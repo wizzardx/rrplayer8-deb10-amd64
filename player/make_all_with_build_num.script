@@ -1,0 +1,117 @@
+#/bin/bash
+
+# Version: 0.03
+
+# When using the GetBuildNumber code, the source code's Makefile is updated to call this code.
+# This script checks if any of the project's dependancies were updated. If they were then
+# the build number is incremented. Then make is called with BUILD_NUMBER.
+
+# Check the parameter. It must be the name of the package (eg player) to build in the current directory
+
+SCRIPT_NAME="make_all_with_build_num.script"
+ERROR_CODE=2 # Return code for errors
+
+if [ "$#" != "1" ]; then
+  echo "$SCRIPT_NAME" ": Expected 1 paramter: The name of the package to build"
+  exit $ERROR_CODE
+fi
+
+PACKAGE="$1"
+
+echo "===================================================="
+echo " Checking Build Number (build_num.txt)..."
+
+# Check if build_num.txt exists, retrieve the value if it exists, otherwise create a build_num.txt
+# with the value of "1"
+
+BUILD_NUM_FILE="build_num.txt"
+BUILD_ERROR_MARKER="build_error.txt"
+
+if [ -f "$BUILD_NUM_FILE" ]; then
+  # build_num.txt exists, retrieve the value
+  BUILD_NUM=`cat $BUILD_NUM_FILE`
+else
+  # build_num.txt does not exist. Create it with a 1 VALUE
+  echo " Creating $BUILD_NUM_FILE"
+  echo "1" > "$BUILD_NUM_FILE"
+  BUILD_NUM=1
+fi
+
+echo " Current Build Number: $BUILD_NUM"
+
+CHANGES=0  # No changes found yet
+
+# First check for a make error marker file that this script creates. We only want to
+# increment the build number for successful make operations (where changes occured to the source)
+
+if [ -f $BUILD_ERROR_MARKER ]; then
+  # An error occured in the last build operation. Do not increase the build number
+  echo " An error occured in the previous build, build number will not be increased"
+else
+  # An error did not occur in the last build operation. Check for source code changes
+  echo " Checking all source code under current directory... "
+  for test_file in `find . -iname "*.h" -xdev; find . -iname "*.cpp" -xdev; find . -iname "*.c" -xdev`; do
+    # Compare each .cpp, .c and .h file in the directory structure against the package
+    if [ "$test_file" -nt "$PACKAGE" ]; then
+      let CHANGES=$CHANGES+1
+    fi
+  done
+fi
+
+# Check the result of the source code scan...
+
+if [ "$CHANGES" == "0" ]; then
+  # Project not updated.
+  echo " Build Number stays at $BUILD_NUM"
+else
+  # Project was updated, increment the build number
+  echo " Source code files updated: $CHANGES"
+  let BUILD_NUM=$BUILD_NUM+1
+  echo "$BUILD_NUM" > $BUILD_NUM_FILE
+
+  # Also touch build_num.h and build_num.cpp, so that they
+  # will be recompiled and the GetBuildNum() function will
+  # return the new Build Number
+
+  # Check if build_num.h exists
+  if [ ! -f "build_num.h" ]; then
+    echo " ERROR: I could not find build_num.h!"
+    exit $ERROR_CODE # Return an error condition
+  fi
+
+  # Check if build_num.cpp exists
+  if [ -f "build_num.cpp" ]; then
+    # Touch the file. build_num.cpp needs to be recompiled so the GetBuildNum() function
+    # will return the new build number.
+    touch build_num.cpp    
+  else
+    echo " ERROR: I could not find build_num.cpp!"
+    exit $ERROR_CODE # Return an error condition
+  fi
+
+  echo " Project updated, Build Number incremented to $BUILD_NUM"
+fi
+
+echo "===================================================="
+
+# This script was called from the changed "all" target of the Makefile. Now
+# make the original "all" target, and pass $BUILD_NUM to the make process.
+
+make """BUILD_NUM=$BUILD_NUM""" all_old
+
+RESULT=$?
+
+# Now check the make result. If there were make errors then create the make error marker file, otherwise
+# delete the marker file
+
+if [ $RESULT -gt 1 ]; then
+  # A compile error occured, create the marker file
+  echo "Make error occured, temporarily stopping Build Numbers from increasing" > $BUILD_ERROR_MARKER
+else
+  # Otherwise, remove any existing marker files
+  rm -f $BUILD_ERROR_MARKER 
+fi
+
+# Also return the result of the make
+exit $RESULT
+

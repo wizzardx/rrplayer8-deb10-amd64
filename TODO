@@ -1,0 +1,22 @@
+TODO:
+  1) Improve music playlist randomization.
+      -turn off randomize (do own randomize when profile changed?)
+      -When adverts are about to start:
+        - Move all songs above & including current point, to the end of the
+          playlist file.
+        - If we've gone through the entire playlist length, then randomize the playlist.
+      
+      -When the playlist ends:
+        - Re-randomize the playlist & play.
+        
+        
+      
+      -remember position before advert
+      -resume at next position after advert.
+      -When the playlist ends, re-randomize the playlist.
+  
+  2) If the player can't connect to XMMS during startup, keep trying (don't terminate because of the exception)
+  3) Announcement volume 0 = skip announcements. (use at that store of Annalies)  
+  4) Allow percentage-based profiles
+  5) Ability to play encrypted announcements.
+  6) Ability to play ogg music and announcements

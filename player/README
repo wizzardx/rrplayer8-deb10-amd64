@@ -1,0 +1,27 @@
+The motivation for this logger class, is that each application may have it's own specific
+database-based logging methods (or other methods, eg timed e-mail). However, low-level
+functions (eg functions in rr_utils, xmms_controller) are not and should not directly call these
+functions, because they are application specific.
+
+My solution: The application creates a descendant class of "logger" (defined in this "logger" library)
+and does the application-specific logging inside the virtual "log" method. Then all low-level libraries
+are passed a pointer to this descendant logging class. Polymorphism (ie late or dynamic binding)
+allows these functions to call the application-specific "log" function, while they think they are
+calling the parent "logger" class.
+
+Instructions for use:
+1) Include logging.h in your project
+   - this gives you automatic textfile and clog logging.
+   - you can control the automatic logging using the methods of global object "Logging"
+
+2) In your project, define a subclass of "logger", define your logging logic inside the
+   virtual function "handle_log()". logger instances have a lot of useful information passed
+   to them.
+
+3) Pass a pointer to this new logging object to Logger.set_custom_logger();
+
+4) Call the log_message, log_warning and log_error macros in your program.
+
+5) Now all of the libraries are able to use the default (textfile and clog) logging, as well
+   as your program-specific logging mechanisms.
+

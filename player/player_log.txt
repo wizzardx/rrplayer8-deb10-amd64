@@ -1,0 +1,667 @@
+Previous logfile was archived to /home/radman/david_stuff/mnt/userdata/dev/instore_software/player/versions/player-6.19.5/player/logs/player_log_19.tar.gz
+[20/12/2004 11:28:10] player(): Today's RR date: 2545
+[20/12/2004 11:28:10] player(): Initializing media playing sub-system...
+[20/12/2004 11:28:10] init(): Checking XMMS status...
+[20/12/2004 11:28:10] init(): XMMS is running.
+[20/12/2004 11:31:45] GetBuildNum(): BUILD_NUM not defined, will update Makefile...
+[20/12/2004 11:31:45] GetBuildNum(): **** UPDATING Makefile ****
+[20/12/2004 11:31:46] GetBuildNum(): **** Makefile was updated. Please recompile your project ****
+[20/12/2004 11:31:46] player(): ====================================
+[20/12/2004 11:31:46] player():  Starting Player v6.19.5 (build -1)
+[20/12/2004 11:31:46] player(): ====================================
+[20/12/2004 11:31:46] player(): Today's RR date: 2545
+[20/12/2004 11:31:46] player(): Initializing media playing sub-system...
+[20/12/2004 11:31:46] init(): Checking XMMS status...
+[20/12/2004 11:31:46] init(): XMMS is running.
+[20/12/2004 11:31:46] init(): aumix found
+[20/12/2004 11:31:46] init(): Current xmms volume = 43%
+[20/12/2004 11:31:46] init(): Current linein volume  = 0%
+[20/12/2004 11:31:46] init(): Current music type: XMMS
+[20/12/2004 11:31:46] player(): Reading instore player configuration file...
+[20/12/2004 11:31:46] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 11:32:36] player(): =====================================
+[20/12/2004 11:32:36] player():  Starting Player v6.19.5 (build 533)
+[20/12/2004 11:32:36] player(): =====================================
+[20/12/2004 11:32:36] player(): Today's RR date: 2545
+[20/12/2004 11:32:36] player(): Initializing media playing sub-system...
+[20/12/2004 11:32:36] init(): Checking XMMS status...
+[20/12/2004 11:32:36] init(): XMMS is running.
+[20/12/2004 11:32:36] init(): aumix found
+[20/12/2004 11:32:36] init(): Current xmms volume = 43%
+[20/12/2004 11:32:36] init(): Current linein volume  = 0%
+[20/12/2004 11:32:36] init(): Current music type: XMMS
+[20/12/2004 11:32:36] player(): Reading instore player configuration file...
+[20/12/2004 11:32:36] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 11:32:36] player(): Checking database version...
+[20/12/2004 11:32:37] Check_DB_Version(): ERROR: Incorrect database version (expected 3.19, found 3.26)
+[20/12/2004 11:32:38] player(): Loading instore paths...
+[20/12/2004 12:50:35] GetBuildNum(): BUILD_NUM not defined, will update Makefile...
+[20/12/2004 12:50:35] GetBuildNum(): **** UPDATING Makefile ****
+[20/12/2004 12:50:35] GetBuildNum(): **** Makefile was updated. Please recompile your project ****
+[20/12/2004 12:50:35] player(): ====================================
+[20/12/2004 12:50:35] player():  Starting Player v6.19.6 (build -1)
+[20/12/2004 12:50:35] player(): ====================================
+[20/12/2004 12:50:36] player(): Today's RR date: 2545
+[20/12/2004 12:50:36] player(): Initializing media playing sub-system...
+[20/12/2004 12:50:36] init(): Checking XMMS status...
+[20/12/2004 12:50:36] init(): XMMS is running.
+[20/12/2004 12:50:37] init(): aumix found
+[20/12/2004 12:50:37] init(): Current xmms volume = 43%
+[20/12/2004 12:50:37] init(): Current linein volume  = 0%
+[20/12/2004 12:50:37] init(): Current music type: XMMS
+[20/12/2004 12:50:37] player(): Reading instore player configuration file...
+[20/12/2004 12:50:37] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 12:50:39] player(): Checking database version...
+[20/12/2004 12:50:40] Check_DB_Version(): ERROR: Incorrect database version (expected 3.19, found 3.26)
+[20/12/2004 12:50:40] player(): Loading instore paths...
+[20/12/2004 12:50:40] player(): Loading player config from instore database...
+[20/12/2004 12:50:40] player(): Removing waiting commands: mppa, mpst, mpre...
+[20/12/2004 12:50:41] player(): Checking store status...
+[20/12/2004 12:50:42] player(): Store is Open.
+[20/12/2004 12:50:42] player(): Initializing player volume levels...
+[20/12/2004 12:50:43] setvol(): XMMS volume set to 41%
+[20/12/2004 12:50:43] player(): Checking music profile...
+[20/12/2004 12:50:44] CheckMusicProfile(): Changing to music profile "default": /data/radio_retail/stores_software/data/
+[20/12/2004 12:50:44] CreateRandomPlaylist(): Creating random playlist...
+[20/12/2004 12:50:52] StartVolSlide(): Starting a 0ms volume slide from 0% to 41%...
+[20/12/2004 12:50:53] player(): Creating directory structure...
+[20/12/2004 12:50:53] player(): Creating playing.chk file...
+[20/12/2004 12:50:53] player(): Writing LiveInfo data...
+[20/12/2004 12:50:54] player(): Checking the received folder...
+[20/12/2004 12:50:55] player(): Checking for invalid 'waiting' announcements...
+[20/12/2004 12:50:55] player(): Checking for missed announcements...
+[20/12/2004 12:50:57] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000117.mp3 was missed 20 times between 15/12/2004 18:00:00 and 20/12/2004 10:51:00
+[20/12/2004 12:50:57] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000118.mp3 was missed 69 times between 15/12/2004 17:29:00 and 20/12/2004 12:21:00
+[20/12/2004 12:50:58] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000122.mp3 was missed 69 times between 15/12/2004 17:00:00 and 20/12/2004 12:21:00
+[20/12/2004 12:50:58] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000123.mp3 was missed 68 times between 15/12/2004 17:06:00 and 20/12/2004 12:06:00
+[20/12/2004 12:50:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000124.mp3 was missed 68 times between 15/12/2004 17:29:00 and 20/12/2004 12:29:00
+[20/12/2004 12:50:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000125.mp3 was missed 68 times between 15/12/2004 17:14:00 and 20/12/2004 12:14:00
+[20/12/2004 12:50:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000126.mp3 was missed 69 times between 15/12/2004 16:59:00 and 20/12/2004 12:25:00
+[20/12/2004 12:51:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000127.mp3 was missed 68 times between 15/12/2004 17:03:00 and 20/12/2004 12:03:00
+[20/12/2004 12:51:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000128.mp3 was missed 68 times between 15/12/2004 17:10:00 and 20/12/2004 12:10:00
+[20/12/2004 12:51:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000129.mp3 was missed 62 times between 15/12/2004 17:18:00 and 19/12/2004 17:48:00
+[20/12/2004 12:51:01] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000130.mp3 was missed 68 times between 15/12/2004 17:03:00 and 20/12/2004 12:18:00
+[20/12/2004 12:51:02] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000131.mp3 was missed 70 times between 15/12/2004 16:56:00 and 20/12/2004 12:33:00
+[20/12/2004 12:51:02] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000132.mp3 was missed 68 times between 15/12/2004 17:18:00 and 20/12/2004 12:11:00
+[20/12/2004 12:51:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000133.mp3 was missed 68 times between 15/12/2004 17:33:00 and 20/12/2004 12:18:00
+[20/12/2004 12:51:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000134.mp3 was missed 51 times between 15/12/2004 17:26:00 and 20/12/2004 12:33:00
+[20/12/2004 12:51:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000135.mp3 was missed 34 times between 16/12/2004 07:40:00 and 20/12/2004 12:26:00
+[20/12/2004 12:51:04] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000136.mp3 was missed 33 times between 16/12/2004 07:18:00 and 20/12/2004 11:40:00
+[20/12/2004 12:51:04] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000137.mp3 was missed 33 times between 16/12/2004 07:48:00 and 20/12/2004 11:18:00
+[20/12/2004 12:51:05] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000138.mp3 was missed 78 times between 15/12/2004 17:00:00 and 20/12/2004 12:00:00
+[20/12/2004 12:51:05] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000139.mp3 was missed 78 times between 15/12/2004 17:06:00 and 20/12/2004 12:21:00
+[20/12/2004 12:51:06] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000140.mp3 was missed 77 times between 15/12/2004 17:29:00 and 20/12/2004 11:51:00
+[20/12/2004 12:51:06] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000141.mp3 was missed 78 times between 15/12/2004 17:14:00 and 20/12/2004 12:06:00
+[20/12/2004 12:51:07] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000142.mp3 was missed 79 times between 15/12/2004 16:59:00 and 20/12/2004 12:29:00
+[20/12/2004 12:51:08] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000143.mp3 was missed 77 times between 15/12/2004 17:06:00 and 20/12/2004 11:44:00
+[20/12/2004 12:51:08] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000144.mp3 was missed 77 times between 15/12/2004 17:29:00 and 20/12/2004 11:51:00
+[20/12/2004 12:51:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000145.mp3 was missed 78 times between 15/12/2004 17:14:00 and 20/12/2004 12:14:00
+[20/12/2004 12:51:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000146.mp3 was missed 78 times between 15/12/2004 16:59:00 and 20/12/2004 11:59:00
+[20/12/2004 12:51:10] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000147.mp3 was missed 77 times between 15/12/2004 17:06:00 and 20/12/2004 11:44:00
+[20/12/2004 12:51:10] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000148.mp3 was missed 67 times between 15/12/2004 17:36:00 and 20/12/2004 12:29:00
+[20/12/2004 12:51:10] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000149.mp3 was missed 66 times between 15/12/2004 17:14:00 and 20/12/2004 11:36:00
+[20/12/2004 12:51:11] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000150.mp3 was missed 66 times between 15/12/2004 17:41:00 and 20/12/2004 11:56:00
+[20/12/2004 12:51:11] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000151.mp3 was missed 61 times between 15/12/2004 17:18:00 and 20/12/2004 12:06:00
+[20/12/2004 12:51:11] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000152.mp3 was missed 34 times between 16/12/2004 07:44:00 and 20/12/2004 12:29:00
+[20/12/2004 12:51:12] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000153.mp3 was missed 33 times between 16/12/2004 07:06:00 and 20/12/2004 11:18:00
+[20/12/2004 12:51:12] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000154.mp3 was missed 33 times between 16/12/2004 07:29:00 and 20/12/2004 11:48:00
+[20/12/2004 12:51:12] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000155.mp3 was missed 34 times between 16/12/2004 07:51:00 and 20/12/2004 12:14:00
+[20/12/2004 12:51:12] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000156.mp3 was missed 34 times between 16/12/2004 07:36:00 and 20/12/2004 12:25:00
+[20/12/2004 12:51:13] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000157.mp3 was missed 31 times between 16/12/2004 07:14:00 and 20/12/2004 12:33:00
+[20/12/2004 12:51:13] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000158.mp3 was missed 29 times between 16/12/2004 07:33:00 and 20/12/2004 12:03:00
+[20/12/2004 12:51:13] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000159.mp3 was missed 25 times between 16/12/2004 07:03:00 and 20/12/2004 09:03:00
+[20/12/2004 12:51:13] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000160.mp3 was missed 24 times between 16/12/2004 07:56:00 and 20/12/2004 12:11:00
+[20/12/2004 12:51:13] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000161.mp3 was missed 5 times between 16/12/2004 07:11:00 and 17/12/2004 08:41:00
+[20/12/2004 12:51:13] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000180.mp3 was missed 12 times between 16/12/2004 08:51:00 and 20/12/2004 10:33:00
+[20/12/2004 12:51:13] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000181.mp3 was missed 10 times between 16/12/2004 09:51:00 and 20/12/2004 11:14:00
+[20/12/2004 12:51:14] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000182.mp3 was missed 52 times between 15/12/2004 16:56:00 and 20/12/2004 12:14:00
+[20/12/2004 12:51:14] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000183.mp3 was missed 50 times between 15/12/2004 17:56:00 and 20/12/2004 11:33:00
+[20/12/2004 12:51:14] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000184.mp3 was missed 51 times between 15/12/2004 17:11:00 and 20/12/2004 12:21:00
+[20/12/2004 12:51:14] player(): Logging XMMS status...
+[20/12/2004 12:51:15] player(): Player startup complete.
+[20/12/2004 12:51:15] player(): Player main event loop starting...
+[20/12/2004 12:51:15] player(): 
+[20/12/2004 12:51:47] LogLatestMusicMP3Played(): Playing music: Atomic Kitten - Whole again
+[20/12/2004 12:51:47] run(): Music playlist was updated, logging to database now.
+[20/12/2004 12:51:47] LogXMMSPlaylistToDB(): Logging XMMS playlist to database...
+[20/12/2004 12:51:49] LogAllMachineMusicToDB(): Logging all available music to database... (please be patient)
+[20/12/2004 12:51:56] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000128.mp3
+[20/12/2004 12:51:56] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000128.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000133.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000133.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000123.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000123.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000140.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000140.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000147.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000147.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000150.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000150.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000130.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000130.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000134.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000134.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000124.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000124.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000143.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000143.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000149.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000149.mp3
+[20/12/2004 12:51:57] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000153.mp3
+[20/12/2004 12:51:57] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000153.mp3
+[20/12/2004 12:52:18] save_changes(): Saving buffered mp3 tag details...
+[20/12/2004 12:52:19] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000128.mp3
+[20/12/2004 12:52:19] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000128.mp3
+[20/12/2004 12:52:19] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000133.mp3
+[20/12/2004 12:52:19] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000133.mp3
+[20/12/2004 12:52:19] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000123.mp3
+[20/12/2004 12:52:19] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000123.mp3
+[20/12/2004 12:52:19] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000140.mp3
+[20/12/2004 12:52:19] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000140.mp3
+[20/12/2004 12:52:19] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000147.mp3
+[20/12/2004 12:52:19] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000147.mp3
+[20/12/2004 12:52:19] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000150.mp3
+[20/12/2004 12:52:20] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000150.mp3
+[20/12/2004 12:52:20] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000130.mp3
+[20/12/2004 12:52:20] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000130.mp3
+[20/12/2004 12:52:20] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000134.mp3
+[20/12/2004 12:52:20] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000134.mp3
+[20/12/2004 12:52:20] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000124.mp3
+[20/12/2004 12:52:20] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000124.mp3
+[20/12/2004 12:52:20] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000143.mp3
+[20/12/2004 12:52:20] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000143.mp3
+[20/12/2004 12:52:20] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000149.mp3
+[20/12/2004 12:52:20] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000149.mp3
+[20/12/2004 12:52:20] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000153.mp3
+[20/12/2004 12:52:20] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000153.mp3
+[20/12/2004 12:52:20] run(): Running... (Music type: XMMS, volume: 41%)
+[20/12/2004 12:52:51] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000128.mp3
+[20/12/2004 12:52:51] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000128.mp3
+[20/12/2004 12:52:52] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000133.mp3
+[20/12/2004 12:52:52] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000133.mp3
+[20/12/2004 12:52:52] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000123.mp3
+[20/12/2004 12:52:52] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000123.mp3
+[20/12/2004 12:52:52] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000140.mp3
+[20/12/2004 12:52:52] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000140.mp3
+[20/12/2004 12:52:52] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000147.mp3
+[20/12/2004 12:52:52] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000147.mp3
+[20/12/2004 12:52:52] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000150.mp3
+[20/12/2004 12:52:52] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000150.mp3
+[20/12/2004 12:52:52] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000130.mp3
+[20/12/2004 12:52:52] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000130.mp3
+[20/12/2004 12:52:52] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000134.mp3
+[20/12/2004 12:52:53] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000134.mp3
+[20/12/2004 12:52:53] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000124.mp3
+[20/12/2004 12:52:53] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000124.mp3
+[20/12/2004 12:52:53] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000143.mp3
+[20/12/2004 12:52:54] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000143.mp3
+[20/12/2004 12:52:54] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000149.mp3
+[20/12/2004 12:52:54] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000149.mp3
+[20/12/2004 12:52:54] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000153.mp3
+[20/12/2004 12:52:54] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000153.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000128.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000128.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000133.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000133.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000123.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000123.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000140.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000140.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000147.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000147.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000150.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000150.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000130.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000130.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000134.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000134.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000124.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000124.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000143.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000143.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000149.mp3
+[20/12/2004 12:53:26] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000149.mp3
+[20/12/2004 12:53:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000153.mp3
+[20/12/2004 12:53:27] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000153.mp3
+[20/12/2004 12:53:27] run(): Running... (Music type: XMMS, volume: 41%)
+[20/12/2004 13:19:04] player(): =====================================
+[20/12/2004 13:19:04] player():  Starting Player v6.19.6 (build 534)
+[20/12/2004 13:19:04] player(): =====================================
+[20/12/2004 13:19:04] player(): Player already loaded, terminating...
+[20/12/2004 13:20:25] player(): =====================================
+[20/12/2004 13:20:25] player():  Starting Player v6.19.6 (build 534)
+[20/12/2004 13:20:25] player(): =====================================
+[20/12/2004 13:20:25] player(): Today's RR date: 2545
+[20/12/2004 13:20:25] player(): Initializing media playing sub-system...
+[20/12/2004 13:20:25] init(): Checking XMMS status...
+[20/12/2004 13:20:26] init(): XMMS is running.
+[20/12/2004 13:20:26] init(): aumix found
+[20/12/2004 13:20:27] init(): Current xmms volume = 40%
+[20/12/2004 13:20:27] init(): Current linein volume  = 0%
+[20/12/2004 13:20:27] init(): Current music type: XMMS
+[20/12/2004 13:20:27] player(): Reading instore player configuration file...
+[20/12/2004 13:20:27] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 13:20:27] player(): Checking database version...
+[20/12/2004 13:20:27] Check_DB_Version(): ERROR: Incorrect database version (expected 3.19, found 3.27)
+[20/12/2004 13:20:27] player(): Loading instore paths...
+[20/12/2004 13:20:27] player(): Loading player config from instore database...
+[20/12/2004 13:20:28] player(): Removing waiting commands: mppa, mpst, mpre...
+[20/12/2004 13:20:28] player(): Checking store status...
+[20/12/2004 13:20:28] player(): Store is Open.
+[20/12/2004 13:20:28] player(): Initializing player volume levels...
+[20/12/2004 13:20:28] setvol(): XMMS volume set to 40%
+[20/12/2004 13:20:28] player(): Checking music profile...
+[20/12/2004 13:20:28] CheckMusicProfile(): Changing to music profile "default": /data/radio_retail/stores_software/data/
+[20/12/2004 13:20:28] CreateRandomPlaylist(): Creating random playlist...
+[20/12/2004 13:20:30] player(): Creating directory structure...
+[20/12/2004 13:20:30] player(): Creating playing.chk file...
+[20/12/2004 13:20:30] player(): Writing LiveInfo data...
+[20/12/2004 13:20:31] player(): Checking the received folder...
+[20/12/2004 13:20:31] player(): Checking for invalid 'waiting' announcements...
+[20/12/2004 13:20:31] player(): Checking for missed announcements...
+[20/12/2004 13:24:55] player(): =====================================
+[20/12/2004 13:24:55] player():  Starting Player v6.19.6 (build 535)
+[20/12/2004 13:24:55] player(): =====================================
+[20/12/2004 13:24:55] player(): Today's RR date: 2545
+[20/12/2004 13:24:55] player(): Initializing media playing sub-system...
+[20/12/2004 13:24:55] init(): Checking XMMS status...
+[20/12/2004 13:24:55] init(): XMMS is running.
+[20/12/2004 13:24:56] init(): aumix found
+[20/12/2004 13:24:57] init(): Current xmms volume = 40%
+[20/12/2004 13:24:57] init(): Current linein volume  = 0%
+[20/12/2004 13:24:57] init(): Current music type: XMMS
+[20/12/2004 13:24:57] player(): Reading instore player configuration file...
+[20/12/2004 13:24:57] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 13:24:57] player(): Loading instore paths...
+[20/12/2004 13:24:57] player(): Loading player config from instore database...
+[20/12/2004 13:24:57] player(): Removing waiting commands: mppa, mpst, mpre...
+[20/12/2004 13:24:57] player(): Checking store status...
+[20/12/2004 13:24:57] player(): Store is Open.
+[20/12/2004 13:24:57] player(): Initializing player volume levels...
+[20/12/2004 13:24:58] setvol(): XMMS volume set to 40%
+[20/12/2004 13:24:58] player(): Checking music profile...
+[20/12/2004 13:24:58] CheckMusicProfile(): Changing to music profile "default": /data/radio_retail/stores_software/data/
+[20/12/2004 13:24:58] CreateRandomPlaylist(): Creating random playlist...
+[20/12/2004 13:24:59] player(): Creating directory structure...
+[20/12/2004 13:24:59] player(): Creating playing.chk file...
+[20/12/2004 13:24:59] player(): Writing LiveInfo data...
+[20/12/2004 13:25:00] player(): Checking the received folder...
+[20/12/2004 13:25:01] player(): Checking for invalid 'waiting' announcements...
+[20/12/2004 13:25:01] player(): Checking for missed announcements...
+[20/12/2004 13:25:02] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000118.mp3 (at 20/12/2004 13:06:00) was missed.
+[20/12/2004 13:25:02] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000122.mp3 (at 20/12/2004 13:00:00) was missed.
+[20/12/2004 13:25:02] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000123.mp3 (at 20/12/2004 13:06:00) was missed.
+[20/12/2004 13:25:02] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000124.mp3 (at 20/12/2004 12:51:00) was missed.
+[20/12/2004 13:25:02] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000126.mp3 (at 20/12/2004 12:59:00) was missed.
+[20/12/2004 13:25:02] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000127.mp3 was missed 2 times between 20/12/2004 12:55:00 and 20/12/2004 13:03:00
+[20/12/2004 13:25:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000128.mp3 (at 20/12/2004 13:10:00) was missed.
+[20/12/2004 13:25:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000130.mp3 (at 20/12/2004 12:48:00) was missed.
+[20/12/2004 13:25:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000131.mp3 (at 20/12/2004 13:03:00) was missed.
+[20/12/2004 13:25:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000132.mp3 (at 20/12/2004 12:56:00) was missed.
+[20/12/2004 13:25:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000134.mp3 (at 20/12/2004 12:48:00) was missed.
+[20/12/2004 13:25:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000138.mp3 (at 20/12/2004 13:00:00) was missed.
+[20/12/2004 13:25:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000141.mp3 (at 20/12/2004 13:06:00) was missed.
+[20/12/2004 13:25:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000143.mp3 (at 20/12/2004 12:51:00) was missed.
+[20/12/2004 13:25:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000146.mp3 (at 20/12/2004 12:59:00) was missed.
+[20/12/2004 13:25:03] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000149.mp3 (at 20/12/2004 12:51:00) was missed.
+[20/12/2004 13:25:04] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000151.mp3 (at 20/12/2004 13:06:00) was missed.
+[20/12/2004 13:25:04] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000153.mp3 (at 20/12/2004 12:51:00) was missed.
+[20/12/2004 13:25:04] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000158.mp3 (at 20/12/2004 13:03:00) was missed.
+[20/12/2004 13:25:04] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000159.mp3 (at 20/12/2004 12:56:00) was missed.
+[20/12/2004 13:25:04] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000183.mp3 (at 20/12/2004 12:59:00) was missed.
+[20/12/2004 13:25:04] player(): Logging XMMS status...
+[20/12/2004 13:25:05] player(): Player startup complete.
+[20/12/2004 13:25:05] player(): Player main event loop starting...
+[20/12/2004 13:25:05] player(): 
+[20/12/2004 13:50:00] player(): =====================================
+[20/12/2004 13:50:00] player():  Starting Player v6.19.6 (build 535)
+[20/12/2004 13:50:00] player(): =====================================
+[20/12/2004 13:50:00] player(): Today's RR date: 2545
+[20/12/2004 13:50:00] player(): Initializing media playing sub-system...
+[20/12/2004 13:50:00] init(): Checking XMMS status...
+[20/12/2004 13:50:00] init(): XMMS is running.
+[20/12/2004 13:50:01] init(): aumix found
+[20/12/2004 13:50:02] init(): Current xmms volume = 40%
+[20/12/2004 13:50:02] init(): Current linein volume  = 0%
+[20/12/2004 13:50:02] init(): Current music type: XMMS
+[20/12/2004 13:50:02] player(): Reading instore player configuration file...
+[20/12/2004 13:50:02] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 13:50:02] player(): Loading instore paths...
+[20/12/2004 13:50:02] player(): Loading player config from instore database...
+[20/12/2004 13:50:03] player(): Removing waiting commands: mppa, mpst, mpre...
+[20/12/2004 13:50:03] player(): Checking store status...
+[20/12/2004 13:50:03] player(): Store is Open.
+[20/12/2004 13:50:03] player(): Initializing player volume levels...
+[20/12/2004 13:50:03] setvol(): XMMS volume set to 40%
+[20/12/2004 13:50:03] player(): Checking music profile...
+[20/12/2004 13:50:04] CheckMusicProfile(): Changing to music profile "default": /data/radio_retail/stores_software/data/
+[20/12/2004 13:50:04] CreateRandomPlaylist(): Creating random playlist...
+[20/12/2004 13:50:05] player(): Creating directory structure...
+[20/12/2004 13:50:05] player(): Creating playing.chk file...
+[20/12/2004 13:50:05] player(): Writing LiveInfo data...
+[20/12/2004 13:50:07] player(): Checking the received folder...
+[20/12/2004 13:50:07] player(): Checking for invalid 'waiting' announcements...
+[20/12/2004 13:50:07] player(): Checking for missed announcements...
+[20/12/2004 13:50:08] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000118.mp3 (at 20/12/2004 13:21:00) was missed.
+[20/12/2004 13:50:08] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000122.mp3 (at 20/12/2004 13:21:00) was missed.
+[20/12/2004 13:50:08] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000124.mp3 (at 20/12/2004 13:29:00) was missed.
+[20/12/2004 13:50:08] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000125.mp3 (at 20/12/2004 13:14:00) was missed.
+[20/12/2004 13:50:08] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000126.mp3 (at 20/12/2004 13:25:00) was missed.
+[20/12/2004 13:50:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000130.mp3 (at 20/12/2004 13:18:00) was missed.
+[20/12/2004 13:50:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000131.mp3 (at 20/12/2004 13:33:00) was missed.
+[20/12/2004 13:50:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000132.mp3 (at 20/12/2004 13:11:00) was missed.
+[20/12/2004 13:50:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000133.mp3 (at 20/12/2004 13:18:00) was missed.
+[20/12/2004 13:50:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000134.mp3 (at 20/12/2004 13:33:00) was missed.
+[20/12/2004 13:50:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000135.mp3 (at 20/12/2004 13:26:00) was missed.
+[20/12/2004 13:50:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000139.mp3 (at 20/12/2004 13:21:00) was missed.
+[20/12/2004 13:50:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000142.mp3 (at 20/12/2004 13:29:00) was missed.
+[20/12/2004 13:50:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000145.mp3 (at 20/12/2004 13:14:00) was missed.
+[20/12/2004 13:50:09] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000148.mp3 (at 20/12/2004 13:29:00) was missed.
+[20/12/2004 13:50:10] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000152.mp3 (at 20/12/2004 13:29:00) was missed.
+[20/12/2004 13:50:10] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000155.mp3 (at 20/12/2004 13:14:00) was missed.
+[20/12/2004 13:50:10] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000156.mp3 (at 20/12/2004 13:25:00) was missed.
+[20/12/2004 13:50:10] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000157.mp3 (at 20/12/2004 13:33:00) was missed.
+[20/12/2004 13:50:10] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000160.mp3 (at 20/12/2004 13:11:00) was missed.
+[20/12/2004 13:50:10] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000182.mp3 (at 20/12/2004 13:14:00) was missed.
+[20/12/2004 13:50:10] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000184.mp3 (at 20/12/2004 13:21:00) was missed.
+[20/12/2004 13:50:10] player(): Logging XMMS status...
+[20/12/2004 13:50:11] player(): Player startup complete.
+[20/12/2004 13:50:11] player(): Player main event loop starting...
+[20/12/2004 13:50:11] player(): 
+[20/12/2004 13:50:42] LogLatestMusicMP3Played(): Playing music: Madonna - Don't tell me
+[20/12/2004 13:50:43] run(): Music playlist was updated, logging to database now.
+[20/12/2004 13:50:43] LogXMMSPlaylistToDB(): Logging XMMS playlist to database...
+[20/12/2004 13:50:49] LogAllMachineMusicToDB(): Logging all available music to database... (please be patient)
+[20/12/2004 13:51:32] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000128.mp3
+[20/12/2004 13:51:32] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000128.mp3
+[20/12/2004 13:51:32] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000133.mp3
+[20/12/2004 13:51:32] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000133.mp3
+[20/12/2004 13:51:33] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000123.mp3
+[20/12/2004 13:51:33] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000140.mp3
+[20/12/2004 13:51:33] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000140.mp3
+[20/12/2004 13:51:33] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000147.mp3
+[20/12/2004 13:51:34] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000150.mp3
+[20/12/2004 13:51:34] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000130.mp3
+[20/12/2004 13:51:34] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000130.mp3
+[20/12/2004 13:51:34] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000134.mp3
+[20/12/2004 13:51:34] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000134.mp3
+[20/12/2004 13:51:34] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000124.mp3
+[20/12/2004 13:51:35] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000124.mp3
+[20/12/2004 13:51:35] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000143.mp3
+[20/12/2004 13:51:35] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000143.mp3
+[20/12/2004 13:51:35] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000149.mp3
+[20/12/2004 13:51:35] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000149.mp3
+[20/12/2004 13:51:36] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000153.mp3
+[20/12/2004 13:51:46] save_changes(): Saving buffered mp3 tag details...
+[20/12/2004 13:51:48] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000128.mp3
+[20/12/2004 13:51:48] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000128.mp3
+[20/12/2004 13:51:48] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000133.mp3
+[20/12/2004 13:51:48] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000133.mp3
+[20/12/2004 13:51:48] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000123.mp3
+[20/12/2004 13:51:48] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000140.mp3
+[20/12/2004 13:51:49] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000140.mp3
+[20/12/2004 13:51:49] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000147.mp3
+[20/12/2004 13:51:49] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000150.mp3
+[20/12/2004 13:51:49] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000130.mp3
+[20/12/2004 13:51:50] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000130.mp3
+[20/12/2004 13:51:50] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000134.mp3
+[20/12/2004 13:51:50] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000134.mp3
+[20/12/2004 13:51:50] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000124.mp3
+[20/12/2004 13:51:50] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000124.mp3
+[20/12/2004 13:51:51] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000143.mp3
+[20/12/2004 13:51:51] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000143.mp3
+[20/12/2004 13:51:51] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000149.mp3
+[20/12/2004 13:51:51] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000149.mp3
+[20/12/2004 13:51:52] run(): ERROR: Advert skipped because the period it was purchased for has expired: spc0000153.mp3
+[20/12/2004 13:51:52] run(): Running... (Music type: XMMS, volume: 40%)
+[20/12/2004 13:52:23] LogLatestMusicMP3Played(): Playing music: Masters of Rock - Track 12
+[20/12/2004 13:52:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000128.mp3
+[20/12/2004 13:52:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000133.mp3
+[20/12/2004 13:52:26] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000140.mp3
+[20/12/2004 13:52:26] run(): Announcement to be played: spc0000123.mp3, priority: 02, catagory: "a0271", volume: 100%,  time: 01:44:00 pm, date: 20/12/2004, db index: 152988
+[20/12/2004 13:52:27] run(): Announcement to be played: spc0000147.mp3, priority: 02, catagory: "a0167", volume: 100%,  time: 01:44:00 pm, date: 20/12/2004, db index: 155796
+[20/12/2004 13:52:27] run(): Announcement to be played: spc0000150.mp3, priority: 02, catagory: "a0147", volume: 100%,  time: 01:44:00 pm, date: 20/12/2004, db index: 156640
+[20/12/2004 13:52:27] StartVolSlide(): Starting a 1000ms volume slide from 40% to 0%...
+[20/12/2004 13:52:28] setvol(): XMMS volume set to 0%
+[20/12/2004 13:52:29] setvol(): XMMS volume set to 48%
+[20/12/2004 13:52:29] AnnPlaybackCheck(): Playing announcement (1/3) : spc0000123.mp3 (id: 152988)
+[20/12/2004 13:59:11] player(): =====================================
+[20/12/2004 13:59:11] player():  Starting Player v6.19.6 (build 536)
+[20/12/2004 13:59:11] player(): =====================================
+[20/12/2004 13:59:11] player(): Today's RR date: 2545
+[20/12/2004 13:59:11] player(): Initializing media playing sub-system...
+[20/12/2004 13:59:11] init(): Checking XMMS status...
+[20/12/2004 13:59:11] init(): XMMS is running.
+[20/12/2004 13:59:12] init(): aumix found
+[20/12/2004 13:59:12] init(): Current xmms volume = 48%
+[20/12/2004 13:59:12] init(): Current linein volume  = 0%
+[20/12/2004 13:59:12] init(): Current music type: XMMS
+[20/12/2004 13:59:12] player(): Reading instore player configuration file...
+[20/12/2004 13:59:12] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 13:59:12] player(): Loading instore paths...
+[20/12/2004 13:59:12] player(): Loading player config from instore database...
+[20/12/2004 13:59:12] player(): Removing waiting commands: mppa, mpst, mpre...
+[20/12/2004 13:59:12] player(): Checking store status...
+[20/12/2004 13:59:12] player(): Store is Open.
+[20/12/2004 13:59:12] player(): Initializing player volume levels...
+[20/12/2004 13:59:12] setvol(): XMMS volume set to 40%
+[20/12/2004 13:59:13] player(): Checking music profile...
+[20/12/2004 13:59:13] CheckMusicProfile(): Changing to music profile "default": /data/radio_retail/stores_software/data/
+[20/12/2004 13:59:13] CreateRandomPlaylist(): Creating random playlist...
+[20/12/2004 13:59:13] StartVolSlide(): Starting a 0ms volume slide from 0% to 40%...
+[20/12/2004 13:59:14] setvol(): XMMS volume set to 40%
+[20/12/2004 13:59:14] player(): Creating directory structure...
+[20/12/2004 13:59:14] player(): Creating playing.chk file...
+[20/12/2004 13:59:14] player(): Writing LiveInfo data...
+[20/12/2004 13:59:15] player(): Checking the received folder...
+[20/12/2004 13:59:15] player(): Checking for invalid 'waiting' announcements...
+[20/12/2004 13:59:15] CorrectWaitingAnnouncements(): 3 announcement(s) corrected. (Changed status from 'about to be played' to 'loaded from SNS').
+[20/12/2004 13:59:15] player(): Checking for missed announcements...
+[20/12/2004 13:59:16] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000123.mp3 (at 20/12/2004 13:44:00) was missed.
+[20/12/2004 13:59:16] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000125.mp3 (at 20/12/2004 13:36:00) was missed.
+[20/12/2004 13:59:16] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000128.mp3 (at 20/12/2004 13:40:00) was missed.
+[20/12/2004 13:59:16] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000133.mp3 (at 20/12/2004 13:41:00) was missed.
+[20/12/2004 13:59:16] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000140.mp3 (at 20/12/2004 13:44:00) was missed.
+[20/12/2004 13:59:16] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000144.mp3 (at 20/12/2004 13:36:00) was missed.
+[20/12/2004 13:59:16] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000147.mp3 (at 20/12/2004 13:44:00) was missed.
+[20/12/2004 13:59:16] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000150.mp3 (at 20/12/2004 13:44:00) was missed.
+[20/12/2004 13:59:16] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000154.mp3 (at 20/12/2004 13:36:00) was missed.
+[20/12/2004 13:59:16] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000181.mp3 (at 20/12/2004 13:36:00) was missed.
+[20/12/2004 13:59:16] player(): Logging XMMS status...
+[20/12/2004 13:59:17] player(): Player startup complete.
+[20/12/2004 13:59:17] player(): Player main event loop starting...
+[20/12/2004 13:59:17] player(): 
+[20/12/2004 14:34:54] player(): =====================================
+[20/12/2004 14:34:54] player():  Starting Player v6.19.6 (build 537)
+[20/12/2004 14:34:54] player(): =====================================
+[20/12/2004 14:34:54] player(): Today's RR date: 2545
+[20/12/2004 14:34:54] player(): Initializing media playing sub-system...
+[20/12/2004 14:34:54] init(): Checking XMMS status...
+[20/12/2004 14:34:54] init(): XMMS is running.
+[20/12/2004 14:34:54] init(): aumix found
+[20/12/2004 14:34:55] init(): Current xmms volume = 100%
+[20/12/2004 14:34:55] init(): Current linein volume  = 0%
+[20/12/2004 14:34:55] init(): Current music type: XMMS
+[20/12/2004 14:34:55] player(): Reading instore player configuration file...
+[20/12/2004 14:34:55] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 14:34:55] player(): Loading instore paths...
+[20/12/2004 14:34:55] player(): Loading player config from instore database...
+[20/12/2004 14:34:55] player(): Removing waiting commands: mppa, mpst, mpre...
+[20/12/2004 14:34:55] player(): Checking store status...
+[20/12/2004 14:34:55] player(): Store is Open.
+[20/12/2004 14:34:55] player(): Initializing player volume levels...
+[20/12/2004 14:34:55] setvol(): XMMS volume set to 40%
+[20/12/2004 14:34:55] player(): Checking music profile...
+[20/12/2004 14:34:56] CheckMusicProfile(): Changing to music profile "default": /data/radio_retail/stores_software/data/
+[20/12/2004 14:34:56] CreateRandomPlaylist(): Creating random playlist...
+[20/12/2004 14:34:57] player(): Creating directory structure...
+[20/12/2004 14:34:57] player(): Creating playing.chk file...
+[20/12/2004 14:34:57] player(): Writing LiveInfo data...
+[20/12/2004 14:34:58] player(): Checking the received folder...
+[20/12/2004 14:34:58] player(): Checking for invalid 'waiting' announcements...
+[20/12/2004 14:34:58] player(): Checking for missed announcements...
+[20/12/2004 14:34:58] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000122.mp3 (at 20/12/2004 14:00:00) was missed.
+[20/12/2004 14:34:58] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000124.mp3 (at 20/12/2004 13:51:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000125.mp3 (at 20/12/2004 14:06:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000126.mp3 (at 20/12/2004 13:59:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000127.mp3 (at 20/12/2004 13:55:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000130.mp3 was missed 2 times between 20/12/2004 13:48:00 and 20/12/2004 14:14:00
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000132.mp3 (at 20/12/2004 13:56:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000133.mp3 (at 20/12/2004 14:03:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000134.mp3 (at 20/12/2004 13:48:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000135.mp3 (at 20/12/2004 14:10:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000137.mp3 (at 20/12/2004 14:18:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000138.mp3 (at 20/12/2004 14:00:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000139.mp3 (at 20/12/2004 14:06:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000141.mp3 (at 20/12/2004 14:14:00) was missed.
+[20/12/2004 14:34:59] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000143.mp3 was missed 2 times between 20/12/2004 13:51:00 and 20/12/2004 14:06:00
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000145.mp3 (at 20/12/2004 14:14:00) was missed.
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000146.mp3 (at 20/12/2004 13:59:00) was missed.
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000147.mp3 (at 20/12/2004 14:06:00) was missed.
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000148.mp3 (at 20/12/2004 14:14:00) was missed.
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000149.mp3 was missed 2 times between 20/12/2004 13:51:00 and 20/12/2004 14:03:00
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000151.mp3 (at 20/12/2004 14:10:00) was missed.
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000153.mp3 (at 20/12/2004 13:51:00) was missed.
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000159.mp3 (at 20/12/2004 13:56:00) was missed.
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000182.mp3 (at 20/12/2004 14:11:00) was missed.
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000183.mp3 (at 20/12/2004 13:59:00) was missed.
+[20/12/2004 14:35:00] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000184.mp3 (at 20/12/2004 14:18:00) was missed.
+[20/12/2004 14:35:00] player(): Logging XMMS status...
+[20/12/2004 14:35:01] player(): Player startup complete.
+[20/12/2004 14:35:01] player(): Player main event loop starting...
+[20/12/2004 14:35:01] player(): 
+[20/12/2004 14:35:31] LogLatestMusicMP3Played(): Playing music: Madonna - Runaway lover
+[20/12/2004 14:35:32] run(): Music playlist was updated, logging to database now.
+[20/12/2004 14:35:32] LogXMMSPlaylistToDB(): Logging XMMS playlist to database...
+[20/12/2004 14:35:35] LogAllMachineMusicToDB(): Logging all available music to database... (please be patient)
+[20/12/2004 14:35:55] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000142.mp3
+[20/12/2004 14:35:55] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000146.mp3
+[20/12/2004 14:35:55] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000132.mp3
+[20/12/2004 14:35:55] run(): Announcement to be played: spc0000123.mp3, priority: 02, catagory: "a0271", volume: 100%,  time: 02:21:00 pm, date: 20/12/2004, db index: 152990
+[20/12/2004 14:35:55] run(): Announcement to be played: spc0000138.mp3, priority: 02, catagory: "a0195", volume: 100%,  time: 02:21:00 pm, date: 20/12/2004, db index: 154574
+[20/12/2004 14:35:55] run(): Announcement to be played: spc0000151.mp3, priority: 02, catagory: "a0199", volume: 100%,  time: 02:25:00 pm, date: 20/12/2004, db index: 156749
+[20/12/2004 14:35:55] StartVolSlide(): Starting a 1000ms volume slide from 40% to 0%...
+[20/12/2004 14:36:50] setvol(): XMMS volume set to 0%
+[20/12/2004 14:38:28] player(): =====================================
+[20/12/2004 14:38:28] player():  Starting Player v6.19.6 (build 538)
+[20/12/2004 14:38:28] player(): =====================================
+[20/12/2004 14:38:28] player(): Today's RR date: 2545
+[20/12/2004 14:38:28] player(): Initializing media playing sub-system...
+[20/12/2004 14:38:28] init(): Checking XMMS status...
+[20/12/2004 14:38:28] init(): XMMS is running.
+[20/12/2004 14:38:28] init(): aumix found
+[20/12/2004 14:38:29] init(): Current xmms volume = 0%
+[20/12/2004 14:38:29] init(): Current linein volume  = 0%
+[20/12/2004 14:38:29] init(): Current music type: XMMS
+[20/12/2004 14:38:29] player(): Reading instore player configuration file...
+[20/12/2004 14:38:29] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 14:38:29] player(): Loading instore paths...
+[20/12/2004 14:38:29] player(): Loading player config from instore database...
+[20/12/2004 14:38:29] player(): Removing waiting commands: mppa, mpst, mpre...
+[20/12/2004 14:38:29] player(): Checking store status...
+[20/12/2004 14:38:29] player(): Store is Open.
+[20/12/2004 14:38:29] player(): Initializing player volume levels...
+[20/12/2004 14:38:29] player(): Checking music profile...
+[20/12/2004 14:38:30] CheckMusicProfile(): Changing to music profile "default": /data/radio_retail/stores_software/data/
+[20/12/2004 14:38:30] CreateRandomPlaylist(): Creating random playlist...
+[20/12/2004 14:38:30] StartVolSlide(): Starting a 0ms volume slide from 0% to 40%...
+[20/12/2004 14:38:31] setvol(): XMMS volume set to 40%
+[20/12/2004 14:38:31] player(): Creating directory structure...
+[20/12/2004 14:38:31] player(): Creating playing.chk file...
+[20/12/2004 14:38:31] player(): Writing LiveInfo data...
+[20/12/2004 14:38:33] player(): Checking the received folder...
+[20/12/2004 14:38:33] player(): Checking for invalid 'waiting' announcements...
+[20/12/2004 14:38:33] CorrectWaitingAnnouncements(): 3 announcement(s) corrected. (Changed status from 'about to be played' to 'loaded from SNS').
+[20/12/2004 14:38:33] player(): Checking for missed announcements...
+[20/12/2004 14:38:33] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000123.mp3 (at 20/12/2004 14:21:00) was missed.
+[20/12/2004 14:38:33] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000138.mp3 (at 20/12/2004 14:21:00) was missed.
+[20/12/2004 14:38:33] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000142.mp3 (at 20/12/2004 14:21:00) was missed.
+[20/12/2004 14:38:33] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000146.mp3 (at 20/12/2004 14:21:00) was missed.
+[20/12/2004 14:38:33] player(): Logging XMMS status...
+[20/12/2004 14:38:34] player(): Player startup complete.
+[20/12/2004 14:38:34] player(): Player main event loop starting...
+[20/12/2004 14:38:34] player(): 
+[20/12/2004 14:39:05] LogLatestMusicMP3Played(): Playing music: Madonna - What it feels like for a girl
+[20/12/2004 14:39:05] setvol(): XMMS volume set to 40%
+[20/12/2004 14:39:06] run(): Music playlist was updated, logging to database now.
+[20/12/2004 14:39:06] LogXMMSPlaylistToDB(): Logging XMMS playlist to database...
+[20/12/2004 14:39:08] LogAllMachineMusicToDB(): Logging all available music to database... (please be patient)
+[20/12/2004 14:39:27] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000132.mp3
+[20/12/2004 14:39:28] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000126.mp3
+[20/12/2004 14:39:28] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000140.mp3
+[20/12/2004 14:39:28] run(): ERROR: Could not find announcement MP3: /data/radio_retail/stores_software/data/specials/spc0000144.mp3
+[20/12/2004 14:39:28] run(): Announcement to be played: spc0000151.mp3, priority: 02, catagory: "a0199", volume: 100%,  time: 02:25:00 pm, date: 20/12/2004, db index: 156749
+[20/12/2004 14:39:28] run(): Announcement to be played: spc0000150.mp3, priority: 02, catagory: "a0147", volume: 100%,  time: 02:26:00 pm, date: 20/12/2004, db index: 156643
+[20/12/2004 14:39:28] run(): Announcement to be played: spc0000118.mp3, priority: 02, catagory: "a0271", volume: 100%,  time: 02:29:00 pm, date: 20/12/2004, db index: 155965
+[20/12/2004 14:39:28] StartVolSlide(): Starting a 1000ms volume slide from 40% to 0%...
+[20/12/2004 14:40:14] setvol(): XMMS volume set to 0%
+[20/12/2004 14:40:41] setvol(): XMMS volume set to 48%
+[20/12/2004 14:40:41] AnnPlaybackCheck(): Playing announcement (1/3) : spc0000151.mp3 (id: 156749)
+[20/12/2004 14:41:03] AnnPlaybackCheck(): Playing announcement (2/3) : spc0000150.mp3 (id: 156643)
+[20/12/2004 14:41:09] player(): =====================================
+[20/12/2004 14:41:09] player():  Starting Player v6.19.6 (build 538)
+[20/12/2004 14:41:09] player(): =====================================
+[20/12/2004 14:41:09] player(): Today's RR date: 2545
+[20/12/2004 14:41:09] player(): Initializing media playing sub-system...
+[20/12/2004 14:41:09] init(): Checking XMMS status...
+[20/12/2004 14:41:09] init(): XMMS is running.
+[20/12/2004 14:41:09] init(): aumix found
+[20/12/2004 14:41:10] init(): Current xmms volume = 48%
+[20/12/2004 14:41:10] init(): Current linein volume  = 0%
+[20/12/2004 14:41:10] init(): Current music type: XMMS
+[20/12/2004 14:41:10] player(): Reading instore player configuration file...
+[20/12/2004 14:41:10] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 14:41:10] player(): Loading instore paths...
+[20/12/2004 14:41:10] player(): Loading player config from instore database...
+[20/12/2004 14:41:10] player(): Removing waiting commands: mppa, mpst, mpre...
+[20/12/2004 14:41:10] player(): Checking store status...
+[20/12/2004 14:41:10] player(): Store is Open.
+[20/12/2004 14:41:10] player(): Initializing player volume levels...
+[20/12/2004 14:41:10] setvol(): XMMS volume set to 40%
+[20/12/2004 14:41:10] player(): Checking music profile...
+[20/12/2004 14:41:10] CheckMusicProfile(): Changing to music profile "default": /data/radio_retail/stores_software/data/
+[20/12/2004 14:41:10] CreateRandomPlaylist(): Creating random playlist...
+[20/12/2004 14:41:11] Play(): Current song is not in new playlist, interrupting playback.
+[20/12/2004 14:41:11] player(): Creating directory structure...
+[20/12/2004 14:41:12] player(): Creating playing.chk file...
+[20/12/2004 14:41:12] player(): Writing LiveInfo data...
+[20/12/2004 14:41:13] player(): Checking the received folder...
+[20/12/2004 14:41:13] player(): Checking for invalid 'waiting' announcements...
+[20/12/2004 14:41:13] CorrectWaitingAnnouncements(): 2 announcement(s) corrected. (Changed status from 'about to be played' to 'loaded from SNS').
+[20/12/2004 14:41:13] player(): Checking for missed announcements...
+[20/12/2004 14:41:13] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000073.mp3 was missed 9 times between 08/12/2004 07:00:00 and 08/12/2004 09:44:00
+[20/12/2004 14:41:13] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000074.mp3 was missed 3 times between 08/12/2004 07:06:00 and 08/12/2004 09:06:00
+[20/12/2004 14:41:15] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000075.mp3 was missed 165 times between 09/12/2004 07:00:00 and 12/12/2004 19:44:00
+[20/12/2004 14:41:15] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000132.mp3 (at 20/12/2004 14:25:00) was missed.
+[20/12/2004 14:41:15] WriteErrorsForMissedAds_logmissed(): WARNING: Announcement spc0000150.mp3 (at 20/12/2004 14:26:00) was missed.
+[20/12/2004 14:41:15] player(): Logging XMMS status...
+[20/12/2004 14:41:16] player(): Player startup complete.
+[20/12/2004 14:41:16] player(): Player main event loop starting...
+[20/12/2004 14:41:16] player(): 
+[20/12/2004 14:41:47] LogLatestMusicMP3Played(): Playing music: Live - Flow
+[20/12/2004 14:41:47] run(): Music playlist was updated, logging to database now.
+[20/12/2004 14:41:47] LogXMMSPlaylistToDB(): Logging XMMS playlist to database...
+[20/12/2004 14:41:51] LogAllMachineMusicToDB(): Logging all available music to database... (please be patient)
+[20/12/2004 15:36:07] player(): =====================================
+[20/12/2004 15:36:07] player():  Starting Player v6.19.6 (build 538)
+[20/12/2004 15:36:07] player(): =====================================
+[20/12/2004 15:36:08] player(): Today's RR date: 2545
+[20/12/2004 15:36:08] player(): Initializing media playing sub-system...
+[20/12/2004 15:36:08] init(): Checking XMMS status...
+[20/12/2004 15:36:08] init(): XMMS is running.
+[20/12/2004 15:36:08] init(): aumix found
+[20/12/2004 15:36:08] init(): Current xmms volume = 48%
+[20/12/2004 15:36:08] init(): Current linein volume  = 0%
+[20/12/2004 15:36:08] init(): Current music type: XMMS
+[20/12/2004 15:36:08] player(): Reading instore player configuration file...
+[20/12/2004 15:36:08] player(): Connecting to instore database (schedule on 127.0.0.1)...
+[20/12/2004 15:36:08] player(): Loading instore paths...
+[20/12/2004 15:36:09] player(): Loading player config from instore database...
+[20/12/2004 15:36:09] player(): Removing waiting commands: mppa, mpst, mpre...
+[20/12/2004 15:36:09] player(): Checking store status...
+[20/12/2004 15:36:09] player(): Store is Open.
+[20/12/2004 15:36:09] player(): Initializing player volume levels...
+[20/12/2004 15:36:09] setvol(): XMMS volume set to 40%
+[20/12/2004 15:36:09] player(): Checking music profile...
+[20/12/2004 15:36:09] CheckMusicProfile(): Changing to music profile "default": /data/radio_retail/stores_software/data/
+[20/12/2004 15:36:09] CreateRandomPlaylist(): Creating random playlist...

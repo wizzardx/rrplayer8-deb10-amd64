@@ -1,0 +1,281 @@
+=====================
+ 6.25.814 Changes:
+=====================
+  
+  21/02/2005
+    - Player can now play encrypted (.rrcrypt) announcement files.
+      - Database & sns data stays exactly the same as before, just run rrencrypt-file on the files.
+    - Added package dependancy to ccrypt (used for decryption)
+
+=====================
+ 6.24.801 Changes:
+=====================
+  31/01/2005
+    - Player now uses advert filename to determine where to find the advert (not the priority code)
+    - Updated RR C++ libraries to the latest versions: rr_utils, temp_dir, mp3_tags, rr_security
+    - Also created player version 6.19.6.536, based on current instore Shoprite version 6.19.5.533, but with these changes
+      - this is so that I can update the stores with this fix before they have upgraded their other software.
+
+=====================
+ 6.23.798 Changes:
+=====================
+  19/01/2005 - 21/01/2004
+   - Updated RR C++ libraries to the latest versions.
+   - No longer using XMMS shuffle. Now managing the playlist & playlist order more directly.
+     - Playlist entries are "cycled" to the end of the playlist file before ad playback.
+     - After adverts, playback resumes from the start of the new playlist.
+     - Music order is completely linear through the playlist.
+     - After the entire playlist has been cycled, the playlist file is shuffled.
+   - Checking for duplicate entries in playlist, removing them.
+   - Some minor logic updates.
+   - Removed "PROFILE" command handling, no longer used (profiles are now done directly by the wizard).
+   - LogAllMachineMusicToDB() - Using a database transaction (fron new RR pg_sql C++ library). Runs a bit
+                                faster now.
+
+=====================
+ 6.22.742 Changes:
+=====================
+  17/01/2005
+  - Scheduled Music Profiles - ordering query results for which "profile slot" to play now, by the
+    "timezone" primary key, not the "profile" primary key. This is because if profile A is scheduled,
+    then B over A, then A over B again, then B would still be playing (B has a higher "profile" primary key,
+    even if the schedule "timezone" has a lower "timezone" key ).
+    
+=====================
+ 6.21.739 Changes:
+=====================
+  - No longer using old "arts latency" setting in tbldefs.
+  - Upated the 2 XMMS latency settings, so that the ad playback sounds a bit better.
+  - Fixed some logic for sliding the volume from 0 upwards, when ads stop and music starts again.
+  - Corrected a floating-point rounding issue with volume setting.
+  - Added a "blnAdvertsWaitForSongEnd" setting. If it is set, then the player always waits for the
+    current song to end before playing adverts. 
+    Exceptions: 
+      - Advert batches with adverts with "forced" playtimes.
+      - Linein music.
+=====================
+ 6.20.727 Changes:
+=====================
+  - Calling XMMS 
+  - Replaced all C code libraries with newer versions, updated logic & calls, etc.
+  - Took out the database version check. The debian-based install system now ensures that the database versions are correct.
+  - Updated logic for delays which wait for XMMS (all stores will now be using OSS) - removed "delayed volume change" logic
+  - Now depends on rrxmms-config - which gives us the crossfade plugin and the correct settings that the player now needs (for XMMS timing, etc)
+  - Now logging (to the textfile only) when there are delays for syncing with XMMS sound output. This gives
+    a much better idea of where to make corrections when the timing is off. Just listen and watch the log.
+
+=====================
+ 6.19.5.533 Changes:
+=====================
+
+  - NB: Player version 6.20 has already been started. All changes made to this version must be carried across!
+  - Optimized the query which counts ads to play today. Taking advantage of new tblschedule_tz_slot.dtmday field.
+
+=====================
+ 6.19.4.531 Changes:
+=====================
+
+ - NB: Player version 6.20 has already been started. All changes made to this version must be carried across!
+ - Optimized some queries and taking adantage of new database indexes:
+   - Updated function player::WriteErrorsForMissedAds - query more efficient now.
+   - Updated function event_scheduler::run - query for detecting ads to play is now more efficient.
+ 
+=====================
+ 6.19.3.514 Changes:
+=====================
+21/09/2004
+  - All timed player events now check the database connection before proceeding. This is
+  - to prevent the logic from getting confused when the database connection is down.
+
+=====================
+ 6.19.2.511 Changes:
+=====================
+20/09/2004
+  - When the database connection is down, the player now checks for this file:
+  
+  /data/radio_retail/progs/player/player.db-error.no-xmms-checks
+ 
+  - If it exists, then the player will do absolutely no XMMS checks. The existance of this file means
+    that the user has been updating XMMS through the Instore Wizard (during the "database down" state).
+    This is so that the Player will not interfere with the user's volume settings or resume music playback
+    if the user Stops XMMS. If this file exists, it is the Instore Wizard's responsibility to delete it
+    as appropriate (to resume player XMMS checks when there is a database error).
+    
+  - Also took out the logic which sets the XMMS volumes to default levels if the volume is found to be 0
+
+==================
+ 6.19.1 Changes:
+==================
+
+  - TEMPORARY: Logging the player Music Source every 10 seconds, because it appears as if the loader
+    is overwriting this value! (15/07/2004)
+
+==================
+ 6.19 Changes:
+==================
+
+  - If the number of ads in a batch to be played is less than the adverts that "want" to play now (returned
+    by a database query), and the setting for "minimum time between advert batches" is 0 minutes, then
+    announcement batches will be played "back to back", ie the player will call the "advert
+
+  If the minimum time between advert batches is 0 minutes, and there are still adverts that "want" to
+    play (the number of ads in the current batch to play is less than the returned database list of ads to play),
+    then the player will run advert batches "back to back", ie, the code that lists & plays adverts will
+    be immediately re-called after it finishes the first batch. (15/06/2004)
+  - Fixed some DateTime issues in rr_psql and rr_utils - Recently tblstorehours has had "1900" year values
+    which was confusing the SemiSonic() function. (14/05/2004)
+  - "SemiSonic" function, now using datetime_error values instead of "-1". (14/05/2004)
+  - Changed the expected database version from 3.17 to 3.19 (03/06/2004)
+  - Updating the timing code for volume slides - it should be much more accurate now.
+    - note that a "sound latency" factor for ARTS sound daemon usage is still included. See the tbldefs setting.
+  - Corrected the logic for sleeping 1s between ads, previously it would sleep for 1s before the 1st ad
+    also.
+  - Observed that the latency effect only occurs in Arts, not ALSA, so the latency is not XMMS latency, but
+    rather aRts latency. Changed the setting from intXMMSLatency to intARTSLatency. Only using the latency
+    when aRts is being used as the sound daemon.
+
+  (build 452)
+  - Made the music fade-out and fade-in length (during announcements) into new settings in tbldefs (01/06/2004):
+    - intMusicFadeOutLength
+    - intMusicFadeInLength
+
+==================
+ 6.18 Changes:
+==================
+(build 447 - 05/05/2004)
+  - Removed libpqxx0 support, using libpqxx libpqxx-2.1.3 instead.
+(build 444 - 07/04/2004)
+ - Added a (hardcoded) 1/2-second delay between announcements
+ - Fixed logic in media_player::StartVolSlide which caused an unnecessary
+     "Starting a 0ms volume slide from X% to X%" message to be displayed during Player startup.
+ - Changed some (int) typecast comparisons to lrint comparisons (where rounding is more appropriate
+   than truncation)
+
+==================
+ 6.17 Changes:
+==================
+(build 438)
+ - Using aumix to fetch and set PCM volume (bypassing XMMS's interface for setting & fetching volumes)
+   - XMMS behaves very badly with ALSA, when low volumes (<10) are set, (eg: volume slide before an announcement)
+  - Logging current RR date on program startup, and in "Store Opening for the day" message.
+ - Copied updated rr_psql, rr_utils libraries into the player project - several bugs fixed.
+ - media_player.h and media_player.cpp
+   - changed some pointer args to references.
+   - Now an ann_playback_status var needs to be passed to StartAnnouncementQueuePlay()
+   - removed "user stopped xmms" detection (based on how far an announcement played before it stopped)
+     - when an announcement stops playing, XMMS now always checks the DB for waiting commands, eg
+       user "stop xmms" commands.
+ Updated xmms_controller::setvol - check XMMS volume immediatelly after setting it.
+ - Updated media_player.cpp and media_player.h
+
+(build 364)
+ - In this version we attempt to find ways to minimize "api_frozen" events which cause XMMS to be restarted.
+   - We're also now making use of the "libpqxx0" Debian package, instead of .so files compiled from source.
+     - If the player is unable to run because of a missing "libpqxx.so.0" file, then you need to install
+       the libpqxx0 debian package. For Spar the correct version to install is currently 1.5.1-1/testing (56.2kB)
+
+      - xmmsctrl.cpp - Now using an XMMS_API_INPUT_TIMEOUT constant instead of a hardcoded "5" value
+
+- Swapping Playlist Clear & XMMS Clear calls.
+(build 376)
+- The XMMS freeze problem is now fixed, by an update to libvolnorm.
+- Updated a check that the player makes at the end of announcement MP3 playback:
+  - During announcement playback, the player sees how many seconds into the announcement XMMS has played.
+    - At the end of the announcement, playback had to be within 2 seconds of the total length of the
+      total announcement length. If the check fails, the player assumes that a user stopped XMMS playback,
+      and stops the announcement batch.
+      - Updated this value from 2 seconds to 10 seconds.
+
+==================
+ 6.16 Changes:
+==================
+ - (Build 353) - Changed all operations involving volumes, to use floats instead of ints.
+                 (because Riaan VJ observed that the player truncated 0.8% to 0% instead of
+                 rounding up to 1)
+               - Moved call to "volZones" before each MediaPlayer.Maintenance - so that
+                 all "volume corrections" code will have the latest store volumes from the schedule database.
+
+=============
+ 6.15 Changes:
+=============
+  - (build 350) - fixed a bug where music profiles were retrieved by lngprofile ASC, not DESC.
+  - Many small bugfixes and improvements, logic updates, code changes, etc.
+  - Removed logic for e-mailing error logs.
+  - Music profile changes:
+    - Music profiles can now be scheduled for specific hours
+    - A new setting "strDefaultMusicSource" - to be used instead of tblapppaths.strmp3
+    - If there is a music profile playlist creation error, then there is now a fallback to
+      1) The default profile, 2) tblapppaths.strmp3, 3) A Critical error is logged.
+  - Loading an encrypted database password from the conf file.
+  - Changed over to libpqxx (using rr_psql library instead of pg_recordset)
+  - XMMS volume is not corrected unless XMMS is the current sound source, and it is
+     busy playing (volume is not "corrected to 0" when XMMS is in a stopped or paused state) (build #27, 04/09/2003)
+  - At startup the player marks all MPPA, MPST and MPRE commands as complete (but with errors) (build #12, 04/09/2003)
+  - Changed the player code, made it a lot more object-oriented-looking and tidy (build #9, 04/09/2003)
+  - Finished rewriting build number code. It now works like you would expect it to now. Updates Makefile. (build #1 02/09/2003)
+  - Missed adverts are logged as messages instead of errors, ie, logged but not e-mailed.  (26/08/2003)
+  Build #13 (Lucky 13, this is when I finished testing and started using the new build number function)
+    - Fixed bug where player depends on HOME variable being defined (13/08/2003)
+  Entries after this point were before I added build numbers:
+  - rr_utils updated with added a function which allows me to have an automatically-updated
+    build number (07/08/2003)
+  - Player now reads symbolic links as well as regular files when
+    building a music playlist from a directory's contents. (06/08/2003)
+  - Bugfixes in RPLS code - if the player is currently paused, stopped, etc, the profile can still change and the
+    playlist be updated, but playback is not restarted. This is now clearly logged also. (06/08/2003)
+  - Completely removed code for SNS loading that was still present but no longer called.
+  - Removing code that was commented out in previous versions. (25/07/2003)
+  - Fixed a config-loading bug where the e-mail-sending interval is overwritten with the setting for minimum number
+    of seconds to elapse between adverts (25/07/2003)
+  - Advert limiting options are now loaded from the database, not from the config file. (05/04/2003)
+  - The player reads the ad-limiting options at startup, and when a "RCFG" command is read.
+  - Updating the code which schedules and starts announcement playback (timer.cpp:timScheduler())
+    - Announcements which are defined as forced to play at specific times will now ignore the global
+      "minimum music time between ads" setting. (05/08/2003)
+    - The code loop, not the query, now limits the number of announcements to play.
+    - The announcement-playing code now forbids two announcements of the same MP3, or same catagory to play
+      in the same announcement batch. Also, adverts by the same announcer cannot play immediately after one another.
+    - The query returning announcements to play now, also orders by the announcement priority - a nod in the
+      direction of the whole "priority" idea (as opposed to just specifying where the media is located on the system)
+    - There is now also a file existance check right after the query, in addition to the one later in the playlist            generating code.
+    - Now generating permutations to find good announcer combinations - ie: The same announcer can play twice
+      in a batch, just not twice in succession. The query doesn't know about this, and the original code would have
+      just skipped additional ads by the same announcer if the were right by each other.
+  - Commented out more code and variables dealing with the now-obsolete "alternate media paths" concept.
+
+(6.12 -> 6.13) [24/07/2003] -> Emergency update because too many adverts were scheduled through the Wizard at Blouberg.
+-----------------
+Changes:
+  - Added config file options for limiting announcement playback (24/07/2003)
+    - specifically:
+      - The maximum number of announcements per batch
+      - A minimum number of minutes must elapse between announcement batches.
+      - The number of minutes after which an unplayed announcement is considered "missed"
+  - Now logging messages when config file options are left out.
+
+(6.11 -> 6.12)
+--------------
+Changes:
+  - Started this changelog file
+  - Changed event-timing code so as not to depend on the returned system time. (18/07/2003)
+    -> Also checking for system time changes which would otherwise cause problems.
+  - Summarise missed ads instead of writing an error log for each one. (21/07/2003)
+  - Test on a Shoprite linux installation - doesn't work, will have to
+    attempt the recompilation on my 151 / stable bootup.
+
+(6.10 -> 6.11) [18/07/2003]  -> 6.11 is the version on the Spar master install CD.
+---------------------------
+Changes:
+  - Major changes from the previous version, including
+    - using a (bugfixed by myself) version of the XMMS API
+    - Added a "linein" music playback mode.
+    - Added music fade-in and fade-out around announcements
+    - Taking aRts sound latency into account when making volume changes (volume changes are queued)
+    - Abstracted the announcement and music playback into a "MediaPlayer" object.
+    - Enabled pausing, stopping and resuming during music and announcements
+    - Checking more regularly for player commands that were queued into the database.
+    - Many more bugfixes and improvements
+
+Version 6.10 - This is the base version of the player that is running at Shoprite.
+====================================================================================
+
