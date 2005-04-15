@@ -516,10 +516,12 @@ void player::load_store_status() {
 
     datetime dtmtime = time();
 
-    if (dtmopen <= dtmclose)
+    if (dtmopen <= dtmclose) {
       store_status.blnopen = (dtmopen <= dtmtime) && (dtmtime <= dtmclose);
-    else // Weird cases, eg: Store opens at 11 PM and closes at 2 AM.
+    }
+    else { // Weird cases, eg: Store opens at 11 PM and closes at 2 AM.
       store_status.blnopen = !((dtmtime >= dtmclose) && (dtmtime <= dtmopen));
+    }
   }
 
   // If the store is closed, then reset all the volumes to 0 %:
@@ -1303,9 +1305,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     }
 
     // v6.14.3 - PAYB stuff:
-    testing_throw; blnCheckPrerecLifespan = false;
     if (blnCheckPrerecLifespan) {
-      testing_throw;
       if (strPrerecMediaRef == "") {
         testing_throw;
         // The bit for checking the lifespan is set, but the media reference field is empty
@@ -1313,7 +1313,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
         blnSkipItem = true;
       }
       else {
-        testing_throw;
         // strprerec_mediaref and bitcheck_prerec_lifespan are set. Retrieve lifespan and global expiry date info from
         // the related tblprerec_item record
         string psql_PrerecMediaRef = psql_str(lcase(strPrerecMediaRef));
@@ -1323,7 +1322,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
         // Check the results of the query.
         if (rsPrerecItem.recordcount() != 1) {
           // We expected to find 1 matching record, but a different number was found
-          log_error(itostr(rsPrerecItem.recordcount()) + " prerecorded items match media reference " + strPrerecMediaRef);
+          log_error(itostr(rsPrerecItem.recordcount()) + " prerecorded items match media reference " + strPrerecMediaRef + ". Cannot play " + scFileName);
           blnSkipItem = true;
         }
         else {
@@ -1373,7 +1372,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
       // . Check 2: Do not allow ads by the same announcer to play twice in succession:
       if (!blnSkipItem && strAnnCode != "") {
         if (AnnounceList[AnnounceList.size()-1].strAnnCode == strAnnCode) {
-          testing_throw;
           blnSkipItem = true;
           blnAnnouncerClash = true;
         }
@@ -1404,12 +1402,10 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
         AnnounceList.push_back(Announce);
       }
       else {
-        testing_throw;
         // This announcement possibly will not play, because the announcer was the same as the last
         // announcer in the "to-play" queue. We will try later to add it to the list anyway (if the maximum
         // allowed number of announcements per batch has not yet been reached)
         AnnounceMissed_SameVoice.push_back(Announce);
-        testing_throw;
       }
     }
     RS.movenext(); // Move to the next record...
@@ -1795,22 +1791,18 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
           log_warning("Could not find the Default Format clock! (lngfc=" + ltostr(config.lngdefault_format_clock) +"). I will revert to the default music profile.");
         }
         else {
-          testing_throw;
           // We found the Format Clock record. Now find the current Format Clock segment
           lngfc = config.lngdefault_format_clock;
           try {
-            testing_throw;
             lngfc_seg = get_fc_segment(lngfc, strfc_time_without_hour);
           }
           catch(const my_exception & e) {
-            testing_throw;
             // We failed to get a segment.
             log_warning(e.get_error());
             log_warning("Will default to the default music profile");
             lngfc = -1;
             lngfc_seg = -1;
           }
-          testing_throw;
         }
       }
     }
@@ -1830,16 +1822,17 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     // How far into the segment did we query for?
     int intdiff = dtmdelayed - run_data.current_segment.scheduled.dtmstart;
 
+    // Is our difference negative?
+    if (intdiff < 0) my_throw("Logic Error!");
+    
     // Did we query part-way into the segment?
     if (intdiff > 0) {
       log_line("Currently " + itostr(intdiff) + "s into the new segment. Compensating...");
       // Try to add this difference to our current segment delay factor
       int intnew_segment_delay = run_data.intsegment_delay + intdiff;
       if (intnew_segment_delay > intmax_segment_push_back) {
-        testing_throw;
         log_warning("I have to drop " + itostr(intnew_segment_delay - intmax_segment_push_back) + "s of segment playback time! I've reached my segment 'delay' limit of " + itostr(intmax_segment_push_back) + "s");
         intnew_segment_delay = intmax_segment_push_back;
-        testing_throw;
       }
       if (run_data.intsegment_delay != intnew_segment_delay) {
         log_line("Increasing 'segment delay' factor to " + itostr(intnew_segment_delay) + "s (+" + itostr(intnew_segment_delay - run_data.intsegment_delay) + "s)");

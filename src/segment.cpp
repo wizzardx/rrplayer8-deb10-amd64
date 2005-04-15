@@ -146,17 +146,25 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
   cat.lngcat  = strtol(rs.field("lngcat"));
   cat.strname = rs.field("strcat_name");
   cat.cat     = parse_category_string(cat.strname);
+  
+  // Sub-category
+  load_sub_cat_struct(sub_cat, rs.field("strsub_cat"), db, cat, lngfc_seg, "Sub-category", "strsub_cat");
 
   // Alternative category
   alt_cat.lngcat  = strtol(rs.field("lngalt_cat", "-1"));
   alt_cat.strname = rs.field("stralt_cat_name", "");
-  alt_cat.cat     = parse_category_string(alt_cat.strname);
+  if (alt_cat.strname == "") {
+    // Alternative category wasn't defined
+    alt_cat.cat = SCAT_UNKNOWN;
+  }
+  else {
+    testing_throw;
+    // Alternative category was defined.
+    alt_cat.cat = parse_category_string(alt_cat.strname);    
 
-  // Sub-category
-  load_sub_cat_struct(sub_cat, rs.field("strsub_cat"), db, cat, lngfc_seg, "Sub-category", "strsub_cat");
-
-  // Alternative sub-category:
-  load_sub_cat_struct(alt_sub_cat, rs.field("stralt_sub_cat"), db, alt_cat, lngfc_seg, "Alternative sub-category", "stralt_sub_cat");
+    // Alternative sub-category:
+    load_sub_cat_struct(alt_sub_cat, rs.field("stralt_sub_cat"), db, alt_cat, lngfc_seg, "Alternative sub-category", "stralt_sub_cat");
+  }
 
   // Segment-specific info
   sequence            = parse_sequence_string(rs.field("strseq"));  // Random, Sequential, Specific
@@ -403,7 +411,6 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
     my_throw("Could not find any media for the playlist: \"" + strsource + "\"");
   }
   else if (cat.cat == SCAT_MUSIC && pel.size() < 10) {
-    testing_throw;
     // Log a warning if this is a music segment and there are very few entries:    
     log_warning("The new music playlist only has " + itostr(pel.size()) + " song(s)!");    
   }
@@ -428,7 +435,6 @@ void segment::shuffle_pel(programming_element_list & pel) {
 
 // Function called by load_from_db: Prepare a list of programming elements to use, based on the segment parameters.
 void segment::load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_connection & db) {
-testing_throw;  
   // Clear out the current program element list:
   pel.clear();
   bool blnshuffle_pel = false; // Set to true if we are shuffle pel at the end of the function
@@ -453,6 +459,7 @@ testing_throw;
   
   // Is the sequence "Specific"? (ie, use only 1 media item)
   if (sequence == SSEQ_SPECIFIC) {
+testing_throw;
     // Prepare a single programming element and add it to the list.
     if (!file_exists(strspecific_media)) my_throw("Segment's 'specific' media not found: " + strspecific_media);
     strsource = strspecific_media;
@@ -464,6 +471,7 @@ testing_throw;
     if (sub_cat.strsub_cat == "") my_throw("strsub_cat is not set!");
 
     if (isint(sub_cat.strsub_cat)) {
+testing_throw;
       // strsub_cat is numeric. Fetch the sub-category's sub-directory.
       string strsql = "SELECT strdir FROM tlkfc_sub_cat WHERE lngfc_sub_cat = " + sub_cat.strsub_cat;
       pg_result rs = db.exec(strsql);
@@ -497,14 +505,22 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
   // with the alternate category, we attempt to revert to the default music profile. If there are still problems
   // we throw an exception. This function is called to revert from the current playback status to the next lower.
   bool blndone = false; // Set to true when we find the state to revert to.
+  
   while (!blndone) {
+    // Reset pe list, and current element pointer.
+    programming_elements.clear();
+    next_item = programming_elements.begin();
+  
     switch (playback_state) {
       case PBS_CATEGORY: {
         log_message("Reverting to Alternative Category & Sub-Category");
         playback_state = PBS_ALTERNATE;
         try {
-          load_pe_list(programming_elements, cat, sub_cat, db);
+          // Check if the alternate category was defined:
+          if (alt_cat.cat == SCAT_UNKNOWN) my_throw("Alternate Category was not defined.");
+          load_pe_list(programming_elements, alt_cat, alt_sub_cat, db);
           next_item = programming_elements.begin();
+          blndone = true;
         } catch_exceptions;
       } break;
       case PBS_ALTERNATE: {
@@ -512,17 +528,19 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
         playback_state = PBS_DEFAULT_MUSIC;
         try {
           setup_as_music_profile(strdefault_music_source, "<Default Music Profile>", db);
+          next_item = programming_elements.begin();
           // Also allow promos to play now:
           blnpromos = true;
+          blndone = true;
         } catch_exceptions;
       } break;
       case PBS_DEFAULT_MUSIC: {
         testing_throw;
         my_throw("There was a problem with the Default music profile, but there is nothing else to play!");
+        blndone = true;
       } break;
       default: my_throw("Logic Error!");
     }
-    blndone = next_item != programming_elements.end();
   }
 }
 
@@ -551,12 +569,12 @@ segment::seg_sequence segment::parse_sequence_string(const string & strseq) {
 }
 
 void segment::load_sub_cat_struct(struct sub_cat & sub_cat, const string strsub_cat, pg_connection & db, const struct cat & cat, const long lngfc_seg, const string & strdescr, const string & strfield) {
-testing_throw;  
   // Load sub-category details from the database.
   sub_cat.strsub_cat = strsub_cat; // Load from the arg into the struct
 
   // sub-category in integer form?
   if (isint(strsub_cat)) {
+  testing_throw;
     // strsub_cat points to a tlkfc_sub_cat record
 
     // Fetch category details:
@@ -736,7 +754,6 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
 
   // A file?
   if (file_exists(strsource)) {
-    testing_throw;
     // What is the file extension?
     string strext=lcase(right(strsource, 4));
     if (strext==".mp3") {
@@ -746,7 +763,6 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       testing_throw;
     }
     else if (strext==".m3u") {
-      testing_throw;
       // A M3U file. Are we at our recursion level?
       if (intrecursion_level <= 0) {
         testing_throw;
@@ -755,7 +771,6 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
         testing_throw;
       }
       else {
-        testing_throw;
         // No. Attempt to open and read lines from the file:
         ifstream m3u_file(strsource.c_str());
         if (!m3u_file) {
@@ -764,21 +779,16 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
           testing_throw;
         }
         else {
-          testing_throw;
           // Process all lines in the M3U file:
           int intadded = 0; // Lines we've used from the file:
           string strline="";
           while (getline(m3u_file, strline)) {
-            testing_throw;
             // Skip empty lines and lines beginning with #:
             if (strline != "" && strline[0] != '#') {
-              testing_throw;
               // Line should be fine. Process the line:
               recursive_add_to_string_list(file_list, strline, intrecursion_level - 1, db);
               ++intadded;
-              testing_throw;
             }
-            testing_throw;
           }
           // Did we get any usable lines?
           if (intadded <= 0) {
@@ -786,11 +796,8 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
             log_warning("Didn't find any usable lines in M3U file: " + strsource);
             testing_throw;
           }
-          testing_throw;
         }
-        testing_throw;
       }
-      testing_throw;
     }
     else {
       testing_throw;
@@ -798,7 +805,6 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       log_warning("I don't recognise the '" + strext + "' extension on this file: " + strsource);
       testing_throw;
     }
-    testing_throw;
     return; // Done with the file source handling.
   }
 
