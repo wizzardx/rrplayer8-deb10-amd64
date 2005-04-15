@@ -1,315 +1,270 @@
-/***************************************************************************
-                          player.h  -  description
-                             -------------------
-    begin                : Sun Jun 16 2002
-    copyright            : (C) 2002 by David Purdy
-    email                : david@radioretail.co.za
- ***************************************************************************/
 
 #ifndef PLAYER_H
 #define PLAYER_H
 
-// Finally some sort of attempt to tidy up the player's code structure
-
+#include "programming_element.h"
 #include <string>
-#include "media_player.h"
-#include "player_logger.h"
-#include "rr_psql.h" // For Connection
-#include "timed_events.h" // For running events at specified intervals.
+#include "common/psql.h"
+#include "common/testing.h"
+#include "common/xmms_controller.h"
+#include "segment.h"
 
-// Path for the player to run in
-const string player_path = "/data/radio_retail/progs/player/";
-// Filename for the playing.chk file..
-const string playing_chk = "playing.chk";
+using namespace std;
 
-// Player's version, database version that it expects to run with.
-const string strPlayerVer    = VERSION;   // The all-important player version constant
-const string strCorrectDBVer = "3.19";    // And the schedule database (postgres) version
-                                          // it's meant to run with. Higher DB versions usually won't hurt but
-                                          // earlier DB versions can cause major problems.
+// Some player-related constants:
+const string PLAYER_DIR = "/data/radio_retail/progs/player/";
 
-// Default database connection settings
-const string strDefaultMainDBServer	="127.0.0.1";
-const string strDefaultMainDBName	="schedule";
-const string strDefaultUser					="postgres";
-const string strDefaultPassword			="postgres";
-const string strDefaultPort					="5432";
-                                                                 
-// Some default player settings to use if they're not found in the database
-const int intDefault_MinsToMissAdsAfter = 15; // 5 minutes
-const int intDefault_MaxAdsPerBatch = 3; // 3 ads max per batch
-const int intDefault_MinMinsBetweenAdBatches = 4; // At least 4 minutes of music between announcement batches.
+const int intcrossfade_length_ms             = 8000; // Crossfades run for 8000ms. Also music fade-ins and fade-outs.
+const int intnext_playback_safety_margin_ms = 18000; // How long before important playback events, the player should be ready and
+                                                     // not run other logic which could cut into time needed for crossfading, etc.
+const int intmax_xmms = 4;                           // Number of XMMS's required for playback. 4 would be necessary when
+                                                     // crossfading between two items, both with underlying music.
+const int intmax_segment_push_back = 6*60;           // Maximum amount of time in seconds that segments will be
+                                                     // "pushed back" because previous segments played for too long.
 
-// Length of music fade-out and fade-in during announcement playback:
-const int intDefault_MusicFadeOutLength = 5000; // 5000ms = 5 seconds
-const int intDefault_MusicFadeInLength = 5000; // 5000ms = 5 seconds
 
-// Added in version 6.15 (build 211) - a default setting for XMMS latency if it is not found
-// in the database.
-const int intDefault_ARTSLatency = 1000; // Assume an aRts latency of 1 second.
-
-// Advert status (used by tblSchedule_TZ_Slot.bitScheduled)
-enum advert_status_type {
-  AdvertSNSLoaded    = 0,
-  AdvertListedToPlay = 1,
-  AdvertPaused       = 2,
-  AdvertDeleted      = 3,
-  AdvertPlayed       = 4 
+                                                     
+// Information about "events" that take place during playback of the current item.
+// (current item ends, music bed starts, music bed starts
+class playback_events_info {
+public:
+  playback_events_info(); // Constructor
+  void reset(); // Reset attributes back to default values.
+  int intnext_ms;      // ms until the next event happens
+  int intitem_ends_ms; // ms until the current item ends
+  int intmusic_bed_starts_ms; // ms until the music bed starts playing
+  int intmusic_bed_ends_ms;   // ms until the music bed stops playing.
+  int intpromo_interrupt_ms;  // ms until the item (ie, music) will be interrupted to play a promo.
+  programming_element promo;  // If this item is interrupted by a promo then this var is populated
 };
 
-// Version 6.15 (build 332) - The player now checks for alterations to tblapppaths.strmp3 and corrects them to the
-// the value below (see the logic in player::set_Paths()) :
-const string strcorrect_mp3_path = "/data/radio_retail/stores_software/data/";
-
-// Forward declarations to classes that we will define as being "friends" of the
-// player class.
-class event_check_music;
-class event_check_received;
-class event_check_waiting_cmds;
-class event_operational_check;
-class event_scheduler;
-class event_check_db;
-class event_player_running;
-class event_check_music_db_err;
-
+// Structure for storing events that take place during a playback transition (see player::playback_transition)
+struct transition_event {
+  int intrun_ms; // When does the event run?
+  string strevent; // Lists the event.
+};
+typedef vector <transition_event> transition_event_list;
+// A function we use with the sort() algorithm:
+bool transition_event_less_than(const transition_event & e1, const transition_event & e2);
+                                                      
 class player {
 public:
-  // Main methods
-  player();    // Initialize the player
-  ~player();  // Close down the player
-  bool do_events(); // Check for any player events that need to run, run them, and return.
-                               // returns false if it is time for the player to quit.
-
-  // Operators
-
-  // - bool operator - lets you retrieve a boolean value from the object variable itself, not a method or attribute.
-  // - The value is true if the Player initialization succeeded.
-  operator bool() { return blninit_success; }
-
+  player();  // Constructor
+  ~player(); // Destructor
+  void run(); // Main logic
+  void log(const log_info & LI); // Call this to write a log to the player logfile & to the schedule database.
 private:
-  // Information set by the constructor...
-  // Did the player start successfully?
-  bool blninit_success;
+  void init();  // Called by the constructor to do the actual init (kdevelop breakpoint problems).
 
-  bool blnTerminatePlayer; // Set this to true to end the player event loop
+  // FUNCTIONS AND ATTRIBUTES USED DURING INIT():  
+  void reset(); // Reset ALL object attributes to default, uninitialized values.
+  void remove_waiting_mediaplayer_cmds(); // Remove waiting MediaPlayer commands (pause, stop, resume, etc)
+  void write_liveinfo(); // Write status info to a table for the Global Reporter to read.
+  void write_liveinfo_setting(const string strname, const string strvalue);
+  void check_received(); // Check the Received directory for .CMD files
+  void load_cmd_into_db(const string strfull_path);
+  void process_waiting_cmds();
+  void correct_waiting_promos();
+  void write_errors_for_missed_promos();
+  void write_errors_for_missed_promos_log_missed(const string strmissed_file, const long lngmissed_count, const datetime dtmmissed_first, const datetime dtmmissed_last);
+  void log_xmms_status_to_db();
 
-  pg_connection DB; // Database connection to the schedule database
+  pg_connection db; // Connection to the schedule database. This is used to run queries and fetch records.
 
-  // The timed events that take place within the Player
-  event * timCheckMusic;
-  event * timReceivedCheck;
-  event * timCheckWaitingCMDs;
-  event * timOperationalCheck;
-  event * timScheduler;
-  event * timCheckDBConn;
-  event * timShowPlayerRunning;
-  event * timCheckMusicDbErr; // Called by the database handling when there are retries...
-
-  // Friend classes of this class - they are in fact functionality of this class that have been split off
-  // because they are run by this class at specific intervals.
-  friend class event_check_music;
-  friend class event_check_received;
-  friend class event_check_waiting_cmds;
-  friend class event_operational_check;
-  friend class event_scheduler;
-  friend class event_check_db;
-  friend class event_player_running;
-  friend class event_check_music_db_err;
-
-  // An object that is called regularly to run all the events at the correct intervals:
-  timed_events EventRunner;
-  
-//  // Log important messages to the database.
-//  void LogError(const string strType, const string strMsg, const string strFrom);
-//  void LogMessage(const string strType, const string strMsg, const string strFrom);
-
-//  // Handle unexpected function errors
-//  void ErrorHandler(const string ProcName, const string Descr = "Program error", const string Priority = "MEDIUM");
-  
-  // Load and save settings from the database
-  string LoadSettingFromDB(const string strSettingName, const string strDefault, const string strType);
-  void SaveSettingToDB(const string strSettingName, const string strType, const string strValue);
-
-  // Load paths from the database
-  void set_Paths();
-
-  // Load other (non-path) database settings.
-  void Load_ConfigFromDB(); // Load player config options from the database...
-  
-  // Config file
-  void ReadPlayerConfigFile();
+  // A callback function called by the db (database connection) object when there is a database
+  // connection problem. It keeps music going, etc.
+  static void callback_check_db_error();
 
   // Some settings and configuration read from the config file and from the database.
-  struct {
+  struct config {
     // Database connection details (player.conf)
-    struct {
-      string strDBServer;
-      string strDBName;  // The name of the MySQL database
-      string strUserName;  // The user name
-      string strPassword;  // The password
-      string strPort;  // The port
-    } MainDBParams;
+    struct db {
+      string strserver;
+      string strdb;  // The name of the MySQL database
+      string struser;  // The user name
+      string strpassword;  // The password
+      string strport;  // The port
+    } db;
 
-    // Announcement frequency capping options (tbldefs)
-    int intMinsToMissAdsAfter;   // If an announcement was scheduled to play earlier than this amount of time ago, then skip it if it has not already been played.
-    int intMaxAdsPerBatch;
-    int intMinMinsBetweenAdBatches; // Minimum amount of music to play between announcement batches
+    // Promo frequency capping options (tbldefs)
+    int intmins_to_miss_promos_after; // If an announcement was scheduled to play earlier than this amount of time ago, then skip it if it has not already been played.
+    int intmax_promos_per_batch;
+    int intmin_mins_between_batches; // Minimum amount of music to play between promo batches
 
-    // Application paths. (tblapppaths)
-    struct {
-      string strmain;
-      string stradmin;
+    // directories:
+    struct dirs {
       string strmp3;
       string stradverts;
       string strannouncements;
       string strspecials;
-      string strconfirmbroadcast;
-      string stremergency;
-      string strerror;
-      string strplaylist;
       string strreceived;
-      string strreturns;
-      string strschedules;
-      string strtemp;
       string strtoday;
-      string strroot;
-      string strinstoredb;
-      string stragent;
-      string strupdater;
-      string strloader;
-      string strplayer;
-      string strprofiles;
-    } AppPaths;
+    } dirs;
 
     // Added in 6.15 (build 330) The location to use for the default music profile:
     string strdefault_music_source;
 
     // Added in 6.21 (build 737) Wait for the current song to end before starting
-    // announcement playback? Exception: linein music & "force to play now" adverts.
-    bool blnAdvertsWaitForSongEnd;
-  } Config;
+    // promo playback? Exception: linein music & "force to play now" promos.
+    bool blnpromos_wait_for_song_end;
 
-  // Create the instore paths
-  void Create_Directory_Structure();
+    // New settings added in v7.00
+    // Format clock settings:
+    bool blnformat_clocks_enabled; // Are format clocks used on this system?
+    long lngdefault_format_clock;  // Database reference to the "default" format clock (to use if
+                                   // there are problems with the current format clock, or no format clocks
+                                   // were scheduled.
+  } config;
   
-  // Enable and disable the playback (ie: music and adverts)
-  bool PlaybackEnabled(); // Return the current "enabled" status of music & ad playback.
-//  void Playback_enable();
-//  void Playback_disable();
+  void read_config_file(); // Read database connection settings from the player config file into the config.db structure.
+  void load_db_config();   // Load all the other settings (besides config.db) into the config structure.
 
-  // Pause, Stop and Resume media playback
-  void Media_Pause();
-  void Media_Stop();
-  void Media_Resume();  
+  // Load & Save tbldefs settings:
+  string load_tbldefs(const string & strsetting, const string & strdefault, const string & strtype);
+  void save_tbldefs(const string & strsetting, const string & strtype, const string & strvalue);
+ 
+  struct store_status { // Current store status
+     bool blnopen; // Is the store currently open? (compare current time with tblstorehours).
+     // These volumes are represented as PERCENTAGES (ie, out of 100, not out of 255).
+     // Additionally, these volumes are converted to 80% of their original to prevent distortion of louder
+     // levels. After calling "load_store_status()", player logic can use the levels here directly for playback.
+     // Volumes in this struct are reset to 0% when the store is closed.
+     struct volumes {  // Current volumes, adjusted correctly
+       int intmusic;    // Has hourly adjustment vol added
+       int intannounce; // Has music volume (adjusted) added.
+       int intlinein;   // Just the value from tbldefs
+     } volumes;
+  } store_status;
+  void load_store_status(); // Update the current store status
 
-  // Functions for handling player commands (stored in the database)
-  bool Load_CMDIntoDB(const string Full_Path);
-  void Process_WaitingCMDs();
-  void Remove_WaitingMediaPlayer_CMDs(); 
+  // Promo status (used by tblSchedule_TZ_Slot.bitScheduled)
+  enum advert_status_type {
+    ADVERT_SNS_LOADED     = 0,
+    ADVERT_LISTED_TO_PLAY = 1,
+    ADVERT_PAUSED         = 2,
+    ADVERT_DELETED        = 3,
+    ADVERT_PLAYED         = 4
+  };
+
+  // FUNCTIONS AND ATTRIBUTES USED DURING RUN():
+
+   // Track what a given sound resource (linein, xmms session) is being used for:
+  enum sound_usage {
+    SU_UNUSED,     // Not used by an item.
+    SU_CURRENT_FG, // Sound resource is busy playing the current item.
+    SU_CURRENT_BG, // Sound resource is busy playing the current item's underlying music.
+    SU_NEXT_FG,    // Sound resource is busy playing the next item
+    SU_NEXT_BG     // Sound resource is busy playing the next item's underlying music
+  };
   
-  // Music profiles
-  bool CheckMusicProfile(const bool blnForcePlaylistRebuild=false);
-  string strMusicSource, strPrevMusicSource; // Variables used by CheckMusicProfile
-  // A function used by internally by CheckMusicProfile:
-  bool check_short_weekday(const string & strShortWeekDay, int & intWeekDay);  
-
-  // Music Playlist
-  void CreateRandomPlaylist();
-  // And a function used only by CreateRandomPlayList:
-  bool LoadM3UIntoPlaylistVector(const string &strm3upath, vector<string> &music_list, int &intLinesAdded);
-
-  // MediaPlayer stuff
-
-  // The media_player class handles the specifics of processing announcement queues,
-  // switching volumes, volume sliding and changing between XMMS and Linein music.
-
-  media_player MediaPlayer;  
+  // Sub-class containing "run" data. ie XMMS info, "current" programming element, "next" PE, current segment, etc, etc.
+  class run_data {
+  public:
+    void init(); // Run this to reset/reinitialize playback status.
   
-  // The MediaPlayer_Play function should be called instead of MediaPlayer.Play() because it does some
-  // additional database logging for the benefit of external (Linein) music.
-  void MediaPlayer_Play();
+    // Programming elements (current item, next item):
+    programming_element current_item; // Current programming element being played. Includes special events, etc.
+    programming_element next_item;    // Next programming element to be played.
 
-  // Handle Announcements 
+    // The current Format Clock segment:
+    segment current_segment;
 
-  // Correct adverts in the database that are incorrectly marked as "about to play" (waiting)
-  void CorrectWaitingAnnouncements();
+    // XMMS control:
+    xmms_controller xmms[intmax_xmms]; // XMMS controller instances.
 
-  // doHandleMediaPlayerAnnPlayback is called to wait for MediaPlayer to finish playing announcements.
-  // - Call this function after calling MediaPlayer.StartAnnouncementQueuePlay, but only
-  //    if that function returned True.    
-  bool doHandleMediaPlayerAnnPlayback(ann_playback_status & Status);
-  // Variable used by doHandleMediaPlayerAnnPlayback
-  long lngLastAnnID; // So that doHandleMediaPlayerAnnPlayback can know when ads finish.
-  void WriteErrorsForMissedAds();  
+    sound_usage xmms_usage[intmax_xmms]; // What the xmms sessions are being used for
+    sound_usage linein_usage; // What LineIn is being used for.
 
-  // Function called only by WriteErrorsForMissedAds
-  void WriteErrorsForMissedAds_logmissed(const string strmissed_file, const long lngmissed_count, const DateTime dtmmissed_first, const DateTime dtmmissed_last);
+    // Fetch an unused xmms session:
+    int get_free_xmms_session();
 
-  // MarkAnnounceComplete is only used by doHandleMediaPlayerAnnPlayback();
-  void MarkAnnounceComplete(const long lngTZ_Slot);  
+    // Set the status of an XMMS session:
+    void set_xmms_usage(const int intsession, const sound_usage sound_usage);
 
-  // Volume zones  
-  // - Volume zones refer to the ability to adjust the volume for every hour of every day of the week.  
-  void volZones();
+    // Fetch which XMMS session is being used by a given "usage". eg, item fg, item bg, etc.
+    // - Throws an exception if we can't find which XMMS session is being used. Also if LineIn is being used.
+    int get_xmms_used(const sound_usage sound_usage);
 
-  // Music History
-  void LogLatestMusicMP3Played();
+    // Returns true if linein is being used for the specified usage (foreground, underlying music, etc).
+    bool uses_linein(const sound_usage sound_usage);
 
-  // Received directory handling (command files)
-  void Check_Received();
+    // Returns true if there is already a "sound resource" allocated for the specified usage.
+    bool sound_usage_allocated(const sound_usage sound_usage);
 
-  // LiveInfo (summary of Player status stored in the Database)
-  void WriteLiveInfoSetting(const string strName, const string strValue);
-  void doUpdateLiveInfo();
+    // Use this to transition info, resource allocation, etc, etc from "next" to "current".
+    void next_becomes_current();
 
-  // Store's OPEN or CLOSED status
-  string SemiSonic(); // Return OPEN or CLOSED depending on the current time and store hours
-  void StoreClose();  // Close the store (pause playback)
-  void StoreOpen();  // Open the store (resume playback)
+    // How long Format Clock Segments are currently "delayed" by. Segments are "delayed" (ie, they start & end later)
+    // when earlier segments take too long to play. This figure will go up between non-music segments, up to the
+    // limit (6 mins), and then is reduced when we hit a music segment. Music segments are reduced down to a minimum
+    // of 30 seconds to reclaim time back from this "puch back" factor.
+    int intsegment_delay;
 
-  // The Player's current status
-  struct {
-    double curVolume;                // current volume
+    programming_element_list waiting_promos; // List of promos waiting to play. Populated by get_next_item_promo
+  } run_data;
 
-    double curMusicVolume;           // current music volume
-    double curDefaultAnnounceVol;  // current announcement volume
-    double curLineInVol; // Current line-in music volume (external music feed)
+  // Check playback status of XMMS, LineIn, etc. Throw errors here if there is something wrong.
+  // Also compares xmms_usage and linein_usage with the current device status.
+  void check_playback_status();
 
-    double curThisAnnounceVol;
+  // Fetch the next item to be played, after the current one. Checks for announcements (promos) to play
+  // format clock details, music, linein, etc, etc. Also sets a flag which determines if a crossfade
+  // must take place when transitioning to the next item. When we reach the store closing hour, the next
+  // item is automatically the "Silence" category (overriding anything else that might want to play now)
+  // Also here must come logic for when a) repeat runs out before the segment end, and b) when some time of
+  // the next segement is used up by accident (push slots forwards by up to 6 mins, reclaim space by using up music time).   
+  void get_next_item(programming_element & item, const int intstarts_ms); // intstarts_ms - how long from now (in ms) the item will be played.
 
-    double curAdjVol;
-    string StoreStatus;           // open / closed
+  // Functions called by get_next_item():
+    void get_next_item_promo(programming_element & next_item, const int intstarts_ms); // Populate argument with the next promo if there are promos waiting.
+    void get_next_item_format_clock(programming_element & next_item, const int intstarts_ms); // Use Format Clocks to determine an item to be played.
 
-    bool blnMediaPaused;              // The user Paused the media playback.
-    bool blnMediaStopped;             // The user Stopped the media playback.
-  } CurrentStatus;
+  // Functions called by get_item_format_clock:
+    long get_fc_segment(const long lngfc, const string & strsql_time);
 
-  // Log XMMS playlist and available music to the database
-
-  // blnMusicLoggingNeeded is set to true when some part of the player logic wants to do the music logging.
-  // - the variable is used because the logging operations can take a few minutes, so the player logic waits
-  //   until the player is not busy (eg: still starting up) before doing the time-consuming music logging.
-  bool blnMusicLoggingNeeded;
-  void LogAllMachineMusicToDB();  
-  void LogXMMSPlaylistToDB();
-
-  // Log XMMS's status to the database
-  void LogXMMSStatusToDB();
-
-  // Function used only by LogXMMSStatusToDB
-  void Write_tblPlayerOutput(const string strMessage, const string strMessageDescr);
+  // Fetch timing info about events that will take place during playback of the current item
+  // (music bed starts, music bed ends, item ends).
+  void get_playback_events_info(playback_events_info & event_info, const int intinterrupt_promo_delay);
   
-  // RAT code stuff - RAT is a system used for checking command files
-  enum enumRAT {ratProblem, ratEncrypted, ratUnEncrypted};
-  enumRAT RAT(const string strInputLine);
+  // Do background maintenance (separate function). Events have frequencies, (sometimes desired "second" to take place at), and are prioritiesed.
+  //  - Also includes resetting info about the next playback item (highest priority, every 30 seconds..., seconds: 00, 30)
+  void player_maintenance(const int intmax_time_ms);
 
-  // Support for times when the next announcement batch should be started immediatly:
-  void do_next_announce_batch_immediately(bool blnimmed);  // Set the state
-  bool do_next_announce_batch_immediately(); // Get the state
-  bool blndo_next_announce_batch_immediately; // This holds the state.
-  
-  // Logger object for the player.
-  player_logger * Logger;
+  // Go into an intensive timing section (5 checks every second) until we're done with the playback event. Logic for
+  // transitioning between items, and introducing or cutting off underlying music, etc.
+  void playback_transition(playback_events_info & playback_events);
+    // Used by playback_transition():
+    void queue_event(transition_event_list & events, const string & strevent, const int intwhen_ms);
+    void queue_volslide(transition_event_list & events, const string & strwhich_item, const int intfrom_vol_percent, const int intto_vol_percent, const int intwhen_ms, const int intlength_ms);    
+
+  // Fetch actual volumes to use, based on item's "strvol" or "strunderlying_media_vol" settings.
+  int get_pe_vol(const string & strpe_vol);
+
+  // Structure used by get_next_item_promo:
+  struct TWaitingAnnounce {
+    unsigned long dbPos;
+    string strFileName;
+    string strProductCat;
+
+    datetime dtmTime;
+    bool blnForcedTime; // True if dtmTime is a "forced" time. (ie, not a slot in the hour, selected by the sns_loader).
+    string strPriority;
+
+    string strPlayAtPercent;
+    string strAnnCode;
+
+    string strPath; // The path where this mp3 is found...
+  };
+  typedef deque <TWaitingAnnounce> TWaitingAnnouncements;
+
+
+  // This is an internal function used only by playback_transition. It is called when
+  // an announcement plays, to log to the database that it has played.
+  void mark_promo_complete(const long lngtz_slot);
 };
+
+extern player * pplayer; // A pointer to the currently-running player instance. Automatically maintained
+                         // by the current player instance. It gets set to NULL when there is no player object.
+                         // Use this for callback functions, etc.
 
 #endif

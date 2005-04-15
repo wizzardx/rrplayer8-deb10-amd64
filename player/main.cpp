@@ -1,34 +1,43 @@
 /***************************************************************************
                           main.cpp  -  description
                              -------------------
-    begin                : Mon May 13 09:32:07 SAST 2002
-    copyright            : (C) 2002 by David Purdy
+    begin                : Wed Mar 16 18:10:44 GMT 2005
+    copyright            : (C) 2005 by David Purdy
     email                : david@radioretail.co.za
  ***************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
 
-#include <iostream>
-#include <stdlib.h>
-#include <unistd.h>
-
-// Header files used by the main app
 #include "player.h"
+#include <stdlib.h>
+#include "common/exception.h"
+#include "common/testing.h"
 
-//int main(int argc, char *argv[]) {
-int main() {
+// A "call-back" logging function:
+void log(const log_info & LI) {
+  if (pplayer != NULL) {
+    pplayer->log(LI);
+  }
+}
+
+int main()
+{
   try {
-    player Player;
-    if (Player) {
-      // Start
-      while (Player.do_events()) { // do_events() returns false when the player must quit.
-        // Check for player events to be run, then wait 1 second...
-        sleep(10);
-      } // end while
-      return EXIT_SUCCESS;
-    } // end if
-    else return EXIT_FAILURE;
+    // Setup the logger:
+    logging.add_logger(log);
+
+    //  Init and run the player:
+    player player;
+    player.run();
+
+    return EXIT_SUCCESS;
   } catch_exceptions;
-} // end function
+  return EXIT_FAILURE;
+}

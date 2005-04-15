@@ -1,0 +1,1 @@
+void net_send(const string & strDest, const string & strMessage);

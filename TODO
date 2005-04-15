@@ -1,22 +1,33 @@
-TODO:
-  1) Improve music playlist randomization.
-      -turn off randomize (do own randomize when profile changed?)
-      -When adverts are about to start:
-        - Move all songs above & including current point, to the end of the
-          playlist file.
-        - If we've gone through the entire playlist length, then randomize the playlist.
-      
-      -When the playlist ends:
-        - Re-randomize the playlist & play.
-        
-        
-      
-      -remember position before advert
-      -resume at next position after advert.
-      -When the playlist ends, re-randomize the playlist.
-  
-  2) If the player can't connect to XMMS during startup, keep trying (don't terminate because of the exception)
-  3) Announcement volume 0 = skip announcements. (use at that store of Annalies)  
-  4) Allow percentage-based profiles
-  5) Ability to play encrypted announcements.
-  6) Ability to play ogg music and announcements
+TODO: Make SP0's higher priority than SPC
+
+TODO: Implement "get_next_item_promo" after I get php5 and wizard etc up & running on my PC.
+
+TODO: implement fetch_promos_to_play... after I've scheduled some adverts...
+
+
+Remember to apply store hours, and volume adjustments (also, have to work out correct volume values based on DB). Extra logic in "player::run" code.
+
+write_liveinfo - restore code to write info about the current music profile.
+               - restore code to write info about the current adjustment vol.
+
+init: implement log_xmms_status_to_db ... show XMMS with current item in it?
+
+
+SELECT * FROM tblfc_sched_date 
+INNER JOIN tblfc     USING(lngfc)
+INNER JOIN tblfc_seg 
+WHERE dtmday='2005-03-17' AND inthour=17;
+
+
+INNER JOIN tblfc_seg USING
+
+
+ lngfc_sched_date | lngfc | dtmday | inthour
+------------------+-------+--------+---------
+(0 rows)
+
+SELECT * FROM tblfc WHERE lngfc=10;
+
+
+========== TODO: Tell VJ:=========
+

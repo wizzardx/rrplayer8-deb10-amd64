@@ -1870,7 +1870,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=player
- VERSION=6.25
+ VERSION=7.01
 
 
 cat >>confdefs.h <<_ACEOF
@@ -17337,6 +17337,8 @@ done
 
           ac_config_files="$ac_config_files player/Makefile"
 
+          ac_config_files="$ac_config_files player/common/Makefile"
+
           ac_config_files="$ac_config_files player/docs/Makefile"
 
           ac_config_files="$ac_config_files player/docs/en/Makefile"
@@ -17885,6 +17887,7 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "player/Makefile" ) CONFIG_FILES="$CONFIG_FILES player/Makefile" ;;
+  "player/common/Makefile" ) CONFIG_FILES="$CONFIG_FILES player/common/Makefile" ;;
   "player/docs/Makefile" ) CONFIG_FILES="$CONFIG_FILES player/docs/Makefile" ;;
   "player/docs/en/Makefile" ) CONFIG_FILES="$CONFIG_FILES player/docs/en/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;

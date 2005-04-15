@@ -2,7 +2,7 @@
 
 SUBDIRS = player 
 
-EXTRA_DIST = player.kdevprj admin AUTHORS COPYING INSTALL README TODO player.lsm 
+EXTRA_DIST = player.kdevprj admin AUTHORS COPYING ChangeLog INSTALL README TODO player.lsm 
 
 ####### kdevelop will overwrite this part!!! (end)############
 # not a GNU package. You can remove this line, if

@@ -1,4 +1,19 @@
 =====================
+ 7.00.?? Changes:
+=====================
+
+  16/03/2005: Started this Player version, which will include:
+   - FORMAT CLOCKS! Woot!
+   - See the "Format Clock" page on my Wiki for exact details of everything.
+   - Completely rewritten advert playback code, to support:
+     - Format Clocks & Segments
+     - Underlying music
+     - Crossfades (with multiple XMMS sessions, not with the xmms-crossfade plugin)
+     - The crossfade & underlying music functionality requires ALSA to be installed (basically, XMMS output plugin that allows 
+       multiple XMMS to output to the sound device at the same time, with low latency & software volume mixing).
+    - Also supports the old non-format clock mode, using OSS, xmms-crossfade (with it's high latency.. bleh).
+     
+=====================
  6.25.814 Changes:
 =====================
   

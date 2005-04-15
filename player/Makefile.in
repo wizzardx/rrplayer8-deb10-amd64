@@ -248,12 +248,12 @@ x_libraries = @x_libraries@
 ####### kdevelop will overwrite this part!!! (begin)##########
 bin_PROGRAMS = player
 
-player_SOURCES = string_splitter.cpp temp_dir.cpp player_timed_events.cpp timed_events.cpp rr_psql.cpp char_array_maths.cpp rr_security.cpp dir_list.cpp logging.cpp player_logger.cpp logger.cpp xmmsctrl.cpp xmms_controller.cpp rr_utils.cpp player.cpp mp3_tags.cpp media_player.cpp build_num.cpp main.cpp 
-player_LDADD = -lglib -lpqxx
+player_SOURCES = format_clock_test_data.cpp segment.cpp programming_element.cpp player.cpp main.cpp 
+player_LDADD = ./common/libcommon.a -lglib -lpqxx
 
-SUBDIRS = docs 
+SUBDIRS = common 
 
-EXTRA_DIST = main.cpp build_num.cpp build_num.h media_player.cpp media_player.h mp3_tags.cpp mp3_tags.h player.cpp player.h rr_utils.cpp rr_utils.h xmms_controller.cpp xmms_controller.h xmmsctrl.cpp xmmsctrl.h xmms_controlsocket.h logger.h logger.cpp player_logger.cpp player_logger.h logging.cpp logging.h log_catagories.h player_areas.h dir_list.cpp dir_list.h rr_security.cpp rr_security.h char_array_maths.cpp char_array_maths.h rr_psql.cpp rr_psql.h timed_events.cpp timed_events.h player_timed_events.cpp player_timed_events.h event.h check_library_versions.h temp_dir.cpp temp_dir.h string_splitter.cpp string_splitter.h 
+EXTRA_DIST = main.cpp player.cpp player.h programming_element.cpp programming_element.h segment.cpp segment.h format_clock_test_data.cpp format_clock_test_data.h categories.h 
 
 ####### kdevelop will overwrite this part!!! (end)############
 # set the include path found by configure
@@ -268,28 +268,16 @@ CONFIG_CLEAN_FILES =
 bin_PROGRAMS = player$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS)
 
-am_player_OBJECTS = string_splitter.$(OBJEXT) temp_dir.$(OBJEXT) \
-	player_timed_events.$(OBJEXT) timed_events.$(OBJEXT) \
-	rr_psql.$(OBJEXT) char_array_maths.$(OBJEXT) \
-	rr_security.$(OBJEXT) dir_list.$(OBJEXT) logging.$(OBJEXT) \
-	player_logger.$(OBJEXT) logger.$(OBJEXT) xmmsctrl.$(OBJEXT) \
-	xmms_controller.$(OBJEXT) rr_utils.$(OBJEXT) player.$(OBJEXT) \
-	mp3_tags.$(OBJEXT) media_player.$(OBJEXT) build_num.$(OBJEXT) \
-	main.$(OBJEXT)
+am_player_OBJECTS = format_clock_test_data.$(OBJEXT) segment.$(OBJEXT) \
+	programming_element.$(OBJEXT) player.$(OBJEXT) main.$(OBJEXT)
 #>- player_OBJECTS = $(am_player_OBJECTS)
-#>+ 11
+#>+ 5
 player_final_OBJECTS = player.all_cpp.o 
-player_nofinal_OBJECTS = string_splitter.$(OBJEXT) temp_dir.$(OBJEXT) \
-	player_timed_events.$(OBJEXT) timed_events.$(OBJEXT) \
-	rr_psql.$(OBJEXT) char_array_maths.$(OBJEXT) \
-	rr_security.$(OBJEXT) dir_list.$(OBJEXT) logging.$(OBJEXT) \
-	player_logger.$(OBJEXT) logger.$(OBJEXT) xmmsctrl.$(OBJEXT) \
-	xmms_controller.$(OBJEXT) rr_utils.$(OBJEXT) player.$(OBJEXT) \
-	mp3_tags.$(OBJEXT) media_player.$(OBJEXT) build_num.$(OBJEXT) \
-	main.$(OBJEXT)
+player_nofinal_OBJECTS = format_clock_test_data.$(OBJEXT) segment.$(OBJEXT) \
+	programming_element.$(OBJEXT) player.$(OBJEXT) main.$(OBJEXT)
 @KDE_USE_FINAL_FALSE@player_OBJECTS = $(player_nofinal_OBJECTS)
 @KDE_USE_FINAL_TRUE@player_OBJECTS = $(player_final_OBJECTS)
-player_DEPENDENCIES =
+player_DEPENDENCIES = ./common/libcommon.a
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
@@ -298,46 +286,19 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/admin/depcomp
 am__depfiles_maybe = depfiles
-#>- @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/build_num.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/char_array_maths.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/dir_list.Po ./$(DEPDIR)/logger.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/logging.Po ./$(DEPDIR)/main.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/media_player.Po ./$(DEPDIR)/mp3_tags.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/player.Po ./$(DEPDIR)/player_logger.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/player_timed_events.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/rr_psql.Po ./$(DEPDIR)/rr_security.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/rr_utils.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/string_splitter.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/temp_dir.Po ./$(DEPDIR)/timed_events.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/xmms_controller.Po \
-#>- @AMDEP_TRUE@	./$(DEPDIR)/xmmsctrl.Po
-#>+ 27
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@DEP_FILES =   $(DEPDIR)/player.all_cpp.P  ./$(DEPDIR)/build_num.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/char_array_maths.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/dir_list.Po ./$(DEPDIR)/logger.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/logging.Po ./$(DEPDIR)/main.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/media_player.Po ./$(DEPDIR)/mp3_tags.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/player.Po ./$(DEPDIR)/player_logger.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/player_timed_events.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/rr_psql.Po ./$(DEPDIR)/rr_security.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/rr_utils.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/string_splitter.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/temp_dir.Po ./$(DEPDIR)/timed_events.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/xmms_controller.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/xmmsctrl.Po
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@DEP_FILES =   ./$(DEPDIR)/build_num.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/char_array_maths.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/dir_list.Po ./$(DEPDIR)/logger.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/logging.Po ./$(DEPDIR)/main.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/media_player.Po ./$(DEPDIR)/mp3_tags.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/player.Po ./$(DEPDIR)/player_logger.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/player_timed_events.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/rr_psql.Po ./$(DEPDIR)/rr_security.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/rr_utils.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/string_splitter.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/temp_dir.Po ./$(DEPDIR)/timed_events.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/xmms_controller.Po \
-@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/xmmsctrl.Po
+#>- @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/format_clock_test_data.Po \
+#>- @AMDEP_TRUE@	./$(DEPDIR)/main.Po ./$(DEPDIR)/player.Po \
+#>- @AMDEP_TRUE@	./$(DEPDIR)/programming_element.Po \
+#>- @AMDEP_TRUE@	./$(DEPDIR)/segment.Po
+#>+ 9
+@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@DEP_FILES =   $(DEPDIR)/player.all_cpp.P  ./$(DEPDIR)/format_clock_test_data.Po \
+@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/main.Po ./$(DEPDIR)/player.Po \
+@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/programming_element.Po \
+@AMDEP_TRUE@@KDE_USE_FINAL_TRUE@	@AMDEP_TRUE@	./$(DEPDIR)/segment.Po
+@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@DEP_FILES =   ./$(DEPDIR)/format_clock_test_data.Po \
+@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/main.Po ./$(DEPDIR)/player.Po \
+@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/programming_element.Po \
+@AMDEP_TRUE@@KDE_USE_FINAL_FALSE@	@AMDEP_TRUE@	./$(DEPDIR)/segment.Po
 
 #>- CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 #>- 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -364,7 +325,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
-DIST_COMMON = README Makefile.am Makefile.in
+DIST_COMMON = Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
 SOURCES = $(player_SOURCES)
 
@@ -422,25 +383,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_num.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/char_array_maths.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir_list.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logger.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logging.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/format_clock_test_data.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/media_player.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mp3_tags.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/player.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/player_logger.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/player_timed_events.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr_psql.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr_security.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr_utils.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/string_splitter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/temp_dir.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timed_events.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmms_controller.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmmsctrl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/programming_element.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/segment.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -571,7 +518,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
 #>- DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 #>+ 4
-KDE_DIST=mp3_tags.txt player.conf avail_music.txt build_num.txt playlist.m3u player.log player_log.txt make_all_with_build_num.script 
+KDE_DIST=player 
 
 DISTFILES= $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST) $(KDE_DIST)
 
@@ -720,11 +667,11 @@ force-reedit:
 
 
 #>+ 11
-player.all_cpp.cpp: $(srcdir)/Makefile.in $(srcdir)/string_splitter.cpp $(srcdir)/temp_dir.cpp $(srcdir)/player_timed_events.cpp $(srcdir)/timed_events.cpp $(srcdir)/rr_psql.cpp $(srcdir)/char_array_maths.cpp $(srcdir)/rr_security.cpp $(srcdir)/dir_list.cpp $(srcdir)/logging.cpp $(srcdir)/player_logger.cpp $(srcdir)/logger.cpp $(srcdir)/xmmsctrl.cpp $(srcdir)/xmms_controller.cpp $(srcdir)/rr_utils.cpp $(srcdir)/player.cpp $(srcdir)/mp3_tags.cpp $(srcdir)/media_player.cpp $(srcdir)/build_num.cpp $(srcdir)/main.cpp 
+player.all_cpp.cpp: $(srcdir)/Makefile.in $(srcdir)/format_clock_test_data.cpp $(srcdir)/segment.cpp $(srcdir)/programming_element.cpp $(srcdir)/player.cpp $(srcdir)/main.cpp 
 	@echo 'creating player.all_cpp.cpp ...'; \
 	rm -f player.all_cpp.files player.all_cpp.final; \
 	echo "#define KDE_USE_FINAL 1" >> player.all_cpp.final; \
-	for file in string_splitter.cpp temp_dir.cpp player_timed_events.cpp timed_events.cpp rr_psql.cpp char_array_maths.cpp rr_security.cpp dir_list.cpp logging.cpp player_logger.cpp logger.cpp xmmsctrl.cpp xmms_controller.cpp rr_utils.cpp player.cpp mp3_tags.cpp media_player.cpp build_num.cpp main.cpp ; do \
+	for file in format_clock_test_data.cpp segment.cpp programming_element.cpp player.cpp main.cpp ; do \
 	  echo "#include \"$$file\"" >> player.all_cpp.files; \
 	  test ! -f $(srcdir)/$$file || egrep '^#pragma +implementation' $(srcdir)/$$file >> player.all_cpp.final; \
 	done; \

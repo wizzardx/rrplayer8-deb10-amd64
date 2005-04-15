@@ -246,8 +246,6 @@ qt_includes = @qt_includes@
 qt_libraries = @qt_libraries@
 x_includes = @x_includes@
 x_libraries = @x_libraries@
-
-EXTRA_DIST = index.html index-1.html index-2.html index-3.html index-4.html index-5.html index-6.html 
 subdir = player/docs/en
 mkinstalldirs = $(SHELL) $(top_srcdir)/admin/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
@@ -283,7 +281,7 @@ TAGS:
 
 #>- DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 #>+ 4
-KDE_DIST=index.sgml 
+KDE_DIST=index-3.html index-4.html index-5.html index.html index-2.html index-1.html index.sgml index-6.html 
 
 DISTFILES= $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST) $(KDE_DIST)
 

@@ -1,0 +1,9 @@
+Common C++ libraries for development.
+
+Copy the "common" directory immediately under your C++ project source code directory.
+
+Only "add" (ie, from kdevelop) the files to your project that you need, you don't want to compile everything.
+Use the linker errors as a guide for what you need to add to "add".
+
+Older ChangeLogs and README files are inside old.tar.gz
+
