@@ -10,7 +10,6 @@ svn checkout svn://172.30.166.99/rr/cpp_common/trunk/ /tmp/cpp_common/
 
 echo " - Preparing to send updated cpp_common files to the repository..."
 pushd ../../ > /dev/null
-(make distclean)
 (cp * /tmp/cpp_common/ &> /dev/null)
 (cp ./scripts/* /tmp/cpp_common/scripts/)
 (cp ./scripts/svn/* /tmp/cpp_common/scripts/svn/)
