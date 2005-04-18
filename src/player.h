@@ -261,6 +261,14 @@ private:
   // This is an internal function used only by playback_transition. It is called when
   // an announcement plays, to log to the database that it has played.
   void mark_promo_complete(const long lngtz_slot);
+  
+  // Timed player maintenance events. Run when there is spare time during playback.
+  // - Called by player_maintenance();
+  void maintenance_check_music(const datetime dtmcutoff);
+  void maintenance_check_received(const datetime dtmcutoff);
+  void maintenance_check_waiting_cmds(const datetime dtmcutoff);
+  void maintenance_operational_check(const datetime dtmcutoff);
+  void maintenance_player_running(const datetime dtmcutoff);
 };
 
 extern player * pplayer; // A pointer to the currently-running player instance. Automatically maintained

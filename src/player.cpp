@@ -1986,11 +1986,11 @@ void player::player_maintenance(const int intmax_time_ms) {
 //  log_line("I have up to " + itostr(intmax_time_ms/1000) + "s to do maintenance in...");
   datetime dtmcutoff = now() + intmax_time_ms / 1000; // Logic not allowed to run past this length.
 
-  #define RUN_TIMED(FREQ, MIN_TIME_REMAINING, FUNC) { \
+  #define RUN_TIMED(FUNC, FREQ) { \
     static datetime dtmlast = datetime_error; \
     datetime dtmnow = now(); \
     if(dtmnow < dtmlast) dtmlast = datetime_error; \
-    if (dtmlast <= dtmnow - FREQ && dtmnow + MIN_TIME_REMAINING < dtmcutoff) { \
+    if (dtmlast <= dtmnow - FREQ) { \
       FUNC(dtmcutoff); \
       dtmlast = now(); \
     } \
@@ -2008,8 +2008,12 @@ void player::player_maintenance(const int intmax_time_ms) {
     }
   }
   */
-  RUN_TIMED(5, 0, log_moo);
-  RUN_TIMED(5, 0, log_moo);  
+  
+  RUN_TIMED(maintenance_check_music,        30);
+  RUN_TIMED(maintenance_check_received,     10);
+  RUN_TIMED(maintenance_check_waiting_cmds, 10);
+  RUN_TIMED(maintenance_operational_check,  30);
+  RUN_TIMED(maintenance_player_running,     60);
 }
 
 void player::playback_transition(playback_events_info & playback_events) {
@@ -2662,4 +2666,26 @@ void player::mark_promo_complete(const long lngtz_slot) {
                            " WHERE (lngTZ_Slot=" + itostr(lngtz_slot) + ")";
 
   db.exec(strsql);
+}
+
+// Timed player maintenance events. Run when there is spare time during playback.
+// - Called by player_maintenance();
+void player::maintenance_check_music(const datetime dtmcutoff) {
+  undefined;
+}
+
+void player::maintenance_check_received(const datetime dtmcutoff) {
+  undefined;
+}
+
+void player::maintenance_check_waiting_cmds(const datetime dtmcutoff) {
+  undefined;
+}
+
+void player::maintenance_operational_check(const datetime dtmcutoff) {
+  undefined;
+}
+
+void player::maintenance_player_running(const datetime dtmcutoff) {
+  undefined;
 }
