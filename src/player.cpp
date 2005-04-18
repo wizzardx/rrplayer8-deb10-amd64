@@ -194,13 +194,11 @@ void player::log(const log_info & LI) {
       }
     }
     else {
-      testing_throw;
       // Write a message to the log file and the standard out...
       string stroutput = "*** Unable to log to tblerrors - bad database connection.";
       append_file_str(strlog_file, stroutput);
-      rotate_logfile(stroutput);
+      rotate_logfile(strlog_file);
       cerr << stroutput << endl;
-      testing_throw;
     }
   }
 }
@@ -268,15 +266,7 @@ void player::init() {
 
   // Fetch the current store status:
   log_message("Checking store status...");
-  load_store_status();
-
-  // Report if the store is open or closed:
-  if (store_status.blnopen) {
-    log_message("Store is Open.");
-  }
-  else {
-    log_message("Store is Closed.");
-  }
+  load_store_status(true);
 
   // Write LiveInfo data:
   log_message("Writing LiveInfo data...");
@@ -503,7 +493,24 @@ void player::save_tbldefs(const string & strsetting, const string & strtype, con
   }
 }
 
-void player::load_store_status() {
+void player::load_store_status(const bool blnverbose) {
+  // Make sure this function doesn't run too regularly...
+  {
+    static datetime dtmlast_run = datetime_error;
+    datetime dtmnow = now();
+    
+    // Check for problems caused by clock changes:
+    if (dtmlast_run > dtmnow) {
+      log_message("System clock was set backwards, adjusting logic");
+      dtmlast_run = datetime_error;
+    }
+    
+    // Now check if it is too soon to run the logic again:
+    if (dtmlast_run > (dtmnow - 30)) return;
+    
+    dtmlast_run = dtmnow;
+  }
+  
   // Update the current store status
 
   // Is the store open now?
@@ -515,12 +522,22 @@ void player::load_store_status() {
     datetime dtmclose = parse_psql_time(rs.field("dtmclosingtime"));
 
     datetime dtmtime = time();
+    
+    // Check if the store's open/closed state changes:
+    bool blnprev_store_open = store_status.blnopen;
 
     if (dtmopen <= dtmclose) {
       store_status.blnopen = (dtmopen <= dtmtime) && (dtmtime <= dtmclose);
     }
     else { // Weird cases, eg: Store opens at 11 PM and closes at 2 AM.
       store_status.blnopen = !((dtmtime >= dtmclose) && (dtmtime <= dtmopen));
+    }
+    
+    // Did the store status change?
+    if (blnverbose || blnprev_store_open != store_status.blnopen) {
+      string strmessage = (string) "Store is now " + (store_status.blnopen ? "Open" : "Closed");
+      strmessage += (string) " (store hours: " + format_datetime(dtmopen, "%T") + " - " + format_datetime(dtmclose, "%T") + ")";
+      log_message(strmessage);
     }
   }
 
@@ -965,24 +982,28 @@ void player::run_data::next_becomes_current() {
 
   // Do we have a current item? (we don't if we just started playing items).
   if (current_item.blnloaded) {
-    // Does it's foreground use XMMS?
-    if (current_item.strmedia == "LineIn") {
-      testing_throw;
-      // Does the next item use LineIn?
-      if (next_item.strmedia != "LineIn") {
+    // Is the current item silence?
+    if (current_item.cat != SCAT_SILENCE) {
+      // No.
+      // Does it's foreground use Linein?
+      if (current_item.strmedia == "LineIn") {
         testing_throw;
-        // No. Set the volume to 0.
-        linein_setvol(0);
+        // Does the next item use LineIn?
+        if (next_item.strmedia != "LineIn") {
+          testing_throw;
+          // No. Set the volume to 0.
+          linein_setvol(0);
+        }
+        // Don't do any further LineIn usage manipulation here. It was already changed, by earlier logic.
+        testing_throw;
       }
-      // Don't do any further LineIn usage manipulation here. It was already changed, by earlier logic.
-      testing_throw;
-    }
-    else {
-      // Current item used XMMS. So Stop it's XMMS (it probably already is, but do it anyway).
-      int intsession = get_xmms_used(SU_CURRENT_FG);
-      xmms[intsession].stop();
-      // Free it also:
-      set_xmms_usage(intsession, SU_UNUSED);
+      else {
+        // Current item used XMMS. So Stop it's XMMS (it probably already is, but do it anyway).
+        int intsession = get_xmms_used(SU_CURRENT_FG);
+        xmms[intsession].stop();
+        // Free it also:
+        set_xmms_usage(intsession, SU_UNUSED);
+      }
     }
 
     // Did the current item have a music bed
@@ -1102,17 +1123,25 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
 
   // Reset "next_item"
   item.reset();
+  
+  // If the current promo batch queue is not empty, then fetch the next item:
+  if (!item.blnloaded && run_data.waiting_promos.size() != 0) {
+    get_next_item_promo(item, intstarts_ms);
+  }
+  
+  // Update the store status, check if the store is currently open or closed:
+  load_store_status();
 
-  // Are we within store hours?
-  if (!store_status.blnopen) {
-testing_throw;
-    // No. The next item is silence.
+  // Stop playback if we are within store hours:
+  if (!item.blnloaded && !store_status.blnopen) {
+    // Store is closed. Next item is silence.
     item.cat = SCAT_SILENCE;
     item.blnloaded = true;
-    // Also reset out "segments delayed by" factor:
+    // Reset our "segments delayed by" factor:
     run_data.intsegment_delay=0;
   }
 
+  // Return the next promo if there is one waiting in the database:
   if (!item.blnloaded) {
     // Inside store hours. Any promos?
     get_next_item_promo(item, intstarts_ms);
@@ -1904,7 +1933,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   int intxmms_song_length_ms = -1;
   int intxmms_song_pos_ms = -1;
 
-  if (!blnlinein_used) {
+  if (!blnlinein_used && run_data.current_item.cat != SCAT_SILENCE) {
     // XMMS is being used to play this item.
     int intxmms_session    = run_data.get_xmms_used(SU_CURRENT_FG);
     intxmms_song_pos_ms    = run_data.xmms[intxmms_session].get_song_pos_ms();
@@ -1918,6 +1947,11 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
       // Music bed end:
       event_info.intmusic_bed_ends_ms = event_info.intmusic_bed_starts_ms + run_data.current_item.music_bed.intlength_ms;
     }
+  }
+  else {
+    // LineIn is playing, or we in a silence segment.
+    // Every 60 seconds we check for the next item:
+    event_info.intitem_ends_ms = 1000 * (60 - (now() % 60));
   }
 
   // Is this item going to be interrupted to play promos? (ie, item is music, the segment allows promos, and there are waiting promos)
@@ -1950,6 +1984,32 @@ void player::player_maintenance(const int intmax_time_ms) {
   // Do background maintenance (separate function). Events have frequencies, (sometimes desired "second" to take place at), and are prioritiesed.
   //  - Also includes resetting info about the next playback item (highest priority, every 30 seconds..., seconds: 00, 30)
 //  log_line("I have up to " + itostr(intmax_time_ms/1000) + "s to do maintenance in...");
+  datetime dtmcutoff = now() + intmax_time_ms / 1000; // Logic not allowed to run past this length.
+
+  #define RUN_TIMED(FREQ, MIN_TIME_REMAINING, FUNC) { \
+    static datetime dtmlast = datetime_error; \
+    datetime dtmnow = now(); \
+    if(dtmnow < dtmlast) dtmlast = datetime_error; \
+    if (dtmlast <= dtmnow - FREQ && dtmnow + MIN_TIME_REMAINING < dtmcutoff) { \
+      FUNC(dtmcutoff); \
+      dtmlast = now(); \
+    } \
+  }
+
+  // Every 60s we log the current player status to the logfile:
+/*  
+  {
+    static datetime dtmlast = datetime_error;
+    datetime dtmnow = now();
+    if (dtmnow < dtmlast) dtmlast = datetime_error; // Clock moved backwards
+    if (dtmlast <= dtmnow - 60) {
+      log_line("Hahaha");
+      dtmlast = now();
+    }
+  }
+  */
+  RUN_TIMED(5, 0, log_moo);
+  RUN_TIMED(5, 0, log_moo);  
 }
 
 void player::playback_transition(playback_events_info & playback_events) {
@@ -2210,7 +2270,7 @@ void player::playback_transition(playback_events_info & playback_events) {
 
       // Now handle the event:
       {
-//        cout << "[" << current_event->intrun_ms << "] " << current_event->strevent << endl;
+        // cout << "[" << current_event->intrun_ms << "] " << current_event->strevent << endl;
         // Fetch the main command, and any argument from the event string:
         string strcmd = "";
         string strarg = "";
@@ -2237,32 +2297,36 @@ void player::playback_transition(playback_events_info & playback_events) {
           if (!run_data.next_item.blnloaded) my_throw("Logic Error!");
           // Are  there already XMMS or LineIn sessions allocated for the next item? (background or foreground)
           if (run_data.sound_usage_allocated(SU_NEXT_FG) || run_data.sound_usage_allocated(SU_NEXT_BG)) my_throw("Logic Error!");
-          // Nope. So setup either an XMMS or LineIn:
-          if (run_data.next_item.strmedia == "LineIn") {
-            testing_throw;
-            // Next item will play through linein.
-            // Is LineIn already allocated to something else?
-            if (run_data.linein_usage != SU_UNUSED) log_message("LineIn is already used for something, but commandeering it anyway for the next item.");
-            run_data.linein_usage = SU_NEXT_FG;
-          }
-          else {
-            // Next item will play through XMMS.
-            // Does the item exist?
-            if (!file_exists(run_data.next_item.strmedia)) my_throw("File not found! " + run_data.next_item.strmedia);
-
-            // - Fetch a free XMMS session
-            int intsession = run_data.get_free_xmms_session(); // Will throw an exception if there aren't any free.
-            // - Reserve the session for next item/foreground:
-            run_data.set_xmms_usage(intsession, SU_NEXT_FG);
-            // - Populate the XMMS session:
-            run_data.xmms[intsession].playlist_clear();
-            run_data.xmms[intsession].playlist_add_url(run_data.next_item.strmedia);
-
-            // - Set XMMS volume to the next item's volume:
-            run_data.xmms[intsession].setvol(get_pe_vol(run_data.next_item.strvol), false);
-
-            // - Make sure that repeat is turned off.
-            run_data.xmms[intsession].setrepeat(false);
+         
+          // Nope. So setup either XMMS or LineIn:           
+          // * Only run this logic if the item is not in a silence segment.
+          if (run_data.next_item.cat != SCAT_SILENCE) {            
+            if (run_data.next_item.strmedia == "LineIn") {
+              testing_throw;
+              // Next item will play through linein.
+              // Is LineIn already allocated to something else?
+              if (run_data.linein_usage != SU_UNUSED) log_message("LineIn is already used for something, but commandeering it anyway for the next item.");
+              run_data.linein_usage = SU_NEXT_FG;
+            }
+            else {
+              // Next item will play through XMMS.
+              // Does the item exist?
+              if (!file_exists(run_data.next_item.strmedia)) my_throw("File not found! " + run_data.next_item.strmedia);
+  
+              // - Fetch a free XMMS session
+              int intsession = run_data.get_free_xmms_session(); // Will throw an exception if there aren't any free.
+              // - Reserve the session for next item/foreground:
+              run_data.set_xmms_usage(intsession, SU_NEXT_FG);
+              // - Populate the XMMS session:
+              run_data.xmms[intsession].playlist_clear();
+              run_data.xmms[intsession].playlist_add_url(run_data.next_item.strmedia);
+  
+              // - Set XMMS volume to the next item's volume:
+              run_data.xmms[intsession].setvol(get_pe_vol(run_data.next_item.strvol), false);
+  
+              // - Make sure that repeat is turned off.
+              run_data.xmms[intsession].setrepeat(false);
+            }
           }
         }
         else if (strcmd == "setvol_next" || strcmd == "setvol_current") {
@@ -2292,105 +2356,112 @@ void player::playback_transition(playback_events_info & playback_events) {
 
           // - Item loaded?
           if (!item->blnloaded) my_throw("Logic Error!");
-          // Fetch the percentage to use (an error will get thrown if there is a problem):
-          int intpercent = strtoi(strarg);
-
-          // Check the range:
-          if (intpercent < 0 || intpercent > 100) my_throw("Invalid volume!");
-
-          // Remember this percentage for any "start_music_bed_current" or "start_music_bed_next" commands:
-          *intvol = intpercent;
-
-          // - LineIn or XMMS?
-          if (item->strmedia == "LineIn") {
-            // LineIn.
-            testing_throw;
-            // Check: No music beds allowed with LineIn:
-            if (run_data.sound_usage_allocated(SU_BG)) my_throw("Music Bed was allocated for LineIn music!");
-
-            // Check: LineIn is allocated to this item:
-            if (!run_data.uses_linein(SU_FG)) my_throw("LineIn was not allocated!");
-
-            // Set the volume of linein appropriately:
-            linein_setvol((store_status.volumes.intlinein * intpercent)/100, false);
-          }
-          else {
-            // Set XMMS volume:
-            // Fetch session used for the foreground. Will throw an exception if it isn't allocated.
-            int intsession = run_data.get_xmms_used(SU_FG);
-            // Set volume appropriately:
-            run_data.xmms[intsession].setvol((get_pe_vol(item->strvol) * intpercent)/100, false);
-
-            // Set volume of music bed also if it is active now:
-            {
-              int intsession = -1;
-              try {
-                intsession = run_data.get_xmms_used(SU_BG);
-                testing_throw;
-              } catch(...) {
-                // There is no music bed XMMS session allocated at this time. Do nothing.
-              }
-              if (intsession != -1) {
-                testing_throw;
-                // We have an XMMS session for the music bed.
-                // Extra check: Does the item actually have a music bed?
-                if (!item->blnmusic_bed) my_throw("Logic Error!");
-                run_data.xmms[intsession].setvol((get_pe_vol(item->music_bed.strvol) * intpercent)/100, false);
+          
+          // Only run the rest of the logic if the item does not have a "Silence" category:
+          if (item->cat != SCAT_SILENCE) {
+            // Fetch the percentage to use (an error will get thrown if there is a problem):
+            int intpercent = strtoi(strarg);
+  
+            // Check the range:
+            if (intpercent < 0 || intpercent > 100) my_throw("Invalid volume!");
+  
+            // Remember this percentage for any "start_music_bed_current" or "start_music_bed_next" commands:
+            *intvol = intpercent;
+  
+            // - LineIn or XMMS?
+            if (item->strmedia == "LineIn") {
+              // LineIn.
+              testing_throw;
+              // Check: No music beds allowed with LineIn:
+              if (run_data.sound_usage_allocated(SU_BG)) my_throw("Music Bed was allocated for LineIn music!");
+  
+              // Check: LineIn is allocated to this item:
+              if (!run_data.uses_linein(SU_FG)) my_throw("LineIn was not allocated!");
+  
+              // Set the volume of linein appropriately:
+              linein_setvol((store_status.volumes.intlinein * intpercent)/100, false);
+            }
+            else {
+              // Set XMMS volume:
+              // Fetch session used for the foreground. Will throw an exception if it isn't allocated.
+              int intsession = run_data.get_xmms_used(SU_FG);
+              // Set volume appropriately:
+              run_data.xmms[intsession].setvol((get_pe_vol(item->strvol) * intpercent)/100, false);
+  
+              // Set volume of music bed also if it is active now:
+              {
+                int intsession = -1;
+                try {
+                  intsession = run_data.get_xmms_used(SU_BG);
+                  testing_throw;
+                } catch(...) {
+                  // There is no music bed XMMS session allocated at this time. Do nothing.
+                }
+                if (intsession != -1) {
+                  testing_throw;
+                  // We have an XMMS session for the music bed.
+                  // Extra check: Does the item actually have a music bed?
+                  if (!item->blnmusic_bed) my_throw("Logic Error!");
+                  run_data.xmms[intsession].setvol((get_pe_vol(item->music_bed.strvol) * intpercent)/100, false);
+                }
               }
             }
           }
         }
         else if (strcmd == "next_play") {
-          // Not relevant for LineIn. If we're using XMMS, then:
-          // - Tell XMMS (for the next item) to start playing
-          // - Check for music bed events that will occur *during* the current fade (if any) and queue them.
-
-          // Is the next item loaded?
-          if (!run_data.next_item.blnloaded) my_throw("Logic Error!");
-
-          // Next item can't be linein:
-          if (run_data.next_item.strmedia == "LineIn") my_throw("Don't use next_play commands for LineIn!");
-
-          // Fetch the XMMS session:
-          int intsession = run_data.get_xmms_used(SU_NEXT_FG);
-
-          // Is XMMS already playing?
-          if (run_data.xmms[intsession].playing()) my_throw("Don't use next_play when XMMS is already running!");
-
-          // Start it playing now.
-          run_data.xmms[intsession].play();
-
-          // Log that we're playing it:
-          log_message("Playing [xmms " + itostr(intsession) + "]: \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\"");
-
-          // Check if there are any music bed events (for the next item) that will occur *during* the current
-          // fade (ie, before we switch over completely to the next item), and queue them here.
-          if (blncrossfade && run_data.next_item.blnmusic_bed) {
-testing_throw;
-            // Work out the current time in ms, compared to when the queue started:
-            timeval tvnow;
-            gettimeofday(&tvnow, NULL);
-            tvnow.tv_sec  -= tvqueue_start.tv_sec;
-            tvnow.tv_usec -= tvqueue_start.tv_usec;
-            normalise_timeval(tvnow);
-            int intnow_ms = tvnow.tv_sec * 1000 + tvnow.tv_usec / 1000; // How many ms since the queue started.
-
-            // Queue a "next_music_bed_start" if it does start in the near future...
-            if (run_data.next_item.music_bed.intstart_ms < intnext_becomes_current_ms) {
-testing_throw;
-              queue_event(events, "next_music_bed_start", intnow_ms + 1 + run_data.next_item.music_bed.intstart_ms);
+          // Skip this if the next item has a "Silence" category:          
+          if (run_data.next_item.cat != SCAT_SILENCE) {
+            // Not relevant for LineIn. If we're using XMMS, then:
+            // - Tell XMMS (for the next item) to start playing
+            // - Check for music bed events that will occur *during* the current fade (if any) and queue them.
+  
+            // Is the next item loaded?
+            if (!run_data.next_item.blnloaded) my_throw("Logic Error!");
+  
+            // Next item can't be linein:
+            if (run_data.next_item.strmedia == "LineIn") my_throw("Don't use next_play commands for LineIn!");
+  
+            // Fetch the XMMS session:
+            int intsession = run_data.get_xmms_used(SU_NEXT_FG);
+  
+            // Is XMMS already playing?
+            if (run_data.xmms[intsession].playing()) my_throw("Don't use next_play when XMMS is already running!");
+  
+            // Start it playing now.
+            run_data.xmms[intsession].play();
+  
+            // Log that we're playing it:
+            log_message("Playing [xmms " + itostr(intsession) + "]: \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\"");
+  
+            // Check if there are any music bed events (for the next item) that will occur *during* the current
+            // fade (ie, before we switch over completely to the next item), and queue them here.
+            if (blncrossfade && run_data.next_item.blnmusic_bed) {
+  testing_throw;
+              // Work out the current time in ms, compared to when the queue started:
+              timeval tvnow;
+              gettimeofday(&tvnow, NULL);
+              tvnow.tv_sec  -= tvqueue_start.tv_sec;
+              tvnow.tv_usec -= tvqueue_start.tv_usec;
+              normalise_timeval(tvnow);
+              int intnow_ms = tvnow.tv_sec * 1000 + tvnow.tv_usec / 1000; // How many ms since the queue started.
+  
+              // Queue a "next_music_bed_start" if it does start in the near future...
+              if (run_data.next_item.music_bed.intstart_ms < intnext_becomes_current_ms) {
+  testing_throw;
+                queue_event(events, "next_music_bed_start", intnow_ms + 1 + run_data.next_item.music_bed.intstart_ms);
+              }
+  
+              // Queue a "next_music_bed_end" if it does end in the near future...
+              if (run_data.next_item.music_bed.intstart_ms + run_data.next_item.music_bed.intlength_ms < intnext_becomes_current_ms) {
+  testing_throw;
+                queue_event(events, "next_music_bed_end", intnow_ms + 2 + run_data.next_item.music_bed.intstart_ms + run_data.next_item.music_bed.intlength_ms);
+              }
+  
+              // Now sort the list of events:
+              sort(events.begin(), events.end(), transition_event_less_than);
+  
+              testing_throw; // Check if we are at the same position in the queue as before!
             }
-
-            // Queue a "next_music_bed_end" if it does end in the near future...
-            if (run_data.next_item.music_bed.intstart_ms + run_data.next_item.music_bed.intlength_ms < intnext_becomes_current_ms) {
-testing_throw;
-              queue_event(events, "next_music_bed_end", intnow_ms + 2 + run_data.next_item.music_bed.intstart_ms + run_data.next_item.music_bed.intlength_ms);
-            }
-
-            // Now sort the list of events:
-            sort(events.begin(), events.end(), transition_event_less_than);
-
-            testing_throw; // Check if we are at the same position in the queue as before!
           }
         }
         else if (strcmd == "next_becomes_current") {

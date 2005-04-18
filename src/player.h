@@ -135,7 +135,7 @@ private:
        int intlinein;   // Just the value from tbldefs
      } volumes;
   } store_status;
-  void load_store_status(); // Update the current store status
+  void load_store_status(const bool blnverbose = false); // Update the current store status
 
   // Promo status (used by tblSchedule_TZ_Slot.bitScheduled)
   enum advert_status_type {
@@ -199,7 +199,7 @@ private:
     // limit (6 mins), and then is reduced when we hit a music segment. Music segments are reduced down to a minimum
     // of 30 seconds to reclaim time back from this "puch back" factor.
     int intsegment_delay;
-
+    
     programming_element_list waiting_promos; // List of promos waiting to play. Populated by get_next_item_promo
   } run_data;
 

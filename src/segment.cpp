@@ -268,26 +268,14 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
       // Yes. Does the segment allow repeating?
       if (blnrepeat) {
         // Yes. Go back to the beginning of the list.
-        log_message("Ran out of media, going back to the beginning of the playlist.");
+        log_message("Ran out of media, going back to the beginning of the playlist");
         next_item = programming_elements.begin();
       }
       else {
-        // Repeating not allowed. Depending on the time left at this point, we either fill it with a
+        // Repeating not allowed. Revert to the alternate category.
         // "imaging filler", or we revert to the alternate category.
-
-        // How much time remains until the end of the segment?
-        int inttime_before_seg_end = intlength - (now() - dtmstart) - intstarts_ms/1000;
-        
-        if (inttime_before_seg_end <= intuse_imaging_filler_limit) {
-          // Look for imaging filler.
-          log_line("Ran out of media for this segment (repeat=false). Fetching an imaging filler for the remaning " + itostr(inttime_before_seg_end) + "s");
-          get_imaging_filler(pe, inttime_before_seg_end, db);
-        }
-        else {
-          // Revert to the alternate category (or to the default music profile if we're already on the alternate category).
-          log_line("Ran out of media for this segment (repeat=false). " + itostr(inttime_before_seg_end) + "s remain so reverting...");
-          revert_down(db, strdefault_music_source); // This will also setup "next_item"
-        }
+        log_line("Ran out of media for this segment (repeat=false)");
+        revert_down(db, strdefault_music_source); // This will also setup "next_item"
       }
     }
   }
@@ -301,11 +289,6 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   // And now we've definitely returned the "first" item from the list if we hadn't
   // already:
   blnfirst_fetched = true; // Next time we will advance to the next item.
-}
-
-// Fetch an imaging filler (used when 1) Repeat=false, 2) We've just run out of items to play, and 3) There is not much time left in the segment.
-void segment::get_imaging_filler(programming_element & pe, const int inttime_before_seg_end, pg_connection & db) {
-  undefined_throw;
 }
 
 void segment::generate_playlist(programming_element_list & pel, const string & strsource, pg_connection & db) {
@@ -639,7 +622,6 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
     string strsql = "SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE strdir = " + psql_str(strdir);
     pg_result rs = db.exec(strsql);
     if (rs.recordcount() > 0) {
-      testing_throw;
       long lngfc_sub_cat = strtol(rs.field("lngfc_sub_cat"));
       
       // A format clock sub-category directory. Fetch relevant MP3s from the database:
@@ -647,16 +629,15 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       string strsql = "SELECT strfile FROM tblfc_media WHERE "
                       "lngcat = " + ltostr(cat.lngcat) + " AND "
                       "lngsub_cat = " + ltostr(lngfc_sub_cat) + " AND "
-                      "dtmrelevant_until >= " + strsql_date;
+                      "COALESCE(dtmrelevant_until, '9999-12-25') >= " + strsql_date;
       // Now modify the query, using the Max Age and Premature segment settings.
       if (!blnpremature) { // blnpremature means ignore relevant from
-        testing_throw;
-        strsql += " AND dtmrelevant_from <= " + strsql_date;
+        strsql += " AND COALESCE(dtmrelevant_from, '0000-01-01') <= " + strsql_date;
       }
 
       if (blnmax_age) { // Max age means maximum # of days after dtmrelevant_from that the media will be played.
         testing_throw;
-        strsql += " AND dtmrelevant_from + " + itostr(intmax_age - 1) + " >= " + strsql_date;
+        strsql += " AND COALESCE(dtmrelevant_from, '0000-01-01') + " + itostr(intmax_age - 1) + " >= " + strsql_date;
       }
 
       // Order the media by filename:
@@ -665,7 +646,6 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
 
       // Did we get anything?
       if (rs.recordcount() == 0) {
-        testing_throw;
         // No:
         log_warning("Database does not list any usable format clock sub-category media under this directory: " + strdir);
         return;
@@ -673,27 +653,22 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
 
       // Process records:
       {
-        testing_throw;
         int intadded=0; // Number if items we've added to the file list
         while (!rs.eof()) {
-          testing_throw;
           // Fetch the file from the database:
           string strfile = rs.field("strfile", "");
           // Exists on the harddrive?
           if (file_exists(strdir + strfile)) {
-            testing_throw;
             // Yes. Add it.
             file_list.push_back(strdir + strfile);
             ++intadded;
           }
           else {
-            testing_throw;
+            testing;
             // No. Log a warning:
             log_warning("File listed in the database, but not found on disk: " + strdir + strfile);
           }
-          testing_throw;
           rs.movenext();
-          testing_throw;
         }
         // Did we add any entries?
         if (intadded <= 0) {
@@ -702,9 +677,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
           log_warning("Could not find any usable format clock sub-category media under this directory: " + strdir);
           testing_throw;
         }
-        testing_throw;
       }
-      testing_throw;
     }
     else {
       // Not a format clock sub-category directory. Process all the files.

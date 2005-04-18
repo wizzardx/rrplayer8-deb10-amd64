@@ -8,12 +8,6 @@
 
 using namespace std;
 
-const int intuse_imaging_filler_limit = 30;          // If we're in a segment where repeated media is not allowed,
-                                                     // and we run out of media to play, then if less than
-                                                     // this amount of time remains, we look for the smallest
-                                                     // available "imaging filler" that is larger than the remaining
-                                                     // time.
-
 // Segment
 // Definition: A time slot in an hour broadcast. It can have varying categories. eg: in a
 // segment, 15:00 - 17:00, I could have a news segment. But in the news segment I could allow
@@ -31,9 +25,6 @@ public:
 
   // Advance to the next item (if necessary) and then return it.
   void get_next_item(programming_element & pe, pg_connection & db, const string & strdefault_music_source, const int intstarts_ms);
-
-  // Fetch an imaging filler (used when 1) Repeat=false, 2) We've just run out of items to play, and 3) There is not much time left in the segment.
-  void get_imaging_filler(programming_element & pe, const int inttime_before_seg_end, pg_connection & db);
 
   bool blnloaded; // Has data been loaded into this object yet?
 

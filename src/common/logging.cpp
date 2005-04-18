@@ -54,9 +54,8 @@ void clogging::log(const log_type LT, const string & strdesc, const string & str
     testing_throw;
     cerr << "*** An unexpected exception was thrown in " << __FUNCTION__<< "!" << endl;
     testing_throw;
-
   }
-  };
+};
 
 string format_log(const log_info & log_info, const string strformat) {
   // Get a string describing the log type:
@@ -160,10 +159,8 @@ bool is_time_to_rotate_logfile(const string & strlog_file) {
 
   } // end if
   else {
-    testing_throw;
     // File does not exist - so don't rotate it.
     blnrotate = false;
-    testing_throw;
   }
   return blnrotate;
 #endif
