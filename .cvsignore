@@ -6,3 +6,7 @@ aclocal.m4
 autom4te.cache
 player.kdevelop.pcs
 player.kdevses
+html
+player.tag
+latex
+xml

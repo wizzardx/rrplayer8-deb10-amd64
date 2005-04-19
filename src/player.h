@@ -12,56 +12,59 @@
 using namespace std;
 
 // Some player-related constants:
-const string PLAYER_DIR = "/data/radio_retail/progs/player/";
+const string PLAYER_DIR = "/data/radio_retail/progs/player/"; ///< Player program directory. Binary lives here.
 
-const int intcrossfade_length_ms             = 8000; // Crossfades run for 8000ms. Also music fade-ins and fade-outs.
-const int intnext_playback_safety_margin_ms = 18000; // How long before important playback events, the player should be ready and
-                                                     // not run other logic which could cut into time needed for crossfading, etc.
-const int intmax_xmms = 4;                           // Number of XMMS's required for playback. 4 would be necessary when
-                                                     // crossfading between two items, both with underlying music.
-const int intmax_segment_push_back = 6*60;           // Maximum amount of time in seconds that segments will be
-                                                     // "pushed back" because previous segments played for too long.
+const int intcrossfade_length_ms             = 8000; ///< Crossfades run for 8000ms. Also music fade-ins and fade-outs.
+const int intnext_playback_safety_margin_ms = 18000; ///< How long before important playback events, the player should be ready and
+                                                     ///< not run other logic which could cut into time needed for crossfading, etc.
+const int intmax_xmms = 4;                           ///< Number of XMMS sessions required. Multiple XMMS sessions are used for playing music beds and performing custom crossfades.
+                                                     ///< crossfading between two items, both with underlying music.
+const int intmax_segment_push_back = 6*60;           ///< Maximum amount of time in seconds that segments will be
+                                                     ///< "pushed back" because previous segments played for too long.
 
 
                                                      
-// Information about "events" that take place during playback of the current item.
-// (current item ends, music bed starts, music bed starts
+/// Information about "events" that take place during playback of the current item.
 class playback_events_info {
 public:
-  playback_events_info(); // Constructor
-  void reset(); // Reset attributes back to default values.
-  int intnext_ms;      // ms until the next event happens
-  int intitem_ends_ms; // ms until the current item ends
-  int intmusic_bed_starts_ms; // ms until the music bed starts playing
-  int intmusic_bed_ends_ms;   // ms until the music bed stops playing.
-  int intpromo_interrupt_ms;  // ms until the item (ie, music) will be interrupted to play a promo.
-  programming_element promo;  // If this item is interrupted by a promo then this var is populated
+  playback_events_info(); ///< Constructor
+  void reset(); ///< Reset attributes back to default values.
+  int intnext_ms;      ///< ms until the next event happens
+  int intitem_ends_ms; ///< ms until the current item ends
+  int intmusic_bed_starts_ms; ///< ms until the music bed starts playing
+  int intmusic_bed_ends_ms;   ///< ms until the music bed stops playing.
+  int intpromo_interrupt_ms;  ///< ms until the item (ie, music) will be interrupted to play a promo.
+  programming_element promo;  ///< If this item is interrupted by a promo then this var is populated
 };
 
-// Structure for storing events that take place during a playback transition (see player::playback_transition)
+/// Structure for storing events that take place during a playback transition (see player::playback_transition)
 struct transition_event {
-  int intrun_ms; // When does the event run?
-  string strevent; // Lists the event.
+  int intrun_ms; ///< When does the event run?
+  string strevent; ///< Lists the event.
 };
 typedef vector <transition_event> transition_event_list;
-// A function we use with the sort() algorithm:
+
+/// A function we use with the sort() algorithm:
 bool transition_event_less_than(const transition_event & e1, const transition_event & e2);
-                                                      
+
+/// The main Player class.
+/// It all happens here
+
 class player {
 public:
-  player();  // Constructor
-  ~player(); // Destructor
-  void run(); // Main logic
-  void log(const log_info & LI); // Call this to write a log to the player logfile & to the schedule database.
+  player();  ///< Constructor.
+  ~player(); ///< Destructor
+  void run(); ///< Main logic
+  void log(const log_info & LI); ///< Call this to write a log to the player logfile & to the schedule database.
 private:
-  void init();  // Called by the constructor to do the actual init (kdevelop breakpoint problems).
+  void init();  ///< Called by the constructor to do the actual init (kdevelop breakpoint problems).
 
   // FUNCTIONS AND ATTRIBUTES USED DURING INIT():  
-  void reset(); // Reset ALL object attributes to default, uninitialized values.
-  void remove_waiting_mediaplayer_cmds(); // Remove waiting MediaPlayer commands (pause, stop, resume, etc)
-  void write_liveinfo(); // Write status info to a table for the Global Reporter to read.
+  void reset(); ///< Reset ALL object attributes to default, uninitialized values.
+  void remove_waiting_mediaplayer_cmds(); ///< Remove waiting MediaPlayer commands (pause, stop, resume, etc)
+  void write_liveinfo(); ///< Write status info to a table for the Global Reporter to read.
   void write_liveinfo_setting(const string strname, const string strvalue);
-  void check_received(); // Check the Received directory for .CMD files
+  void check_received(); ///< Check the Received directory for .CMD files
   void load_cmd_into_db(const string strfull_path);
   void process_waiting_cmds();
   void correct_waiting_promos();
@@ -69,29 +72,29 @@ private:
   void write_errors_for_missed_promos_log_missed(const string strmissed_file, const long lngmissed_count, const datetime dtmmissed_first, const datetime dtmmissed_last);
   void log_xmms_status_to_db();
 
-  pg_connection db; // Connection to the schedule database. This is used to run queries and fetch records.
+  pg_connection db; ///< Connection to the schedule database. This is used to run queries and fetch records.
 
-  // A callback function called by the db (database connection) object when there is a database
-  // connection problem. It keeps music going, etc.
+  /// A callback function called by the db (database connection) object when there is a database
+  /// connection problem. It keeps music going, etc.
   static void callback_check_db_error();
 
-  // Some settings and configuration read from the config file and from the database.
+  /// Some settings and configuration read from the config file and from the database.
   struct config {
-    // Database connection details (player.conf)
+    /// Database connection details (player.conf)
     struct db {
-      string strserver;
-      string strdb;  // The name of the MySQL database
-      string struser;  // The user name
-      string strpassword;  // The password
-      string strport;  // The port
+      string strserver; ///< Server hostname, IP address, etc
+      string strdb;  ///< The name of the MySQL database
+      string struser;  ///< The user name
+      string strpassword;  ///< The password
+      string strport;  ///< The port
     } db;
 
     // Promo frequency capping options (tbldefs)
-    int intmins_to_miss_promos_after; // If an announcement was scheduled to play earlier than this amount of time ago, then skip it if it has not already been played.
-    int intmax_promos_per_batch;
-    int intmin_mins_between_batches; // Minimum amount of music to play between promo batches
+    int intmins_to_miss_promos_after; ///< If an announcement was scheduled to play earlier than this amount of time ago, then skip it if it has not already been played.
+    int intmax_promos_per_batch;      ///< Limits the number of promos played, even if there is major overschedulig.
+    int intmin_mins_between_batches;  ///< Minimum amount of music to play between promo batches
 
-    // directories:
+    /// Directories used by the player.
     struct dirs {
       string strmp3;
       string stradverts;
@@ -101,7 +104,7 @@ private:
       string strtoday;
     } dirs;
 
-    // Added in 6.15 (build 330) The location to use for the default music profile:
+    /// Added in 6.15 (build 330) The location to use for the default music profile:
     string strdefault_music_source;
 
     // Added in 6.21 (build 737) Wait for the current song to end before starting

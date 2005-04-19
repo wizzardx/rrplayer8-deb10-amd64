@@ -14,7 +14,7 @@
     <ignoreparts/>
     <projectdirectory>.</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
-    <description/>
+    <description></description>
   </general>
   <kdevautoproject>
     <general>
@@ -26,7 +26,7 @@
       <terminal>true</terminal>
       <directoryradio>executable</directoryradio>
       <customdirectory>/</customdirectory>
-      <programargs/>
+      <programargs></programargs>
       <autocompile>true</autocompile>
       <envvars/>
       <runarguments>
@@ -94,7 +94,7 @@
       <abortonerror>true</abortonerror>
       <numberofjobs>1</numberofjobs>
       <dontact>false</dontact>
-      <makebin/>
+      <makebin></makebin>
       <prio>0</prio>
     </make>
   </kdevautoproject>
@@ -155,8 +155,6 @@
     <groups>
       <group pattern="*.h" name="Header files" />
       <group pattern="*.cpp" name="Source files" />
-      <hidenonprojectfiles>false</hidenonprojectfiles>
-      <hidenonlocation>false</hidenonlocation>
     </groups>
     <tree>
       <hidepatterns>*.o,*.lo,CVS</hidepatterns>
@@ -203,7 +201,7 @@
       <headerCompletionDelay>250</headerCompletionDelay>
     </codecompletion>
     <creategettersetter>
-      <prefixGet/>
+      <prefixGet></prefixGet>
       <prefixSet>set</prefixSet>
       <prefixVariable>m_,_</prefixVariable>
       <parameterName>theValue</parameterName>
@@ -214,12 +212,12 @@
   </kdevcppsupport>
   <kdevdebugger>
     <general>
-      <programargs/>
-      <gdbpath/>
+      <programargs></programargs>
+      <gdbpath></gdbpath>
       <dbgshell>libtool</dbgshell>
-      <configGdbScript/>
-      <runShellScript/>
-      <runGdbScript/>
+      <configGdbScript></configGdbScript>
+      <runShellScript></runShellScript>
+      <runGdbScript></runGdbScript>
       <breakonloadinglibs>true</breakonloadinglibs>
       <separatetty>false</separatetty>
       <floatingtoolbar>false</floatingtoolbar>
@@ -232,15 +230,15 @@
   </kdevdebugger>
   <kdevvisualadvance>
     <emulator>VisualBoyAdvance</emulator>
-    <binary/>
-    <addOptions/>
+    <binary></binary>
+    <addOptions></addOptions>
     <terminal>false</terminal>
     <fullscreen>false</fullscreen>
     <graphicFilter>-f0</graphicFilter>
     <scaling>-1</scaling>
   </kdevvisualadvance>
   <ctagspart>
-    <customArguments/>
-    <customTagfilePath/>
+    <customArguments></customArguments>
+    <customTagfilePath></customTagfilePath>
   </ctagspart>
 </kdevelop>

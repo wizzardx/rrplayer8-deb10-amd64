@@ -10,7 +10,7 @@
 clogging logging;
 
 // Add a callback function for logging.
-void clogging::add_logger(void(func)(const log_info&)) {
+void clogging::add_logger(void(*func)(const log_info&)) {
   callbacks.push_front(func);
 }
 
@@ -240,7 +240,6 @@ void rotate_logfile(const string & strlog_file) {
           cerr << strout << endl;
           testing_throw;
         }
-        testing_throw;
       }
       else {
         testing_throw;
@@ -259,8 +258,6 @@ void rotate_logfile(const string & strlog_file) {
       cerr << strout << endl;
       testing_throw;
     } // end else
-    testing_throw;
   } // if (FileExists(strLogFile))
-  testing_throw;
 #endif
 }
