@@ -8,6 +8,7 @@
 #include "common/testing.h"
 #include "common/xmms_controller.h"
 #include "segment.h"
+#include "common/mp3_tags.h"
 
 using namespace std;
 
@@ -21,8 +22,6 @@ const int intmax_xmms = 4;                           ///< Number of XMMS session
                                                      ///< crossfading between two items, both with underlying music.
 const int intmax_segment_push_back = 6*60;           ///< Maximum amount of time in seconds that segments will be
                                                      ///< "pushed back" because previous segments played for too long.
-
-
                                                      
 /// Information about "events" that take place during playback of the current item.
 class playback_events_info {
@@ -34,7 +33,6 @@ public:
   int intmusic_bed_starts_ms; ///< ms until the music bed starts playing
   int intmusic_bed_ends_ms;   ///< ms until the music bed stops playing.
   int intpromo_interrupt_ms;  ///< ms until the item (ie, music) will be interrupted to play a promo.
-  programming_element promo;  ///< If this item is interrupted by a promo then this var is populated
 };
 
 /// Structure for storing events that take place during a playback transition (see player::playback_transition)
@@ -113,10 +111,10 @@ private:
 
     // New settings added in v7.00
     // Format clock settings:
-    bool blnformat_clocks_enabled; // Are format clocks used on this system?
-    long lngdefault_format_clock;  // Database reference to the "default" format clock (to use if
-                                   // there are problems with the current format clock, or no format clocks
-                                   // were scheduled.
+    bool blnformat_clocks_enabled; ///< Are format clocks used on this system?
+    long lngdefault_format_clock;  ///< Database reference to the "default" format clock (to use if
+                                   ///< there are problems with the current format clock, or no format clocks
+                                   ///< were scheduled.
   } config;
   
   void read_config_file(); // Read database connection settings from the player config file into the config.db structure.
@@ -126,21 +124,23 @@ private:
   string load_tbldefs(const string & strsetting, const string & strdefault, const string & strtype);
   void save_tbldefs(const string & strsetting, const string & strtype, const string & strvalue);
  
-  struct store_status { // Current store status
-     bool blnopen; // Is the store currently open? (compare current time with tblstorehours).
-     // These volumes are represented as PERCENTAGES (ie, out of 100, not out of 255).
-     // Additionally, these volumes are converted to 80% of their original to prevent distortion of louder
-     // levels. After calling "load_store_status()", player logic can use the levels here directly for playback.
-     // Volumes in this struct are reset to 0% when the store is closed.
-     struct volumes {  // Current volumes, adjusted correctly
-       int intmusic;    // Has hourly adjustment vol added
-       int intannounce; // Has music volume (adjusted) added.
-       int intlinein;   // Just the value from tbldefs
+  /// Current store status
+  struct store_status {
+     bool blnopen; ///< Is the store currently open? (compare current time with tblstorehours).
+     /// These volumes are represented as PERCENTAGES (ie, out of 100, not out of 255).
+     /// Additionally, these volumes are converted to 80% of their original to prevent distortion of louder
+     /// levels. After calling "load_store_status()", player logic can use the levels here directly for playback.
+     /// Volumes in this struct are reset to 0% when the store is closed.
+     /// Current volumes, adjusted correctly     
+     struct volumes {
+       int intmusic;    ///< Has hourly adjustment vol added
+       int intannounce; ///< Has music volume (adjusted) added.
+       int intlinein;   ///< Just the value from tbldefs
      } volumes;
   } store_status;
-  void load_store_status(const bool blnverbose = false); // Update the current store status
+  void load_store_status(const bool blnverbose = false); ///< Update the current store status
 
-  // Promo status (used by tblSchedule_TZ_Slot.bitScheduled)
+  /// Promo status (used by tblSchedule_TZ_Slot.bitScheduled)
   enum advert_status_type {
     ADVERT_SNS_LOADED     = 0,
     ADVERT_LISTED_TO_PLAY = 1,
@@ -151,50 +151,50 @@ private:
 
   // FUNCTIONS AND ATTRIBUTES USED DURING RUN():
 
-   // Track what a given sound resource (linein, xmms session) is being used for:
+   /// Track what a given sound resource (linein, xmms session) is being used for:
   enum sound_usage {
-    SU_UNUSED,     // Not used by an item.
-    SU_CURRENT_FG, // Sound resource is busy playing the current item.
-    SU_CURRENT_BG, // Sound resource is busy playing the current item's underlying music.
-    SU_NEXT_FG,    // Sound resource is busy playing the next item
-    SU_NEXT_BG     // Sound resource is busy playing the next item's underlying music
+    SU_UNUSED,     ///< Not used by an item.
+    SU_CURRENT_FG, ///< Sound resource is busy playing the current item.
+    SU_CURRENT_BG, ///< Sound resource is busy playing the current item's underlying music.
+    SU_NEXT_FG,    ///< Sound resource is busy playing the next item
+    SU_NEXT_BG     ///< Sound resource is busy playing the next item's underlying music
   };
   
-  // Sub-class containing "run" data. ie XMMS info, "current" programming element, "next" PE, current segment, etc, etc.
+  /// Sub-class containing "run" data. ie XMMS info, "current" programming element, "next" PE, current segment, etc, etc.
   class run_data {
   public:
-    void init(); // Run this to reset/reinitialize playback status.
+    void init(); /// Run this to reset/reinitialize playback status.
   
-    // Programming elements (current item, next item):
-    programming_element current_item; // Current programming element being played. Includes special events, etc.
-    programming_element next_item;    // Next programming element to be played.
+    /// Programming elements (current item, next item):
+    programming_element current_item; ///< Current programming element being played. Includes special events, etc.
+    programming_element next_item;    ///< Next programming element to be played.
 
     // The current Format Clock segment:
     segment current_segment;
 
-    // XMMS control:
-    xmms_controller xmms[intmax_xmms]; // XMMS controller instances.
+    /// XMMS control:
+    xmms_controller xmms[intmax_xmms]; ///< XMMS controller instances.
 
-    sound_usage xmms_usage[intmax_xmms]; // What the xmms sessions are being used for
-    sound_usage linein_usage; // What LineIn is being used for.
+    sound_usage xmms_usage[intmax_xmms]; /// What the xmms sessions are being used for
+    sound_usage linein_usage; /// What LineIn is being used for.
 
-    // Fetch an unused xmms session:
+    /// Fetch an unused xmms session:
     int get_free_xmms_session();
 
-    // Set the status of an XMMS session:
+    /// Set the status of an XMMS session:
     void set_xmms_usage(const int intsession, const sound_usage sound_usage);
 
-    // Fetch which XMMS session is being used by a given "usage". eg, item fg, item bg, etc.
-    // - Throws an exception if we can't find which XMMS session is being used. Also if LineIn is being used.
+    /// Fetch which XMMS session is being used by a given "usage". eg, item fg, item bg, etc.
+    /// Throws an exception if we can't find which XMMS session is being used. Also if LineIn is being used.
     int get_xmms_used(const sound_usage sound_usage);
 
-    // Returns true if linein is being used for the specified usage (foreground, underlying music, etc).
+    /// Returns true if linein is being used for the specified usage (foreground, underlying music, etc).
     bool uses_linein(const sound_usage sound_usage);
 
-    // Returns true if there is already a "sound resource" allocated for the specified usage.
+    /// Returns true if there is already a "sound resource" allocated for the specified usage.
     bool sound_usage_allocated(const sound_usage sound_usage);
 
-    // Use this to transition info, resource allocation, etc, etc from "next" to "current".
+    /// Use this to transition info, resource allocation, etc, etc from "next" to "current".
     void next_becomes_current();
 
     // How long Format Clock Segments are currently "delayed" by. Segments are "delayed" (ie, they start & end later)
@@ -203,11 +203,15 @@ private:
     // of 30 seconds to reclaim time back from this "puch back" factor.
     int intsegment_delay;
     
-    programming_element_list waiting_promos; // List of promos waiting to play. Populated by get_next_item_promo
+    programming_element_list waiting_promos; ///< List of promos waiting to play. Populated by get_next_item_promo
+    
+    /// Set to true when the player wants to log 1) the XMMS music playlist, and 2) All available music on the machine.
+    bool blnlog_all_music_to_db; 
   } run_data;
 
-  // Check playback status of XMMS, LineIn, etc. Throw errors here if there is something wrong.
-  // Also compares xmms_usage and linein_usage with the current device status.
+  /// Check playback status of XMMS, LineIn, etc.
+  /// Throws errors here if there is something wrong.
+  /// Also compares xmms_usage and linein_usage with the current device status.
   void check_playback_status();
 
   // Fetch the next item to be played, after the current one. Checks for announcements (promos) to play
@@ -260,18 +264,23 @@ private:
   };
   typedef deque <TWaitingAnnounce> TWaitingAnnouncements;
 
-
   // This is an internal function used only by playback_transition. It is called when
   // an announcement plays, to log to the database that it has played.
   void mark_promo_complete(const long lngtz_slot);
   
   // Timed player maintenance events. Run when there is spare time during playback.
   // - Called by player_maintenance();
-  void maintenance_check_music(const datetime dtmcutoff);
   void maintenance_check_received(const datetime dtmcutoff);
   void maintenance_check_waiting_cmds(const datetime dtmcutoff);
   void maintenance_operational_check(const datetime dtmcutoff);
   void maintenance_player_running(const datetime dtmcutoff);
+  void maintenance_hide_xmms_windows(const datetime dtmcutoff); ///< Hide all visible XMMS windows.
+
+  // Functions called by maintenance_operational_check:
+  void log_music_playlist_to_db(); ///< Log the contents of the current music playlist to the database
+  void log_machine_avail_music_to_db(); ///< Scan the harddrive for available music, and log to the database.
+  
+  mp3_tags mp3tags; ///< A cache of mp3 tags, used for quickly retrieving mp3 details.
 };
 
 extern player * pplayer; // A pointer to the currently-running player instance. Automatically maintained

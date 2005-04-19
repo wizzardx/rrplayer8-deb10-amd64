@@ -43,8 +43,6 @@ void playback_events_info::reset() {
   intmusic_bed_starts_ms = INT_MAX;
   intmusic_bed_ends_ms   = INT_MAX;
   intpromo_interrupt_ms  = INT_MAX;
-
-  promo.reset();  // If this item is interrupted by a promo then this var is populated  
 }
 
 // A function we use with the sort() algorithm:
@@ -294,6 +292,9 @@ void player::init() {
   log_xmms_status_to_db();
 */
 
+  // Also init the mp3 tags:
+  mp3tags.init(PLAYER_DIR + "mp3_tags.txt");
+
   // Show that the init succeeded.
   log_message("Player startup complete.");
   log_message("Player main event loop starting...");
@@ -506,7 +507,8 @@ void player::load_store_status(const bool blnverbose) {
     }
     
     // Now check if it is too soon to run the logic again:
-    if (dtmlast_run > (dtmnow - 30)) return;
+    // (once every 30s)
+    if (dtmlast_run/30 == dtmnow/30) return;
     
     dtmlast_run = dtmnow;
   }
@@ -727,7 +729,7 @@ void player::load_cmd_into_db(const string strfull_path) {
 }
 
 void player::process_waiting_cmds() {
-  undefined_throw;
+  undefined;
 }
 
 void player::correct_waiting_promos() {
@@ -906,6 +908,8 @@ void player::run_data::init() {
   intsegment_delay = 0; // Segments are currently delayed by this number of seconds.
 
   waiting_promos.clear(); // List of promos waiting to play. Populated by get_next_item_promo
+  
+  blnlog_all_music_to_db = false; // Set to true when the player wants to log all available music (and the current XMMS playlist) to the database.
 }
 
 int player::run_data::get_free_xmms_session() {
@@ -1121,6 +1125,9 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
   // Also here must come logic for when a) repeat runs out before the segment end, and b) when some time of
   // the next segement is used up by accident (push slots forwards by up to 6 mins, reclaim space by using up music time).
 
+  // Check if the item is already loaded:
+  if (item.blnloaded) my_throw("Item is already loaded! Can't load it again! Reset it first!");
+  
   // Reset "next_item"
   item.reset();
   
@@ -1183,8 +1190,8 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   }
 
   // Check that enough time has passed since the last time this function was called:
-  if (dtmlast_run != datetime_error && dtmnow - dtmlast_run < 30) return;
-
+  if (dtmlast_run != datetime_error && (dtmnow/30 != dtmlast_run/30)) return;
+  
   // Now remember the last time we ran:
   dtmlast_run = dtmnow;
 
@@ -1844,7 +1851,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
 
     // A -1 lngfc_seg means load the default music profile instead
     run_data.current_segment.load_from_db(db, lngfc_seg, config.strdefault_music_source, dtmnext_starts);
-
+    
     // Log some basic details about the new segment.
     log_line(run_data.current_segment.cat.strname + " segment is scheduled for " + format_datetime(run_data.current_segment.scheduled.dtmstart, "%T") + " to " + format_datetime(run_data.current_segment.scheduled.dtmend, "%T") + " (" + itostr(run_data.current_segment.scheduled.dtmend - run_data.current_segment.scheduled.dtmstart + 1) + "s)");
 
@@ -1893,6 +1900,12 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
 
     // Now log how log what time the segment will start at, and for how long it will play.
     log_message("New segment will run from " + format_datetime(run_data.current_segment.dtmstart, "%T") + " to " + format_datetime(run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1, "%T") + " (" + itostr(run_data.current_segment.intlength) + "s)");
+    
+    // If this is a music playlist then log it to the database:
+    if (run_data.current_segment.cat.cat == SCAT_MUSIC) {
+      // Log the XMMS playlist, and the system's available music later:
+      run_data.blnlog_all_music_to_db = true;
+    }
   }
 
   // Now fetch the next item to play, from the segment:
@@ -1948,23 +1961,56 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
       event_info.intmusic_bed_ends_ms = event_info.intmusic_bed_starts_ms + run_data.current_item.music_bed.intlength_ms;
     }
   }
-  else {
-    // LineIn is playing, or we in a silence segment.
-    // Every 60 seconds we check for the next item:
-    event_info.intitem_ends_ms = 1000 * (60 - (now() % 60));
-  }
 
   // Is this item going to be interrupted to play promos? (ie, item is music, the segment allows promos, and there are waiting promos)
-  if (run_data.current_item.cat == SCAT_MUSIC) {
-    // Current item is Music. Check if there are promos to play
+  if (run_data.current_item.cat == SCAT_MUSIC && !run_data.next_item.blnloaded) {
+      // Current item is Music. Check if there are promos to play
 
     // Check if there is a promo that wants to play now.
-    get_next_item_promo(event_info.promo, intinterrupt_promo_delay);
+    get_next_item_promo(run_data.next_item, intinterrupt_promo_delay);
 
     // So, is there a promo that wants to play now?
-    if (event_info.promo.blnloaded) {
+    if (run_data.next_item.blnloaded) {
       // Yes. So the current item will be interrupted.
       event_info.intpromo_interrupt_ms = intinterrupt_promo_delay;
+    }
+  }
+  
+  // If we're playing linein or silence, then check for the next item:
+  if (run_data.current_item.blnloaded && 
+      run_data.current_item.strmedia == "LineIn" || run_data.current_item.cat == SCAT_SILENCE) {
+    // Is the next item loaded?
+    if (!run_data.next_item.blnloaded) {
+      // So check if there is another item to be played:
+      // How long since we last checked?
+      static datetime dtmlast_check = datetime_error;
+      datetime dtmnow = now();
+      if (dtmlast_check > dtmnow) dtmlast_check = datetime_error; // Clock changed
+      // As soon as the minute changes:
+      if (dtmlast_check/60 != dtmnow/60) {
+        dtmlast_check = dtmnow;
+        // Attempt to fetch the next item.
+        try {
+          get_next_item(run_data.next_item, intinterrupt_promo_delay);
+        } catch(...) {};
+      }
+    }
+    
+    // If the details match the current item (linein, silence, etc), then
+    // reset the info now:
+    if (run_data.next_item.blnloaded) {
+      if (run_data.current_item.cat      == run_data.next_item.cat && 
+          run_data.current_item.strmedia == run_data.next_item.strmedia) {
+        // Yep. So we're still playing linein/silence. Hasn't change.d
+        // Reset the info about the next item:
+        run_data.next_item.reset();
+      }
+    }    
+    
+    // If we have the next item, then setup the end time of the current item:
+    if (run_data.next_item.blnloaded) {
+      // Linein/Silence ends immediately if there is another item    
+      event_info.intitem_ends_ms = 0;
     }
   }
 
@@ -1988,32 +2034,22 @@ void player::player_maintenance(const int intmax_time_ms) {
 
   #define RUN_TIMED(FUNC, FREQ) { \
     static datetime dtmlast = datetime_error; \
-    datetime dtmnow = now(); \
-    if(dtmnow < dtmlast) dtmlast = datetime_error; \
-    if (dtmlast <= dtmnow - FREQ) { \
-      FUNC(dtmcutoff); \
-      dtmlast = now(); \
+    if (now() < dtmcutoff) { \
+      datetime dtmnow = now(); \
+      if (dtmlast/(FREQ) != dtmnow/(FREQ)) { \
+        FUNC(dtmcutoff); \
+        dtmlast = now(); \
+      } \
     } \
   }
 
-  // Every 60s we log the current player status to the logfile:
-/*  
-  {
-    static datetime dtmlast = datetime_error;
-    datetime dtmnow = now();
-    if (dtmnow < dtmlast) dtmlast = datetime_error; // Clock moved backwards
-    if (dtmlast <= dtmnow - 60) {
-      log_line("Hahaha");
-      dtmlast = now();
-    }
-  }
-  */
-  
-  RUN_TIMED(maintenance_check_music,        30);
+  // These events run immediately, and then only after their
+  // frequency (in seconds) has elapsed:
   RUN_TIMED(maintenance_check_received,     10);
   RUN_TIMED(maintenance_check_waiting_cmds, 10);
   RUN_TIMED(maintenance_operational_check,  30);
   RUN_TIMED(maintenance_player_running,     60);
+  RUN_TIMED(maintenance_hide_xmms_windows,  5*60); // Hide all XMMS windows
 }
 
 void player::playback_transition(playback_events_info & playback_events) {
@@ -2065,7 +2101,14 @@ void player::playback_transition(playback_events_info & playback_events) {
       bool blnsegment_change = false; // We also check if the segment changes
       {
         long lngfc_seg_before = run_data.current_segment.lngfc_seg;
-        get_next_item(run_data.next_item, playback_events.intitem_ends_ms);
+        
+        // Only get the next item if it wasn't previously loaded.
+        // This can happen when we're busy playing linein or silence,
+        // or if the current music item is being interrupted for a promo.
+        if (!run_data.next_item.blnloaded) {
+          // Next item is not already known. Switch over:
+          get_next_item(run_data.next_item, playback_events.intitem_ends_ms);
+        }
         blnsegment_change = lngfc_seg_before != run_data.current_segment.lngfc_seg;
       }
 
@@ -2203,14 +2246,9 @@ void player::playback_transition(playback_events_info & playback_events) {
 
     // Current item going to be interrupted by a promo sometime soon?
     // Don't do this if the next item is already loaded!
-    if (!run_data.next_item.blnloaded  && playback_events.intpromo_interrupt_ms < intnext_playback_safety_margin_ms) {
+    if (playback_events.intpromo_interrupt_ms < intnext_playback_safety_margin_ms) {
       // Yes. Queue a music -> promo transition.
-
-      // Fetch the next item from the events info:
-      if (!playback_events.promo.blnloaded) my_throw("Logic Error!"); // This should have been loaded earlier
-      run_data.next_item = playback_events.promo;
-      playback_events.promo.reset(); // Now clear the promo data from the events info record.
-
+      
       // Queue a fade-out for the current item:
       queue_volslide(events, "current", 100, 0, playback_events.intpromo_interrupt_ms, intcrossfade_length_ms);
       // Queue: setup an xmms for the next item.
@@ -2669,23 +2707,114 @@ void player::mark_promo_complete(const long lngtz_slot) {
 }
 
 // Timed player maintenance events. Run when there is spare time during playback.
-// - Called by player_maintenance();
-void player::maintenance_check_music(const datetime dtmcutoff) {
-  undefined;
-}
 
 void player::maintenance_check_received(const datetime dtmcutoff) {
-  undefined;
+  // Run this logic only if we have 60s or more remaining:
+  if (dtmcutoff >= now() + 60) {
+    check_received();
+  }
 }
 
 void player::maintenance_check_waiting_cmds(const datetime dtmcutoff) {
-  undefined;
+  // Run this logic only if we have 60s or more remaining:
+  if (dtmcutoff >= now() + 60) {
+    process_waiting_cmds();
+  }
 }
 
 void player::maintenance_operational_check(const datetime dtmcutoff) {
-  undefined;
+  // Update the live-info file every 10 minutes;
+  // - Only if more than 20 seconds remain:
+  if (dtmcutoff >= now() + 60) {
+    static datetime dtmlast_run = datetime_error;
+    if (now()/(10*60) != dtmlast_run/(10*60)) {
+      try {
+        write_liveinfo();
+      } catch_exceptions;
+      dtmlast_run = now();
+    }
+  }
+  
+  // If the music playlist changed, then the global variable [run_data.blnlog_all_music_to_db] is set. Here is where
+  // we actually log all the available music on the machine.
+  if (run_data.blnlog_all_music_to_db && run_data.current_segment.cat.cat == SCAT_MUSIC && dtmcutoff >= now() + 60) {
+    // Log an informative message.
+    log_message("Music playlist was updated, writing to database...");
+    // Log the playlist to the DB
+    log_music_playlist_to_db();
+    
+    // Also do a quick scan of all the music on the machine, and log this to the database
+    log_message("Scanning machine for music...");
+    log_machine_avail_music_to_db();
+    
+    // Done now:
+    run_data.blnlog_all_music_to_db = false;
+  }
+  
+  // If the cached mp3 tags have changed, write them to disk now:
+  mp3tags.save_changes();
 }
 
 void player::maintenance_player_running(const datetime dtmcutoff) {
+  undefined;
+}
+
+void player::maintenance_hide_xmms_windows(const datetime dtmcutoff) {
+testing; return; // Temporarily not minimizing windows...
+  // Hide all visible XMMS windows.
+  for (int intsession=0; intsession < intmax_xmms; intsession++) {
+    run_data.xmms[intsession].hide_windows();
+  }
+}
+
+// Functions called by maintenance_operational_check:
+
+void player::log_music_playlist_to_db() {
+testing_throw;
+  // Log the contents of the current music playlist to the database
+  // - Check that the current segment is loaded and has a music category:
+  if (!run_data.current_segment.blnloaded) my_throw("Current Format Clock segment is not loaded!");
+  if (run_data.current_segment.cat.cat != SCAT_MUSIC) my_throw("Current Segment does not have a MUSIC category");
+  
+  // Create a postgresql transaction. We're going to be doing a lot of updates:
+  pg_transaction transaction(db);
+
+  const string strPlaylistDescr = "playlist";    
+    
+  // Remove all existing playlist records:
+  string strsql = "DELETE FROM tblplayeroutput WHERE strmsgdesc = " + psql_str(strPlaylistDescr);
+  transaction.exec(strsql);
+  
+  // Now proceed through the playlist:
+  programming_element_list::const_iterator pe = run_data.current_segment.programming_elements.begin();  
+  
+  while (pe != run_data.current_segment.programming_elements.end()) {
+    string strtitle = pe->strmedia;
+    
+    if (strtitle != "LineIn") {
+      // An MP3 then.
+      strtitle = mp3tags.get_mp3_description(strtitle);
+    }
+      
+    string strmessage = ""; ///< Goes into tblplayeroutput.strmessage
+    if (strtitle == "") {
+      strmessage = pe->strmedia + "||" + strtitle;
+    }
+    else {
+      strmessage = pe->strmedia + "||" + get_short_filename(pe->strmedia);
+    }
+      
+    string strsql = "INSERT INTO tblplayeroutput (strmessage, strmsgdesc, dtmtime) VALUES (" + psql_str(strmessage) + ", " + psql_str(strPlaylistDescr) + ", " + psql_time + ")";
+    transaction.exec(strsql);
+    
+    pe++;
+  }
+  
+  // No problems, so commit the database transaction:
+  transaction.commit();
+}
+
+void player::log_machine_avail_music_to_db() {
+  // Scan the harddrive for available music, and log to the database.
   undefined;
 }

@@ -81,13 +81,15 @@ public:
   // Playback timing:
   int intlength; // Length (seconds) that this segment is meant to play for. Calculated after "load_from_db" is called
   datetime dtmstart; // Time when this segment actually starts playing back (we try to keep our segment length constant, regardless of actual start time).
+
+  /// List of items to play during this segment.
+  programming_element_list programming_elements;
 private:
   // Information used to retrieve the "next" item:
-  programming_element_list programming_elements;
-  programming_element_list::iterator next_item; // A pointer to the next item to be returned (if valid etc) by get_next_item
+  programming_element_list::iterator next_item; ///< A pointer to the next item to be returned (if valid etc) by get_next_item
 
-  bool blnfirst_fetched; // Set to true when the first item is fetched. Helps
-                         // logic for navigating the segment items.
+  bool blnfirst_fetched; ///< Set to true when the first item is fetched. Helps
+                         ///< logic for navigating the segment items.
 
   // Functions which are used to operate on the above:
   void generate_playlist(programming_element_list & pel, const string & strsource, pg_connection & db); // strsource is a playlist, directory, etc.

@@ -12,7 +12,7 @@
 #include <fstream>
 #include "file.h"
 #include "exception.h"
-#include "string.h"
+#include "my_string.h"
 
 mp3_tags::mp3_tags(){
   // Initialize internal vars to empty.
@@ -32,7 +32,10 @@ void mp3_tags::init(const string strBuffFilePath) {  // Initialize the mp3_tags 
 
   // Read any previously-buffered details into memory
   strTagBufferFile = strBuffFilePath;
-
+  
+  // Tags buffer file exists?
+  if (!file_exists(strTagBufferFile)) return;
+  
   ifstream tag_list_file(strTagBufferFile.c_str());
   if (!tag_list_file) {
     my_throw("Unable to open " + strTagBufferFile);
