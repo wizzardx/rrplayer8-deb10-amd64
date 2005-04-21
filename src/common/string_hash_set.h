@@ -1,3 +1,9 @@
+#include <ext/hash_set>
+#include <string>
+
+using namespace std;
+using namespace __gnu_cxx;
+
 // String Hash Set (used for quick storing (and searching for) unqiue strings in memory)
 struct string_hash {
   size_t operator()(string s1) const {

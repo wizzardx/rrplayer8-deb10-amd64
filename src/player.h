@@ -2,26 +2,18 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include "programming_element.h"
 #include <string>
+#include <vector>
+#include "common/logging.h"
+#include "common/my_time.h"
 #include "common/psql.h"
-#include "common/testing.h"
-#include "common/xmms_controller.h"
-#include "segment.h"
-#include "common/mp3_tags.h"
+#include "player_run_data.h"
+//#include "common/testing.h"
+//#include "common/xmms_controller.h"
+//#include "common/mp3_tags.h"
+
 
 using namespace std;
-
-// Some player-related constants:
-const string PLAYER_DIR = "/data/radio_retail/progs/player/"; ///< Player program directory. Binary lives here.
-
-const int intcrossfade_length_ms             = 8000; ///< Crossfades run for 8000ms. Also music fade-ins and fade-outs.
-const int intnext_playback_safety_margin_ms = 18000; ///< How long before important playback events, the player should be ready and
-                                                     ///< not run other logic which could cut into time needed for crossfading, etc.
-const int intmax_xmms = 4;                           ///< Number of XMMS sessions required. Multiple XMMS sessions are used for playing music beds and performing custom crossfades.
-                                                     ///< crossfading between two items, both with underlying music.
-const int intmax_segment_push_back = 6*60;           ///< Maximum amount of time in seconds that segments will be
-                                                     ///< "pushed back" because previous segments played for too long.
                                                      
 /// Information about "events" that take place during playback of the current item.
 class playback_events_info {
@@ -100,6 +92,7 @@ private:
       string strspecials;
       string strreceived;
       string strtoday;
+      string strprofiles;
     } dirs;
 
     /// Added in 6.15 (build 330) The location to use for the default music profile:
@@ -150,64 +143,9 @@ private:
   };
 
   // FUNCTIONS AND ATTRIBUTES USED DURING RUN():
-
-   /// Track what a given sound resource (linein, xmms session) is being used for:
-  enum sound_usage {
-    SU_UNUSED,     ///< Not used by an item.
-    SU_CURRENT_FG, ///< Sound resource is busy playing the current item.
-    SU_CURRENT_BG, ///< Sound resource is busy playing the current item's underlying music.
-    SU_NEXT_FG,    ///< Sound resource is busy playing the next item
-    SU_NEXT_BG     ///< Sound resource is busy playing the next item's underlying music
-  };
   
   /// Sub-class containing "run" data. ie XMMS info, "current" programming element, "next" PE, current segment, etc, etc.
-  class run_data {
-  public:
-    void init(); /// Run this to reset/reinitialize playback status.
-  
-    /// Programming elements (current item, next item):
-    programming_element current_item; ///< Current programming element being played. Includes special events, etc.
-    programming_element next_item;    ///< Next programming element to be played.
-
-    // The current Format Clock segment:
-    segment current_segment;
-
-    /// XMMS control:
-    xmms_controller xmms[intmax_xmms]; ///< XMMS controller instances.
-
-    sound_usage xmms_usage[intmax_xmms]; /// What the xmms sessions are being used for
-    sound_usage linein_usage; /// What LineIn is being used for.
-
-    /// Fetch an unused xmms session:
-    int get_free_xmms_session();
-
-    /// Set the status of an XMMS session:
-    void set_xmms_usage(const int intsession, const sound_usage sound_usage);
-
-    /// Fetch which XMMS session is being used by a given "usage". eg, item fg, item bg, etc.
-    /// Throws an exception if we can't find which XMMS session is being used. Also if LineIn is being used.
-    int get_xmms_used(const sound_usage sound_usage);
-
-    /// Returns true if linein is being used for the specified usage (foreground, underlying music, etc).
-    bool uses_linein(const sound_usage sound_usage);
-
-    /// Returns true if there is already a "sound resource" allocated for the specified usage.
-    bool sound_usage_allocated(const sound_usage sound_usage);
-
-    /// Use this to transition info, resource allocation, etc, etc from "next" to "current".
-    void next_becomes_current();
-
-    // How long Format Clock Segments are currently "delayed" by. Segments are "delayed" (ie, they start & end later)
-    // when earlier segments take too long to play. This figure will go up between non-music segments, up to the
-    // limit (6 mins), and then is reduced when we hit a music segment. Music segments are reduced down to a minimum
-    // of 30 seconds to reclaim time back from this "puch back" factor.
-    int intsegment_delay;
-    
-    programming_element_list waiting_promos; ///< List of promos waiting to play. Populated by get_next_item_promo
-    
-    /// Set to true when the player wants to log 1) the XMMS music playlist, and 2) All available music on the machine.
-    bool blnlog_all_music_to_db; 
-  } run_data;
+  player_run_data run_data;
 
   /// Check playback status of XMMS, LineIn, etc.
   /// Throws errors here if there is something wrong.

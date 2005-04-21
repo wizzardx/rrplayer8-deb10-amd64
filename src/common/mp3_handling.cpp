@@ -727,7 +727,6 @@ void NormalizeMP3(const string & strMP3) {
     if (!((substr(strline, 0, 27) == "Applying mp3 gain change of") ||
         ((substr(strline, 0, 13) == "No changes to") &&
          (Right(strline, 13) == "are necessary")))) rr_throw("mp3gain error! Output follows:\n" + stroutput);
-
   }
   
   // Encode to a Wave file    
