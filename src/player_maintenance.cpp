@@ -72,7 +72,7 @@ void player::maintenance_operational_check(const datetime dtmcutoff) {
     log_music_playlist_to_db();
     
     // Also do a quick scan of all the music on the machine, and log this to the database
-    log_message("Scanning machine for music...");
+    log_message("Scanning system, logging available music to database...");
     log_machine_avail_music_to_db();
     
     // Done now:
