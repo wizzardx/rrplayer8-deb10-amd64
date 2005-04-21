@@ -426,7 +426,12 @@ void player::playback_transition(playback_events_info & playback_events) {
             run_data.xmms[intsession].play();
   
             // Log that we're playing it:
-            log_message("Playing [xmms " + itostr(intsession) + "]: \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\"");
+            log_message("Playing (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(run_data.next_item.strvol)) + "%): \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\"");
+            
+            // If it is music, then log the details to the database:
+            if (run_data.next_item.cat == SCAT_MUSIC) {
+              log_song_played(mp3tags.get_mp3_description(run_data.next_item.strmedia));
+            }
   
             // Check if there are any music bed events (for the next item) that will occur *during* the current
             // fade (ie, before we switch over completely to the next item), and queue them here.
@@ -513,7 +518,7 @@ void player::playback_transition(playback_events_info & playback_events) {
           // Start the session
           run_data.xmms[intsession].play();
           // Log that we're playing underlying music:
-          log_message("Music Bed [xmms " + itostr(intsession) + "]: \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\"");
+          log_message("Music Bed (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(pe->music_bed.strvol)) + "%): \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\"");
 
           // Record that this event has been handled:
           pe->music_bed.already_handled.blnstart = true;

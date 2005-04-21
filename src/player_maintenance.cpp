@@ -7,6 +7,7 @@
 #include "common/string_splitter.h"
 #include "common/my_string.h"
 #include "common/temp_dir.h"
+#include "common/linein.h"
 #include <fstream>
 
 void player::player_maintenance(const int intmax_time_ms) {
@@ -84,7 +85,26 @@ void player::maintenance_operational_check(const datetime dtmcutoff) {
 
 void player::maintenance_player_running(const datetime dtmcutoff) {
   // Display a line (once every minute) showing that the player is running...
-  log_line("Running...");
+  string strline = "Running... (";
+  if (run_data.current_item.cat == SCAT_SILENCE) {
+    strline += "Silence";
+  }
+  else if (run_data.current_item.strmedia == "LineIn") {
+    strline += "LineIn: " + itostr(linein_getvol()) + "%";
+  }
+  else {
+    int intsession = run_data.get_xmms_used(SU_CURRENT_FG);
+    strline += "xmms " + itostr(intsession) + ": " + itostr(run_data.xmms[intsession].getvol()) + "%";
+    
+    // Fetch the volume of the music bed, if one is being used: 
+    try {
+      intsession = run_data.get_xmms_used(SU_CURRENT_BG); // Try to fetch the session
+      // No exception thrown, so we have an xmms session for the music bed.
+      strline += ". Music bed: xmms " + itostr(intsession) +": " + itostr(run_data.xmms[intsession].getvol()) + "%";
+    } catch(...) {}
+  }
+  strline += ")";
+  log_line(strline);
 }
 
 void player::maintenance_hide_xmms_windows(const datetime dtmcutoff) {

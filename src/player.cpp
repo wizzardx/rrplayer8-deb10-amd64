@@ -1205,3 +1205,29 @@ void player::mark_promo_complete(const long lngtz_slot) {
   db.exec(strsql);
 }
 
+// Called by playback_transition:
+void player::log_song_played(const string & strdescr) {
+  string strsql = "INSERT INTO tblMusicHistory (dtmTime, strDescription) VALUES (" + psql_now + ", " + psql_str(strdescr) + ")";
+  pg_result rs = db.exec(strsql);
+  
+  // If there are more than 100 MP3s listed then erase the oldest MP3s
+  strsql = "SELECT COUNT(lngPlayedMP3) AS Counter FROM tblMusicHistory";
+  rs = db.exec(strsql);
+
+  int intCounter = 0;
+
+  if (!rs.eof())
+    intCounter = strtoi(rs.field("Counter", "0"));
+
+  if (intCounter > 100) {
+    // There are more then 100 MP3's Listed - erase the oldest
+    strsql = "SELECT lngPlayedMP3 FROM tblMusicHistory ORDER BY lngPlayedMP3 LIMIT " + itostr(intCounter - 100);
+    rs = db.exec(strsql);
+    while (!rs.eof()) {
+      strsql = "DELETE FROM tblMusicHistory WHERE lngPlayedMP3 = " + rs.field("lngPlayedMP3", "-1");
+      db.exec(strsql);
+      rs.movenext();
+    }
+  }
+}
+

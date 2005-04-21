@@ -219,6 +219,9 @@ private:
   void log_machine_avail_music_to_db(); ///< Scan the harddrive for available music, and log to the database.
   
   mp3_tags mp3tags; ///< A cache of mp3 tags, used for quickly retrieving mp3 details.
+
+  // Called by playback_transition:
+  void log_song_played(const string & strdescr); ///< Log the latest song to tblmusichistory
 };
 
 extern player * pplayer; // A pointer to the currently-running player instance. Automatically maintained
