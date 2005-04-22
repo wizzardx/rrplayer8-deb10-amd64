@@ -239,6 +239,7 @@ void segment::setup_as_music_profile(const string & strmusic_source, const strin
   blnpromos      = true; // Allow announcement playback during this segment.
   blnrepeat      = true; // Music
   blncrossfading = true; // Music items crossfade into each other.
+  blnmusic_bed   = false; // Music profiles don't have underlying music.
 
   // Now generate a music playlist from the specified location:
   generate_playlist(programming_elements, strmusic_source, db); // Also shuffles the list
@@ -378,7 +379,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
         pe.music_bed.strmedia    = get_music_bed_media(strtol(music_bed.strsub_cat), db);
         pe.music_bed.strvol      = "MUSIC";
         pe.music_bed.intstart_ms = 0; // Not yet using this functionality.
-        pe.music_bed.intlength_ms = 60*60; // Not yet using this functionality.
+        pe.music_bed.intlength_ms = 1000*60*60; // Not yet using this functionality.
         pe.blnmusic_bed = true;
       }
       pe.blnloaded = true;
@@ -517,7 +518,6 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
         } catch_exceptions;
       } break;
       case PBS_DEFAULT_MUSIC: {
-        testing;
         my_throw("There was a problem with the Default music profile, but there is nothing else to play!");
         blndone = true;
       } break;

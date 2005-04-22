@@ -642,7 +642,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       int intdiff = dtmnext_starts - dtmseg_end - 1; // Take out that extra second here.
       int intnew_segment_delay = run_data.intsegment_delay + intdiff;
       if (intnew_segment_delay > intmax_segment_push_back) {
-        testing_throw;
+        testing;
         log_warning("I have to drop " + itostr(intnew_segment_delay - intmax_segment_push_back) + "s of segment playback time! I've reached my segment 'delay' limit of " + itostr(intmax_segment_push_back) + "s");
         intnew_segment_delay = intmax_segment_push_back;
       }

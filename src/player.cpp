@@ -1108,12 +1108,17 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
       event_info.intmusic_bed_starts_ms = run_data.current_item.music_bed.intstart_ms - intxmms_song_pos_ms;
       // Music bed end:
       event_info.intmusic_bed_ends_ms = event_info.intmusic_bed_starts_ms + run_data.current_item.music_bed.intlength_ms;
+      
+      // If the item is going to end sooner than the music bed, then use the item's end instead:
+      if (event_info.intitem_ends_ms < event_info.intmusic_bed_ends_ms) {
+        event_info.intmusic_bed_ends_ms = event_info.intitem_ends_ms;
+      }
     }
   }
 
   // Is this item going to be interrupted to play promos? (ie, item is music, the segment allows promos, and there are waiting promos)
   if (run_data.current_item.cat == SCAT_MUSIC && !run_data.next_item.blnloaded) {
-      // Current item is Music. Check if there are promos to play
+    // Current item is Music. Check if there are promos to play
 
     // Check if there is a promo that wants to play now.
     get_next_item_promo(run_data.next_item, intinterrupt_promo_delay);

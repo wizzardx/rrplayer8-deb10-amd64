@@ -191,7 +191,6 @@ void player::playback_transition(playback_events_info & playback_events) {
       // Yes. Queue a background music bed "end"
       // - But only if it wasn't previously queued!
       if (!run_data.current_item.music_bed.already_handled.blnstop) {
-        testing;
         queue_event(events, "current_music_bed_stop", playback_events.intmusic_bed_ends_ms);
       }
     }
