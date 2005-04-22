@@ -11,5 +11,6 @@ const int intmax_xmms = 4;                           ///< Number of XMMS session
                                                      ///< crossfading between two items, both with underlying music.
 const int intmax_segment_push_back = 6*60;           ///< Maximum amount of time in seconds that segments will be
                                                      ///< "pushed back" because previous segments played for too long.
+const bool blndebug = true;                          ///< Is the player in debugging mode? The player will log extra output.
 
 #endif

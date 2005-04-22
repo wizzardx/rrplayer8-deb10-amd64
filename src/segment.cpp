@@ -374,13 +374,12 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
       pe.strvol = (pe.cat == SCAT_MUSIC ? "MUSIC" : "PROMO");
       // Add a Music bed?
       if (blnmusic_bed) {
-        testing_throw;
         // Yes. Set music bed details:
         pe.music_bed.strmedia    = get_music_bed_media(strtol(music_bed.strsub_cat), db);
         pe.music_bed.strvol      = "MUSIC";
         pe.music_bed.intstart_ms = 0; // Not yet using this functionality.
         pe.music_bed.intlength_ms = 60*60; // Not yet using this functionality.
-        testing_throw;
+        pe.blnmusic_bed = true;
       }
       pe.blnloaded = true;
       pel.push_back(pe);
@@ -518,7 +517,7 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
         } catch_exceptions;
       } break;
       case PBS_DEFAULT_MUSIC: {
-        testing_throw;
+        testing;
         my_throw("There was a problem with the Default music profile, but there is nothing else to play!");
         blndone = true;
       } break;
@@ -698,21 +697,18 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       dir_list dir(strdir, ".m3u", DT_REG | DT_LNK);
       string strfile = dir;
       while (strfile != "") {
-        testing_throw;
         if (intrecursion_level > 0) {
-          testing_throw;
           // Process contents of the M3U file:
-          recursive_add_to_string_list(file_list, strfile, intrecursion_level - 1, db);
+          recursive_add_to_string_list(file_list, strdir + strfile, intrecursion_level - 1, db);
           ++intadded;
-          testing_throw;
         }
         else {
-          testing_throw;
+          testing;
           // Can't process the M3U file, have reached recursion level.
           log_warning("Not processing M3U file " + strdir + strfile + ". I am already at my maxiumum search depth.");
-          testing_throw;
+          testing;
         }
-        testing_throw;
+        strfile = dir;
       }
 
       // Log a warning if we didn't find any files:
@@ -782,7 +778,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
   }
 
   // Could not find the source:
-  testing_throw;
+  testing;
   log_warning("Source not found: \"" + strsource + "\"");
-  testing_throw;
+  testing;
 }

@@ -171,11 +171,10 @@ void player::playback_transition(playback_events_info & playback_events) {
         }
       }
 
-      // Queue a "stop" for the current item's music bed if it has one
-      if (run_data.current_item.blnloaded && run_data.current_item.blnmusic_bed) {
-        queue_event(events, "current_music_bed_stop", intnext_becomes_current_ms-1);
-      }
-
+//      // Queue a "stop" for the current item's music bed if it has one
+//      if (run_data.current_item.blnloaded && run_data.current_item.blnmusic_bed) {
+//        testing;
+//        queue_event(events, "current_music_bed_stop", intnext_becomes_current_ms-1);
     }
 
     // Current item music bed going to start soon?
@@ -191,9 +190,9 @@ void player::playback_transition(playback_events_info & playback_events) {
     if (playback_events.intmusic_bed_ends_ms < intnext_playback_safety_margin_ms) {
       // Yes. Queue a background music bed "end"
       // - But only if it wasn't previously queued!
-      testing_throw;
       if (!run_data.current_item.music_bed.already_handled.blnstop) {
-        queue_event(events, "current_music_bed_end", playback_events.intmusic_bed_ends_ms);
+        testing;
+        queue_event(events, "current_music_bed_stop", playback_events.intmusic_bed_ends_ms);
       }
     }
 
@@ -265,7 +264,7 @@ void player::playback_transition(playback_events_info & playback_events) {
 
       // Now handle the event:
       {
-        // cout << "[" << current_event->intrun_ms << "] " << current_event->strevent << endl;
+        if (blndebug) cout << "[" << current_event->intrun_ms << "] " << current_event->strevent << endl;
         // Fetch the main command, and any argument from the event string:
         string strcmd = "";
         string strarg = "";
@@ -454,7 +453,7 @@ void player::playback_transition(playback_events_info & playback_events) {
               // Queue a "next_music_bed_end" if it does end in the near future...
               if (run_data.next_item.music_bed.intstart_ms + run_data.next_item.music_bed.intlength_ms < intnext_becomes_current_ms) {
   testing_throw;
-                queue_event(events, "next_music_bed_end", intnow_ms + 2 + run_data.next_item.music_bed.intstart_ms + run_data.next_item.music_bed.intlength_ms);
+                queue_event(events, "next_music_bed_stop", intnow_ms + 2 + run_data.next_item.music_bed.intstart_ms + run_data.next_item.music_bed.intlength_ms);
               }
   
               // Now sort the list of events:
@@ -589,10 +588,9 @@ void player::playback_transition(playback_events_info & playback_events) {
 
 }
 
-
 // Used by playback_transition():
 void player::queue_event(transition_event_list & events, const string & strevent, const int intwhen_ms) {
-//  cout << "Queued: [" << intwhen_ms << "] " << strevent << endl;  
+  if (blndebug) cout << "Queued: [" << intwhen_ms << "] " << strevent << endl;  
   // Add an event to the queue.
   // Setup the event:
   transition_event event;

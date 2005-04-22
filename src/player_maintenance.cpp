@@ -103,7 +103,7 @@ void player::maintenance_player_running(const datetime dtmcutoff) {
       strline += ". Music bed: xmms " + itostr(intsession) +": " + itostr(run_data.xmms[intsession].getvol()) + "%";
     } catch(...) {}
   }
-  strline += ")";
+  strline += ". Next playback event: " + itostr(dtmcutoff-now()) +"s)";
   log_line(strline);
 }
 
