@@ -120,8 +120,8 @@ long count_file_lines(const string & strfilepath) {
 
   string strline;
   int intcount=0;
-  testing_throw;
   while (getline(inFile, strline)) ++intcount;
+  return intcount;
 }
 
 bool find_text_in_file(const string & strtext, const string & strfile_path) {

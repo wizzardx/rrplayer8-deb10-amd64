@@ -547,7 +547,6 @@ long date_diff(const string & interval, const datetime date1, const datetime dat
   }
   else if (interval == "n") {
     // Minute
-
     testing_throw; // Have to do this part differently! See get_datetime_time;    
     return (date2-timezone)/60 - (date1-timezone)/60;      
   }

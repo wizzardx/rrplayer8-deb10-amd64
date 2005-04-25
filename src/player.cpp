@@ -196,9 +196,6 @@ void player::log(const log_info & LI) {
 }
 
 void player::init() {
-  // The player init takes place here, because kdevelop breakpoints in constructors don't work.
-  tzset(); // Set up C vars which indicate the timezone.
-
   // Log the player's version & build numbers:
   string strintro_line = (string)" Starting Player v" + VERSION;
   string strequals_line = "";

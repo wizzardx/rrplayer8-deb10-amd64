@@ -18,15 +18,15 @@ void clogging::log(const log_type LT, const string & strdesc, const string & str
   // Setup the structure with logging info:
   log_info L = {LT, strdesc, get_short_filename(strfile), strfunc, intline};
 
+  // Don't allow this function to be called recursively:
+  static bool blnrunning = false;
+  
   try {
-    // Don't allow this function to be called recursively:
-    static bool blnrunning = false;
     if (blnrunning) {
-      testing_throw;
       cerr << "*** The logging functions are not re-entrant! Check your logic!" << endl;
-      cerr << "*** You tried to log this message during your log handler:" << format_log(L, strstandard_log_format) << endl;
+      cerr << "*** You tried to log this message during your log handler:" << endl;
       cerr << "***   " << format_log(L, strstandard_log_format) << endl;
-      testing_throw;
+      return;
     }
     blnrunning = true;
 
@@ -42,19 +42,16 @@ void clogging::log(const log_type LT, const string & strdesc, const string & str
         cerr << "*** The following was being logged: " << format_log(L, strstandard_log_format) << endl;
       }
       catch (...) {
-        testing_throw;
-        cerr << "*** An unidentifiable error occured while logging!" << endl;
+        cerr << "*** An unknown exception was thrown while logging!" << endl;
         cerr << "*** The following was being logged: " << format_log(L, strstandard_log_format) << endl;
-        testing_throw;
       }
       ++I;
     }
-    blnrunning = false;
   } catch(...) {
-    testing_throw;
-    cerr << "*** An unexpected exception was thrown in " << __FUNCTION__<< "!" << endl;
-    testing_throw;
+    cerr << "*** An unexpected exception was thrown in " << __FUNCTION__<< "()!" << endl;
   }
+  
+  blnrunning = false;
 };
 
 string format_log(const log_info & log_info, const string strformat) {
