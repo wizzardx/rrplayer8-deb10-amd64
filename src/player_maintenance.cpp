@@ -8,6 +8,7 @@
 #include "common/my_string.h"
 #include "common/temp_dir.h"
 #include "common/linein.h"
+#include "common/testing.h"
 #include <fstream>
 
 void player::player_maintenance(const int intmax_time_ms) {
@@ -103,7 +104,16 @@ void player::maintenance_player_running(const datetime dtmcutoff) {
       strline += ". Music bed: xmms " + itostr(intsession) +": " + itostr(run_data.xmms[intsession].getvol()) + "%";
     } catch(...) {}
   }
-  strline += ". Next playback event: " + itostr(dtmcutoff-now()) +"s)";
+
+  // If the next playback event is more than an 24 hours in the future then don't
+  // print it. Probably the end time is undefined (eg: silence, linein).
+  {
+    long lngseconds_remaining = dtmcutoff - now();
+    if (lngseconds_remaining < 24*60*60) {
+      strline += ". Next playback event: " + itostr(lngseconds_remaining) +"s";
+    }
+  }
+  strline += ")";
   log_line(strline);
 }
 

@@ -87,7 +87,7 @@ void player::run() {
       
       if (playback_events.intnext_ms > intnext_playback_safety_margin_ms) {
         // If we have enough time left (> Safety margin, or unknown), then:
-        // - Do background maintenance (separate function). Events have frequencies, (sometimes desired "second" to take place at), and are prioritiesed.
+        // - Do background maintenance (separate function). Has built-in timing.
         player_maintenance(playback_events.intnext_ms - intnext_playback_safety_margin_ms);
       }
       else {

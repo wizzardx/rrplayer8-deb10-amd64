@@ -92,7 +92,7 @@ private:
                          ///< logic for navigating the segment items.
 
   // Functions which are used to operate on the above:
-  void generate_playlist(programming_element_list & pel, const string & strsource, pg_connection & db); // strsource is a playlist, directory, etc.
+  void generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db); // strsource is a playlist, directory, etc.
 
   // Shuffle a programming element list:
   void shuffle_pel(programming_element_list & pel);
