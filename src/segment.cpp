@@ -461,7 +461,7 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
   
   // Is the sequence "Specific"? (ie, use only 1 media item)
   if (sequence == SSEQ_SPECIFIC) {
-testing_throw;
+testing;
     // Prepare a single programming element and add it to the list.
     if (!file_exists(strspecific_media)) my_throw("Segment's 'specific' media not found: " + strspecific_media);
     strsource = strspecific_media;
@@ -523,6 +523,7 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
           
           // Disable some settings from the original category & sub-category:
           blnmusic_bed = false;
+          sequence = SSEQ_RANDOM;
           
           // Now load the new playlist & setup the iterator:
           load_pe_list(programming_elements, alt_cat, alt_sub_cat, db);
@@ -750,10 +751,10 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
     // What is the file extension?
     string strext=lcase(right(strsource, 4));
     if (strext==".mp3") {
-      testing_throw;
-      // A MP3 file. Add it to the list:
+      testing;
+      // An MP3 file. Add it to the list:
       file_list.push_back(strsource);
-      testing_throw;
+      testing;
     }
     else if (strext==".m3u") {
       // A M3U file. Are we at our recursion level?
