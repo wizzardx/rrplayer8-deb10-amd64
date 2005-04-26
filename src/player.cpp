@@ -1110,6 +1110,12 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
       if (event_info.intitem_ends_ms < event_info.intmusic_bed_ends_ms) {
         event_info.intmusic_bed_ends_ms = event_info.intitem_ends_ms;
       }
+      
+      // Now reset fields if they were already handled
+      // (eg, we don't list ms until the music bed start if it was already
+      // handled).
+      if (run_data.current_item.music_bed.already_handled.blnstart) event_info.intmusic_bed_starts_ms = INT_MAX;
+      if (run_data.current_item.music_bed.already_handled.blnstop)  event_info.intmusic_bed_ends_ms   = INT_MAX;      
     }
   }
 

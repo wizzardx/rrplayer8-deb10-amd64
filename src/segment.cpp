@@ -242,6 +242,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
     log_message("Reverting to the default music profile.");
     testing;
     load_from_db(db, -1, strdefault_music_source, dtmtime);
+    lngfc_seg = lngfc_seg_arg; // And restore the value. We are playing default music, but our segment remains unchanged.
   }
 
   // The variable "dtmstarted" gets set later, when the first item from this segment actually starts playing.
@@ -801,7 +802,5 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
   }
 
   // Could not find the source:
-  testing;
   log_warning("Source not found: \"" + strsource + "\"");
-  testing;
 }

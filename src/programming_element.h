@@ -33,7 +33,7 @@ public:
     string strvol;    // What volume to play it at
     int intstart_ms;  // What time during the item the music bed is started. Default: 0 (beginning).
     int intlength_ms;    // How long the underlying music will play for before being stopped. Default: -1 (end when the item ends, or when the underlying music ends. No repeat)
-                         // If the length is left at -1, then we don't know the length (eg: silence or linein).
+                         // If the length is left at INT_MAX, then we don't know the length (eg: silence or linein).
                          
     
 

@@ -517,6 +517,18 @@ void player::playback_transition(playback_events_info & playback_events) {
           run_data.xmms[intsession].play();
           // Log that we're playing underlying music:
           log_message("Music Bed (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(pe->music_bed.strvol)) + "%): \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\"");
+          
+          // Fetch the length of the music bed according to XMMS:
+          {
+            int intmusic_bed_length_ms_xmms = run_data.xmms[intsession].get_song_length_ms();
+            
+            // If the music bed's length is unknown (or was listed as too long in the db), update it here:
+            if (pe->music_bed.intlength_ms > intmusic_bed_length_ms_xmms) {
+              pe->music_bed.intlength_ms = intmusic_bed_length_ms_xmms;
+            }
+          }
+          
+          // If the music bed's length is unknown, 
 
           // Record that this event has been handled:
           pe->music_bed.already_handled.blnstart = true;
