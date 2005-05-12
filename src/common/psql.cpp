@@ -17,7 +17,6 @@
 #include "exception.h"
 #include "my_string.h"
 #include "logging.h"
-#include "testing.h"
 
 #include <pqxx/transaction.h>
 #include <pqxx/nontransaction.h>

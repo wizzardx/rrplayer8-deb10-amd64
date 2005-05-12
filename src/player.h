@@ -110,8 +110,8 @@ private:
                                    ///< were scheduled.
   } config;
   
-  void read_config_file(); // Read database connection settings from the player config file into the config.db structure.
-  void load_db_config();   // Load all the other settings (besides config.db) into the config structure.
+  void read_config_file(); ///< Read database connection settings from the player config file into the config.db structure.
+  void load_db_config();   ///< Load all the other settings (besides config.db) into the config structure.
 
   // Load & Save tbldefs settings:
   string load_tbldefs(const string & strsetting, const string & strdefault, const string & strtype);

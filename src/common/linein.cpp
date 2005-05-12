@@ -1,7 +1,7 @@
 #include "linein.h"
-#include "testing.h"
 #include "my_string.h"
 #include "string_splitter.h"
+#include "exception.h"
 
 int linein_getvol() {
   // Use an "aumix -q" call combined with a "grep" to fetch the linein level

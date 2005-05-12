@@ -20,11 +20,12 @@ void player_run_data::init() {
     // Setup a controller for the session:
     xmms[intsession].set_session(intsession);
 
-    // Check if the session is running:
+    // Check if the session is running. If it is, then do some further init.
     try {
       xmms[intsession].running(); // Throws an exception if xmms is not running.
       xmms[intsession].stop(); // Stop the XMMS session.
       xmms[intsession].setrepeat(false); // Turn off repeat
+      xmms[intsession].hide_windows(); // Hide all visible XMMS windows
     }
     catch(...) {
       // We don't throw this as an exception. Init will still succeed. Later the

@@ -65,6 +65,7 @@ public:
   int intmax_age;           // If so, this is the maximum age.
   bool blnpremature;        // Ignore the "Relevant from" setting of sub-category media
   bool blnrepeat;           // Repeat sub-category media in this segment?
+  int intmax_items;         ///< Maximum number of items allowed to play during this segment;
 
   // Current state (playing from category, alternate category, or default music profile)
   enum playback_state {
@@ -90,6 +91,9 @@ private:
 
   bool blnfirst_fetched; ///< Set to true when the first item is fetched. Helps
                          ///< logic for navigating the segment items.
+                         
+  int intnum_fetched;   ///< Number of items fetched so far. Used with intmax_items
+                        ///< to limit the number of items played in a segment.
 
   // Functions which are used to operate on the above:
   void generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db); // strsource is a playlist, directory, etc.
@@ -109,11 +113,16 @@ private:
   seg_category parse_category_string(const string & strcat);
   seg_sequence parse_sequence_string(const string & strseq);
   void load_sub_cat_struct(struct sub_cat & sub_cat, const string strsub_cat, pg_connection & db, const struct cat & cat, const long lngfc_seg, const string & strdescr, const string & strfield);
-  string get_music_bed_media(const long lngsub_cat, pg_connection & db);
 
   // A recursive function used to load m3u files that contain directories, and directories which contain m3us:
   // Also applies special logic to format clock sub-category directories
   void recursive_add_to_string_list(vector <string> & file_list, const string & strsource, const int intrecursion_level, pg_connection & db);
+  
+  // Cached list of music bed items to use during this segment:
+  vector <string> music_bed_media;
+  vector <string>::const_iterator music_bed_media_it;
+  void list_music_bed_media(pg_connection & db); // Setup the music_bed_media list (and shuffle)
+  string get_music_bed_media();  
 };
 
 #endif

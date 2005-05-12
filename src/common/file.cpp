@@ -7,7 +7,6 @@
 #include "exception.h"
 #include "dir_list.h"
 #include "my_string.h"
-#include "testing.h"
 #include <fstream>
 #include "system.h"
 #include "string_splitter.h"
@@ -35,8 +34,6 @@ bool file_exists(const string & strpath) {
 
   return Ret_Val;
 }
-
-
 
 bool file_existsi(const string & strdir, const string & strfname, string & stractual_filename) {
 #ifndef __linux__

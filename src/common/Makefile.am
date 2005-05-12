@@ -8,3 +8,4 @@ libcommon_a_SOURCES = file.cpp psql.cpp logging.cpp exception.cpp my_time.cpp \
 		xmms_controller.cpp linein.cpp string_splitter.cpp char_array_maths.cpp temp_dir.cpp \
 		xmmsctrl.cpp mp3_tags.cpp string_hash_set.cpp
 
+

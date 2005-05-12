@@ -7,8 +7,10 @@
 #include "file.h"
 
 // Development macros, catching exceptions...
-#define undefined  cout << "UNDEFINED: " << __FUNCTION__ << "(), " << get_short_filename(__FILE__) << ":" << __LINE__ << endl
-#define testing    cout << "TESTING: " << __FUNCTION__ << "(), " << get_short_filename(__FILE__) << ":" << __LINE__ << endl
+//#define undefined  cout << "UNDEFINED: " << __FUNCTION__ << "(), " << get_short_filename(__FILE__) << ":" << __LINE__ << endl
+//#define testing    cout << "TESTING: " << __FUNCTION__ << "(), " << get_short_filename(__FILE__) << ":" << __LINE__ << endl
+#define undefined  log_line((string)"UNDEFINED: " + __FUNCTION__ + "(), " + get_short_filename(__FILE__) + ":" + itostr(__LINE__));
+#define testing    log_line((string)"TESTING: " + __FUNCTION__ + "(), " + get_short_filename(__FILE__) + ":" + itostr(__LINE__));
 
 // Print "UNDEFINED" or "TESTING" as per the above,
 // and then throw an exception:

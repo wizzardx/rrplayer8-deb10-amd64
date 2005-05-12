@@ -4,7 +4,7 @@
     begin                : Wed Mar 16 2005
     copyright            : (C) 2005 by David Purdy
     email                : david@radioretail.co.za
- ***************************************************************************/
+ *******************************************f********************************/
 
 #include "player.h"
 #include "common/exception.h"
@@ -196,7 +196,7 @@ void player::log(const log_info & LI) {
 }
 
 void player::init() {
-  // Log the player's version & build numbers:
+  // Log the player version:
   string strintro_line = (string)" Starting Player v" + VERSION;
   string strequals_line = "";
   for (unsigned i=0; i < strintro_line.length() + 1; ++i) strequals_line += '=';

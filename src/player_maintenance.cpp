@@ -22,7 +22,9 @@ void player::player_maintenance(const int intmax_time_ms) {
     if (now() < dtmcutoff) { \
       datetime dtmnow = now(); \
       if (dtmlast/(FREQ) != dtmnow/(FREQ)) { \
-        FUNC(dtmcutoff); \
+        try { \
+          FUNC(dtmcutoff); \
+        } catch_exceptions; \
         dtmlast = now(); \
       } \
     } \

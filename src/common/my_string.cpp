@@ -95,7 +95,7 @@ int strtoi(const string & str) {
 
   // Check if the converted number is in range for an int (we converted to a 
   // long because there is no strtoi function in libc:
-  if ((lngNum <= INT_MIN) || (lngNum >= INT_MAX)) {
+  if ((lngNum < INT_MIN) || (lngNum > INT_MAX)) {
     my_throw(ltostr(lngNum) + " is outside of the allowed integer range!");
   }
 
@@ -126,7 +126,7 @@ long strtol(const string & str) {
   }
 
   // Check if the converted number is in the allowed range:  
-  if ((lngNum <= LONG_MIN) || (lngNum >= LONG_MAX)) {      
+  if ((lngNum < LONG_MIN) || (lngNum > LONG_MAX)) {      
     my_throw(strnumber + " is outside of the allowed long integer range!");
   }
 

@@ -254,7 +254,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
           blnSkipItem = true;
         }
         else {
-          testing_throw;
+          testing;
           // We found 1 matching record, and found it. Now check the current date against the listed global expiry date, and
           // the current lifespan, of the prerecorded item.
           int intglobalexp = strtoi(rsPrerecItem.field("intglobalexp", "-1"));
@@ -265,19 +265,19 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
           // Check the global expiry date
           if ((intglobalexp != -1) && (intglobalexp < inttoday_rrdate)) {
-            testing_throw;
+            testing;
             // Global expiry date has elapsed!
             log_error("Advert skipped because because it's global expiry date has passed: " + scFileName);
             blnSkipItem = true;
           }
           // Check the lifespan.
           else if ((intlifespan != -1) && (intlifespan < inttoday_rrdate)) {
-            testing_throw;
+            testing;
             // Lifespan has elapsed!
             log_error("Advert skipped because the period it was purchased for has expired: " + scFileName);
             blnSkipItem = true;
           }
-          testing_throw;
+          testing;
         }
       }
     }
@@ -690,7 +690,6 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
           lngfc_seg = get_fc_segment(lngfc, strfc_time_without_hour);
         }
         catch(const my_exception & e) {
-          testing_throw;
           // We failed to get a segment.
           log_warning(e.get_error());
           log_warning("Will revert to the default format clock");
@@ -777,9 +776,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     if (run_data.current_segment.cat.cat == SCAT_MUSIC && run_data.current_segment.intlength > 60) {
       int intnew_length = run_data.current_segment.intlength - run_data.intsegment_delay;
       if (intnew_length < 60) {
-        testing_throw;
         intnew_length = 60;
-        testing_throw;
       }
       int intdiff = run_data.current_segment.intlength - intnew_length;
       if (intdiff > 0) {
