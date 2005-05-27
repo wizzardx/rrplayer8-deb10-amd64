@@ -53,7 +53,7 @@ private:
   void reset(); ///< Reset ALL object attributes to default, uninitialized values.
   void remove_waiting_mediaplayer_cmds(); ///< Remove waiting MediaPlayer commands (pause, stop, resume, etc)
   void write_liveinfo(); ///< Write status info to a table for the Global Reporter to read.
-  void write_liveinfo_setting(const string strname, const string strvalue);
+  void write_liveinfo_setting(const string & strname, const string & strvalue);
   void check_received(); ///< Check the Received directory for .CMD files
   void load_cmd_into_db(const string strfull_path);
   void process_waiting_cmds();
