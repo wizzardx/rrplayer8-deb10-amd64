@@ -1,1 +1,0 @@
-void send_email(const string & strFrom, const string & strTo, const string & strSubject, const string & strBody);
