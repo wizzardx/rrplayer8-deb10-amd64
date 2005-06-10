@@ -8,7 +8,6 @@
 #include "common/my_string.h"
 #include "common/temp_dir.h"
 #include "common/linein.h"
-#include "common/testing.h"
 #include <fstream>
 
 void player::player_maintenance(const int intmax_time_ms) {

@@ -1,6 +1,5 @@
 
 #include "programming_element.h"
-#include "common/testing.h"
 
 // Constructor
 programming_element::programming_element() {

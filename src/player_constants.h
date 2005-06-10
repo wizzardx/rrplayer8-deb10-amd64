@@ -2,7 +2,8 @@
 #define PLAYER_CONSTANTS_H
 
 // Some player-related constants:
-const string PLAYER_DIR = "/data/radio_retail/progs/player/"; ///< Player program directory. Binary lives here.
+const string PLAYER_DIR      = "/data/radio_retail/progs/player/"; ///< Player program directory. Binary & logfile lives here.
+const string PLAYER_LOG_FILE = PLAYER_DIR + "player.log";
 
 const int intcrossfade_length_ms             = 8000; ///< Crossfades run for 8000ms. Also music fade-ins and fade-outs.
 const int intnext_playback_safety_margin_ms = 18000; ///< How long before important playback events, the player should be ready and

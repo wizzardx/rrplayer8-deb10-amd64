@@ -8,10 +8,6 @@
 #include "common/my_time.h"
 #include "common/psql.h"
 #include "player_run_data.h"
-//#include "common/testing.h"
-//#include "common/xmms_controller.h"
-//#include "common/mp3_tags.h"
-
 
 using namespace std;
                                                      
@@ -113,10 +109,6 @@ private:
   void read_config_file(); ///< Read database connection settings from the player config file into the config.db structure.
   void load_db_config();   ///< Load all the other settings (besides config.db) into the config structure.
 
-  // Load & Save tbldefs settings:
-  string load_tbldefs(const string & strsetting, const string & strdefault, const string & strtype);
-  void save_tbldefs(const string & strsetting, const string & strtype, const string & strvalue);
- 
   /// Current store status
   struct store_status {
      bool blnopen; ///< Is the store currently open? (compare current time with tblstorehours).

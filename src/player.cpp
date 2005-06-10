@@ -14,11 +14,12 @@
 #include "config.h"
 #include "common/system.h"
 #include "common/rr_date.h"
-#include "common/testing.h"
 #include "common/config_file.h"
 #include "common/rr_security.h"
 #include "common/dir_list.h"
 #include "common/linein.h"
+#include "common/rr_misc.h"
+#include "common/testing.h"
 
 player * pplayer = NULL; // A pointer to the player object, used by callback functions.
 
@@ -104,105 +105,13 @@ void player::run() {
 }
 
 void player::log(const log_info & LI) {
-  // Call this to write a log to the player logfile & to the schedule database.
-  bool blnlog_tbllog    = false; // Do we write to tbllog?  
-  bool blnlog_tblerrors = false; // Do we write to tblerrors?
-  string strtype = "";           // Message severity, used when writing to log tables.
-  
-  switch (LI.LT) {
-    case LT_LINE: break; // Means we just log to a text file
-    case LT_MESSAGE: {
-      blnlog_tbllog = true;
-      strtype       = "LOW";
-    } break;
-    case LT_WARNING: case LT_ERROR: {
-      blnlog_tblerrors = true;
-      strtype         = "MEDIUM";
-    } break;
-    default: my_throw("Logic Error!"); // There should be no other types!
-  }
-
-  // Format into a string for text-based logging:
-  string strmessage = format_log(LI, strstandard_log_format);
-    
-  // Write to clog:
-  clog << strmessage << endl;
-  
-  // Log to file:
-  string strlog_file = PLAYER_DIR + "player.log";
-  append_file_str(strlog_file, strmessage);
-
-  // And some basic month-day-based log rotation:
-  rotate_logfile(strlog_file);
-
-  // Log to tbllog:
-  if (blnlog_tbllog) {
-    // Writes a log to the database. (tblLog)
-    if (db.ok()) {
-      // Delete previous logs of the exact same description, so that the recent logs always have the
-      // highest primary key... (to aid comprehension of the table contents...)
-      string strsql = "DELETE FROM tblLog WHERE tblLog.strMsg = " + psql_str(LI.strdesc);
-      db.exec(strsql);
-
-      // Now insert the line (it will be the most recent record...)
-      strsql = "INSERT INTO tblLog (dtmDate, dtmTime, strType, strMsg, strFrom) VALUES (" +
-             psql_date + ", " + psql_time + " ," + psql_str(strtype) + """, " + psql_str(LI.strdesc) + ", " + psql_str(LI.strfunc) + ")";
-      db.exec(strsql);
-    }
-    else {
-      // Write a message to the log file and the standard out...
-      string stroutput = "*** Unable to log to tbllog - bad database connection.";
-      append_file_str(strlog_file, stroutput);
-      rotate_logfile(strlog_file);
-      cerr << stroutput << endl;
-    }
-  }
-
-  // Log to tblerrors:  
-  if (blnlog_tblerrors) {
-    if (db.ok()) {
-      // Build a query to see whether an error record must be updated or added
-      string strsql = "SELECT lngErrorNumber, lngErrorOccurred FROM tblErrors"
-                               " WHERE strMsg = " + psql_str(LI.strdesc) + " AND dtmDate = " + psql_date +
-                               " AND strType = " + psql_str(strtype) + " AND strFrom = " + psql_str(LI.strfunc);
-      pg_result rs = db.exec(strsql);
-
-      if (rs.recordcount() == 0) {
-        // No matching records found, create a new one
-        strsql =
-          "INSERT INTO tblErrors (dtmDate, dtmTime, strType, strMsg, strFrom, lngErrorOccurred) "
-          "VALUES (" + psql_date + "," + psql_time + "," + psql_str(strtype) + "," + psql_str(LI.strdesc) + "," + psql_str(LI.strfunc) + ",1)";
-        db.exec(strsql);
-      }
-      else {
-        // This error has already occured today, update the time and occurances
-        int lngErrorNumber = strtoi(rs.field("lngErrorNumber", "-1"));
-        int lngErrorOccurred = strtoi(rs.field("lngErrorOccurred", "-1"));
-
-        strsql = "UPDATE tblErrors SET dtmTime = " + psql_time +
-                 ", lngErrorOccurred = " + itostr(lngErrorOccurred + 1) +
-                 " WHERE lngErrorNumber = " + itostr(lngErrorNumber);
-        db.exec(strsql);
-      }
-    }
-    else {
-      // Write a message to the log file and the standard out...
-      string stroutput = "*** Unable to log to tblerrors - bad database connection.";
-      append_file_str(strlog_file, stroutput);
-      rotate_logfile(strlog_file);
-      cerr << stroutput << endl;
-    }
-  }
+  // Log to the logfile & to database:
+  rr_log_instore(LI, PLAYER_LOG_FILE, db);
 }
 
 void player::init() {
   // Log the player version:
-  string strintro_line = (string)" Starting Player v" + VERSION;
-  string strequals_line = "";
-  for (unsigned i=0; i < strintro_line.length() + 1; ++i) strequals_line += '=';
-  log_line(strequals_line);
-  log_line(strintro_line);
-  log_line(strequals_line);
+  rr_log_prog_starting();
 
   // Reset the object attributes
   reset();
@@ -372,9 +281,9 @@ void player::load_db_config() {
   // Load all the other settings (besides config.db) into the config structure.
 
   // Promo frequency capping options
-  config.intmins_to_miss_promos_after = strtoi(load_tbldefs("intMissUnplayedAdsAfter",  "15", "int"));
-  config.intmax_promos_per_batch      = strtoi(load_tbldefs("intMaxAdsPerBatch",        "3", "int"));
-  config.intmin_mins_between_batches  = strtoi(load_tbldefs("intMinTimeBetweenAdBatch", "4", "int"));
+  config.intmins_to_miss_promos_after = strtoi(load_tbldefs(db, "intMissUnplayedAdsAfter",  "15", "int"));
+  config.intmax_promos_per_batch      = strtoi(load_tbldefs(db, "intMaxAdsPerBatch",        "3", "int"));
+  config.intmin_mins_between_batches  = strtoi(load_tbldefs(db, "intMinTimeBetweenAdBatch", "4", "int"));
 
   // CHECK:
   if (config.intmins_to_miss_promos_after <= 0 || config.intmins_to_miss_promos_after >= 10000) {
@@ -418,7 +327,7 @@ void player::load_db_config() {
   if (!dir_exists(config.dirs.strprofiles))      log_error("Profiles directory not found: "    + config.dirs.strprofiles);
   
   // Default music source
-  config.strdefault_music_source = load_tbldefs("strDefaultMusicSource", config.dirs.strmp3, "str");
+  config.strdefault_music_source = load_tbldefs(db, "strDefaultMusicSource", config.dirs.strmp3, "str");
 
   // CHECK:
 
@@ -434,7 +343,7 @@ void player::load_db_config() {
 
     // Remember the incorrect strmp3 setting as the default music source setting...
     config.strdefault_music_source = config.dirs.strmp3;
-    save_tbldefs("strDefaultMusicSource", "str", config.strdefault_music_source);
+    save_tbldefs(db, "strDefaultMusicSource", "str", config.strdefault_music_source);
 
     // Now correct tblapppaths.strmp3
     config.dirs.strmp3 = strcorrect_mp3_path;
@@ -442,53 +351,19 @@ void player::load_db_config() {
   }
 
   // Do promos that want to play, wait for the current song to end?
-  config.blnpromos_wait_for_song_end = strtobool(load_tbldefs("blnAdvertsWaitForSongEnd", "false", "bln"));
+  config.blnpromos_wait_for_song_end = strtobool(load_tbldefs(db, "blnAdvertsWaitForSongEnd", "false", "bln"));
 
   // Format clock settings
-  config.blnformat_clocks_enabled = strtobool(load_tbldefs("blnFormatClocksEnabled", "false", "bln"));
+  config.blnformat_clocks_enabled = strtobool(load_tbldefs(db, "blnFormatClocksEnabled", "false", "bln"));
 
   // Only load the "default" format clock setting if Format Clocks are enabled:
   if (config.blnformat_clocks_enabled) {
-    config.lngdefault_format_clock = strtoi(load_tbldefs("lngDefaultFormatClock", "-1", "lng"));
+    config.lngdefault_format_clock = strtoi(load_tbldefs(db, "lngDefaultFormatClock", "-1", "lng"));
     // CHECK:
     pg_result rs = db.exec("SELECT lngfc FROM tblfc WHERE lngfc = " + itostr(config.lngdefault_format_clock));
     if (rs.recordcount() != 1) log_error("Invalid tbldefs:lngDefaultFormatClock value! Found " + itostr(rs.recordcount()) + " matching Format Clock records!");
   }
-}
-
-// Load & Save tbldefs settings:
-string player::load_tbldefs(const string & strsetting, const string & strdefault, const string & strtype) {
-  // Load a value of a specific setting from the database
-  // Simplified version (from VB) - load the setting from the table, don't check the type
-  pg_result rs = db.exec("SELECT strDataType, strDef_Val FROM tblDefs WHERE strDef = " + psql_str(strsetting));
-  if (rs.recordcount() == 0) {
-    // The setting was not found in the database, add it there, and return
-    // the default setting value to the caller
-    save_tbldefs(strsetting, strtype, strdefault);
-    return strdefault;
-  } else {
-    // The setting was found in the database - check it's type and then load
-    // it or use the default value if the entry was incorrect
-    // *** - This is a simplified version - just return the string, don't check the type
-    return rs.field("strDef_Val", strdefault.c_str());
-  }
-}
-
-void player::save_tbldefs(const string & strsetting, const string & strtype, const string & strvalue) {
-  // Simplified version (from VB) - save the setting to the table as a string, but don't check the type
-  string strsql = "SELECT strDataType, strDef_Val FROM tblDefs WHERE strDef = " + psql_str(strsetting);
-  pg_result rs = db.exec(strsql);
-
-  if (rs.recordcount() > 0) {
-    // The setting already exists in the database, update it
-    strsql = "UPDATE tblDefs SET strDataType = " + psql_str(strtype) + ", strDef_Val = " + psql_str(strvalue) + " WHERE strDef = " + psql_str(strsetting);
-    db.exec(strsql);
-  }
-  else {
-    // ' The setting was not found, add it to the database
-    strsql = "INSERT INTO tblDefs (strDef, strDataType, strDef_Val) VALUES (" + psql_str(strsetting) + ", " + psql_str(strtype) + ", " + psql_str(strvalue) + ")";
-    db.exec(strsql);
-  }
+  else my_throw("Format Clocks are not enabled!");
 }
 
 void player::load_store_status(const bool blnverbose) {
@@ -571,7 +446,7 @@ void player::load_store_status(const bool blnverbose) {
     }
 
     // Fetch the linein volume:
-    store_status.volumes.intlinein   = strtoi(load_tbldefs("intLineInVol", "255", "int"));
+    store_status.volumes.intlinein   = strtoi(load_tbldefs(db, "intLineInVol", "255", "int"));
 
     // Convert all volumes to a %
     #define CONVERT_255_100(X) X=((X*100)/255)
@@ -989,11 +864,7 @@ void player::check_playback_status() {
   // Check XMMS sessions:
   for (int intsession=0; intsession < intmax_xmms; intsession++) {
     // Check if the session is running:
-    try {
-      run_data.xmms[intsession].running(); // Will throw an exception if the session is not running.
-    } catch (...) {
-      my_throw("XMMS session " + itostr(intsession) + " is not running!");
-    }
+    if (!run_data.xmms[intsession].running()) my_throw("XMMS session " + itostr(intsession) + " is not running!");
 
     // Find out what the session should be playing now, if anything:
     string strplaying = ""; // Stays "" if nothing should be playing, but gets set if something should be.

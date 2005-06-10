@@ -18,13 +18,17 @@
 #include "player.h"
 #include <stdlib.h>
 #include "common/exception.h"
-#include "common/testing.h"
+#include "common/rr_misc.h"
 
 // A "call-back" logging function:
 void log(const log_info & LI) {
+  // Standard log handling - logfile & cout.
+  // Doing this here instead of in player::log in case the player object no longer
+  // exists (eg: Player constructor threw an execption)
   if (pplayer != NULL) {
-    pplayer->log(LI);
+    pplayer->log(LI); // Log to cout, file & db.
   }
+  else rr_log_file(LI, PLAYER_LOG_FILE); // Just log to cout & file.
 }
 
 int main()

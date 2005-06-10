@@ -3,6 +3,7 @@
 #include "common/my_string.h"
 #include "common/linein.h"
 #include "common/testing.h"
+#include "common/system.h"
 
 void player_run_data::init() {
   // Run this function to reset/reinitialize playback status.
@@ -46,6 +47,11 @@ void player_run_data::init() {
   waiting_promos.clear(); // List of promos waiting to play. Populated by get_next_item_promo
   
   blnlog_all_music_to_db = false; // Set to true when the player wants to log all available music (and the current XMMS playlist) to the database.
+  
+  // Set the PCM volume to 90% - we use software mixing not hardware!
+  string strout;
+  system_capture_out_throw("/usr/bin/aumix -w 90", strout);
+  log_message("PCM volume set to 90%");
 }
 
 int player_run_data::get_free_xmms_session() {
