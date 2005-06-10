@@ -104,6 +104,9 @@ private:
     long lngdefault_format_clock;  ///< Database reference to the "default" format clock (to use if
                                    ///< there are problems with the current format clock, or no format clocks
                                    ///< were scheduled.
+
+    // Crossfade settings:
+    int intcrossfade_length_ms; ///< Crossfades run for 8000ms. Also music fade-ins and fade-outs.
   } config;
   
   void read_config_file(); ///< Read database connection settings from the player config file into the config.db structure.
@@ -214,6 +217,11 @@ private:
 
   // Called by playback_transition:
   void log_song_played(const string & strdescr); ///< Log the latest song to tblmusichistory
+  
+  // Fetch the current playback safety margin:
+  //   How long before important playback events, the player should be ready and
+  //   not run other logic which could cut into time needed for crossfading, etc.
+  int get_next_playback_safety_margin_ms();
 };
 
 extern player * pplayer; // A pointer to the currently-running player instance. Automatically maintained

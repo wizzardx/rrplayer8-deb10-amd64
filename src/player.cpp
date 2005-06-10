@@ -84,8 +84,9 @@ void player::run() {
       playback_events_info playback_events;
       // If a promo is going to interrupt the music, we will first fade out the music, ie it will only start after
       // [intcrossfade_length_ms] milliseconds have elapsed.
-      get_playback_events_info(playback_events, intcrossfade_length_ms);
+      get_playback_events_info(playback_events, config.intcrossfade_length_ms);
       
+      int intnext_playback_safety_margin_ms = get_next_playback_safety_margin_ms();
       if (playback_events.intnext_ms > intnext_playback_safety_margin_ms) {
         // If we have enough time left (> Safety margin, or unknown), then:
         // - Do background maintenance (separate function). Has built-in timing.
@@ -237,6 +238,9 @@ void player::reset() {
   // Format clock settings:
   config.blnformat_clocks_enabled = false;
   config.lngdefault_format_clock  = false;
+  
+  // Crossfade settings:
+  config.intcrossfade_length_ms = 8000; // Defaults to 8 seconds.
 
   // Store's current status:
   store_status.blnopen = false;
@@ -364,6 +368,19 @@ void player::load_db_config() {
     if (rs.recordcount() != 1) log_error("Invalid tbldefs:lngDefaultFormatClock value! Found " + itostr(rs.recordcount()) + " matching Format Clock records!");
   }
   else my_throw("Format Clocks are not enabled!");
+  
+  // Read the crossfade length:
+  config.intcrossfade_length_ms = strtoi(load_tbldefs(db, "intCrossfadeLength", "8000", "int"));
+  
+  // Check the setting:
+  if (config.intcrossfade_length_ms < 500) {
+    log_warning("Config setting for Crossfade length (" + itostr(config.intcrossfade_length_ms) + "ms) is too short! (defaulting to 500ms)");
+    config.intcrossfade_length_ms = 500;
+  }
+  else if (config.intcrossfade_length_ms > 30000) {
+    log_warning("Config setting for Crossfade length ( " + itostr(config.intcrossfade_length_ms) + "ms) is too long! (defaulting to 30,000ms)");
+    config.intcrossfade_length_ms = 30000;
+  }
 }
 
 void player::load_store_status(const bool blnverbose) {
@@ -902,7 +919,10 @@ void player::check_playback_status() {
       // Check that it's playing the correct media
       if (run_data.xmms[intsession].get_song_file_path() != strplaying) my_throw("XMMS session " + itostr(intsession) + " is playing incorrect media!");
       // Check that the volume is correct
-      if (run_data.xmms[intsession].getvol() != intvol) my_throw("XMMS session " + itostr(intsession) + " has an incorrect volume!");
+      {
+        int intxmms_vol = run_data.xmms[intsession].getvol();
+        if (intxmms_vol != intvol) my_throw("XMMS session " + itostr(intsession) + " has an incorrect volume! (" + itostr(intxmms_vol) + "% instead of " + itostr(intvol) + "%)");
+      }
       // Check that repeat is off.
       if (run_data.xmms[intsession].getrepeat()) my_throw("XMMS session " + itostr(intsession) + " repeat is turned on!");
     }
@@ -1113,3 +1133,9 @@ void player::log_song_played(const string & strdescr) {
   }
 }
 
+int player::get_next_playback_safety_margin_ms() {
+  // Fetch the current playback safety margin:
+  //   How long before important playback events, the player should be ready and
+  //   not run other logic which could cut into time needed for crossfading, etc.
+  return config.intcrossfade_length_ms + 10000; // crossfade length + 10s.
+}

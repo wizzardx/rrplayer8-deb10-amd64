@@ -19,6 +19,7 @@ void player::playback_transition(playback_events_info & playback_events) {
   gettimeofday(&tvprev_now, NULL);
 
   // Main loop for this function. Check if there are any nearby events for this item, to wait for and handle:
+  int intnext_playback_safety_margin_ms = get_next_playback_safety_margin_ms();
   while (playback_events.intnext_ms < intnext_playback_safety_margin_ms) {
     // We have 1 or more item playback events coming up in the near future. Prepare for them.
 
@@ -100,20 +101,20 @@ void player::playback_transition(playback_events_info & playback_events) {
         if (run_data.current_item.cat == SCAT_MUSIC) {
           // Queue:
           //  1) A volume slide from 100% to 0
-          queue_volslide(events, "current", 100, 0, playback_events.intitem_ends_ms - intcrossfade_length_ms, intcrossfade_length_ms);
+          queue_volslide(events, "current", 100, 0, playback_events.intitem_ends_ms - config.intcrossfade_length_ms, config.intcrossfade_length_ms);
         }
 
         // And transition in the next item:
 
         // Queue:
         // 1) "setup_next"
-        queue_event(events, "setup_next", playback_events.intitem_ends_ms - intcrossfade_length_ms + 1);
+        queue_event(events, "setup_next", playback_events.intitem_ends_ms - config.intcrossfade_length_ms + 1);
         // 2) A fade-in (if music)
         if (run_data.next_item.cat == SCAT_MUSIC) {
-          queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms - intcrossfade_length_ms + 2, intcrossfade_length_ms);
+          queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms - config.intcrossfade_length_ms + 2, config.intcrossfade_length_ms);
         }
         // 3) "next_play",
-        queue_event(events, "next_play", playback_events.intitem_ends_ms - intcrossfade_length_ms + 3);
+        queue_event(events, "next_play", playback_events.intitem_ends_ms - config.intcrossfade_length_ms + 3);
 
         // 4) "next_becomes_current"
         queue_event(events, "next_becomes_current", playback_events.intitem_ends_ms + 3);
@@ -137,7 +138,7 @@ void player::playback_transition(playback_events_info & playback_events) {
             //  3) "next_play" (ony if XMMS)
             queue_event(events, "next_play", playback_events.intitem_ends_ms + 3);
             // 3) A volume slide from current vol (if LineIn, or 0 if XMMS) to full music
-            queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms + 4, intcrossfade_length_ms);
+            queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms + 4, config.intcrossfade_length_ms);
           }
           else {
             // Next item plays through Linein
@@ -145,7 +146,7 @@ void player::playback_transition(playback_events_info & playback_events) {
             // 3) A volume slide from current vol (if LineIn, or 0 if XMMS) to full music
             if (linein_getvol() == 0) {
               // If linein is 0, we slide it up to full
-              queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms + 4, intcrossfade_length_ms);
+              queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms + 4, config.intcrossfade_length_ms);
             }
             else {
               // If linein is not 0, we set it to full immediately.
@@ -153,8 +154,8 @@ void player::playback_transition(playback_events_info & playback_events) {
             }
           }
           //  4) "next_becomes_current" (transition is over)
-          queue_event(events, "next_becomes_current", playback_events.intitem_ends_ms + 5 + intcrossfade_length_ms);
-          intnext_becomes_current_ms = playback_events.intitem_ends_ms + 5 + intcrossfade_length_ms;
+          queue_event(events, "next_becomes_current", playback_events.intitem_ends_ms + 5 + config.intcrossfade_length_ms);
+          intnext_becomes_current_ms = playback_events.intitem_ends_ms + 5 + config.intcrossfade_length_ms;
         }
         else {
           // Just queue the next item to play when this one ends.
@@ -201,14 +202,14 @@ void player::playback_transition(playback_events_info & playback_events) {
       // Yes. Queue a music -> promo transition.
       
       // Queue a fade-out for the current item:
-      queue_volslide(events, "current", 100, 0, playback_events.intpromo_interrupt_ms, intcrossfade_length_ms);
+      queue_volslide(events, "current", 100, 0, playback_events.intpromo_interrupt_ms, config.intcrossfade_length_ms);
       // Queue: setup an xmms for the next item.
-      queue_event(events, "setup_next", playback_events.intpromo_interrupt_ms + intcrossfade_length_ms + 1);
+      queue_event(events, "setup_next", playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 1);
       // Queue: next item play
-      queue_event(events, "next_play", playback_events.intpromo_interrupt_ms + intcrossfade_length_ms + 2);
+      queue_event(events, "next_play", playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 2);
       // Queue: next item -> current item.
-      queue_event(events, "next_becomes_current", playback_events.intpromo_interrupt_ms + intcrossfade_length_ms + 3);
-      intnext_becomes_current_ms = playback_events.intpromo_interrupt_ms + intcrossfade_length_ms + 3;
+      queue_event(events, "next_becomes_current", playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 3);
+      intnext_becomes_current_ms = playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 3;
     }
 
     // Now sort the queue.
@@ -568,7 +569,7 @@ void player::playback_transition(playback_events_info & playback_events) {
     }
 
     // Done with the transitions. Look for any other upcoming events during playback of the current item:
-    get_playback_events_info(playback_events, intcrossfade_length_ms);
+    get_playback_events_info(playback_events, config.intcrossfade_length_ms);
     // - Remember that we could already be part-way into the next item by the time we do this (eg: crossfade transition).
     // - If we already started or stopped a music bed then don't add them again (ie, if they are too far in the past, ignore?
   }
@@ -638,6 +639,14 @@ void player::queue_volslide(transition_event_list & events, const string & strwh
     
     // Go another 200 ms (1/5th of a second) into the fade:
     intfade_pos_ms+=200;
+  }
+  
+  // Did we queue the final setvol (can be missed if the crossfade length is not
+  // an exact multiple of 200ms:
+  if (intlast_vol_percent != intto_vol_percent) {
+    // Yes. We skipped the final setvol. Queue it now:
+    string strevent ="setvol_" + strwhich_item + " " + itostr(intto_vol_percent);
+    queue_event(events, strevent, intwhen_ms + intlength_ms);
   }
 }
 
