@@ -358,7 +358,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
       testing_throw;
       lngPrevAnnListSize = AnnounceList.size(); // Now remember the current announcement list size. If this
                                                                           // length increases, then we will run this loop again.. etc, etc..
-
       // Try to find a spot for each "same-voice" missed announcement, but only while there is space left in this
       // announcement batch...
       TWaitingAnnouncements::iterator item = AnnounceMissed_SameVoice.begin();
@@ -627,15 +626,18 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
   // Fetch info about the "next" item to be played, according to the Format Clock.
   // Also handle all segment timing (eg: last segment played for too long, etc.
 
-  // Fetch the "real" time when the next item will start playing:
+  // Fetch the "real" time when the next item will start playing (in seconds):
   datetime dtmnext_starts = now() + intstarts_ms/1000;
 
   // Work out the current delays.
 
   // Do we currently have a segment loaded?
   if (run_data.current_segment.blnloaded) {
-    // The next item is meant to start 1 second after the current segment ends. Is the next item going to start
-    // later than this time?
+    // We now have the time when the next item will start.
+    // Work out if the current item will play past the end of the current segment.
+    // This logic works by assuming that the current item end on the second just before
+    // the next item starts. Based on that assumption, does the current item end after
+    // the current segment ends? If so, by how many seconds?
     datetime dtmseg_end = run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1;
     if (dtmnext_starts > dtmseg_end + 1) {
       // Yes: Increase the segment delay factor
@@ -649,6 +651,25 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       log_line("Current item is going to end " + itostr(intdiff) + "s after the current segment end. Increasing segment delay factor to " + itostr(intnew_segment_delay) + "s (+" + itostr(intnew_segment_delay - run_data.intsegment_delay) + "s)");
       run_data.intsegment_delay = intnew_segment_delay;
     }
+  }
+  
+  // Check here: has the hour changed?
+  // If it has, then we reset the current segment delay factor.
+  {
+    static datetime dtmlast_checked = datetime_error;
+    
+    // Has the hour changed?
+    datetime dtmnow = now();
+    
+    if (dtmlast_checked != datetime_error && dtmlast_checked/(60*60) != dtmnow/(60*60) && run_data.intsegment_delay > 0) {
+      log_warning("Hour has changed. Resetting segment delay (currently: " + itostr(run_data.intsegment_delay) + "s)");
+      log_warning("All segments that were scheduled to play between '" + format_datetime(dtmnow - run_data.intsegment_delay, "%T") + "' and '" + format_datetime(dtmnow, "%T") + "' will be missed!");
+      run_data.intsegment_delay = 0;
+    }
+    
+    // We've done the check now (or not, if this is the first time the function was called)
+    // Wait until the next hour:
+    dtmlast_checked = dtmnow;
   }
 
   // And now get our "delayed" time, the time in the past at which we fetch format clock data
