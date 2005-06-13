@@ -19,11 +19,11 @@ void player::player_maintenance(const int intmax_time_ms) {
 
   // These events run immediately, and then only after their
   // frequency (in seconds) has elapsed:
-  RUN_TIMED(maintenance_check_received,     10);
-  RUN_TIMED(maintenance_check_waiting_cmds, 10);
-  RUN_TIMED(maintenance_operational_check,  30);
-  RUN_TIMED(maintenance_player_running,     60);
-  RUN_TIMED(maintenance_hide_xmms_windows,  5*60); // Hide all XMMS windows
+  RUN_TIMED_CUTOFF(maintenance_check_received,     10,   dtmcutoff);
+  RUN_TIMED_CUTOFF(maintenance_check_waiting_cmds, 10,   dtmcutoff);
+  RUN_TIMED_CUTOFF(maintenance_operational_check,  30,   dtmcutoff);
+  RUN_TIMED_CUTOFF(maintenance_player_running,     60,   dtmcutoff);
+  RUN_TIMED_CUTOFF(maintenance_hide_xmms_windows,  5*60, dtmcutoff); // Hide all XMMS windows
 }
 
 void player::maintenance_check_received(const datetime dtmcutoff) {
