@@ -9,25 +9,13 @@
 #include "common/temp_dir.h"
 #include "common/linein.h"
 #include <fstream>
+#include "common/rr_misc.h"
 
 void player::player_maintenance(const int intmax_time_ms) {
   // Do background maintenance (separate function). Events have frequencies, (sometimes desired "second" to take place at), and are prioritiesed.
   //  - Also includes resetting info about the next playback item (highest priority, every 30 seconds..., seconds: 00, 30)
 //  log_line("I have up to " + itostr(intmax_time_ms/1000) + "s to do maintenance in...");
   datetime dtmcutoff = now() + intmax_time_ms / 1000; // Logic not allowed to run past this length.
-
-  #define RUN_TIMED(FUNC, FREQ) { \
-    static datetime dtmlast = datetime_error; \
-    if (now() < dtmcutoff) { \
-      datetime dtmnow = now(); \
-      if (dtmlast/(FREQ) != dtmnow/(FREQ)) { \
-        try { \
-          FUNC(dtmcutoff); \
-        } catch_exceptions; \
-        dtmlast = now(); \
-      } \
-    } \
-  }
 
   // These events run immediately, and then only after their
   // frequency (in seconds) has elapsed:
