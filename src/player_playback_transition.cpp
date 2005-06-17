@@ -316,7 +316,7 @@ void player::playback_transition(playback_events_info & playback_events) {
               run_data.xmms[intsession].playlist_add_url(run_data.next_item.strmedia);
   
               // - Set XMMS volume to the next item's volume:
-              run_data.xmms[intsession].setvol(get_pe_vol(run_data.next_item.strvol), false);
+              run_data.xmms[intsession].setvol(get_pe_vol(run_data.next_item.strvol));
   
               // - Make sure that repeat is turned off.
               run_data.xmms[intsession].setrepeat(false);
@@ -373,14 +373,14 @@ void player::playback_transition(playback_events_info & playback_events) {
               if (!run_data.uses_linein(SU_FG)) my_throw("LineIn was not allocated!");
   
               // Set the volume of linein appropriately:
-              linein_setvol((store_status.volumes.intlinein * intpercent)/100, false);
+              linein_setvol((store_status.volumes.intlinein * intpercent)/100);
             }
             else {
               // Set XMMS volume:
               // Fetch session used for the foreground. Will throw an exception if it isn't allocated.
               int intsession = run_data.get_xmms_used(SU_FG);
               // Set volume appropriately:
-              run_data.xmms[intsession].setvol((get_pe_vol(item->strvol) * intpercent)/100, false);
+              run_data.xmms[intsession].setvol((get_pe_vol(item->strvol) * intpercent)/100);
   
               // Set volume of music bed also if it is active now:
               {
@@ -396,7 +396,7 @@ void player::playback_transition(playback_events_info & playback_events) {
                   // We have an XMMS session for the music bed.
                   // Extra check: Does the item actually have a music bed?
                   if (!item->blnmusic_bed) my_throw("Logic Error!");
-                  run_data.xmms[intsession].setvol((get_pe_vol(item->music_bed.strvol) * intpercent)/100, false);
+                  run_data.xmms[intsession].setvol((get_pe_vol(item->music_bed.strvol) * intpercent)/100);
                 }
               }
             }
@@ -511,7 +511,7 @@ void player::playback_transition(playback_events_info & playback_events) {
           // Setup the session
           run_data.xmms[intsession].playlist_clear();
           run_data.xmms[intsession].playlist_add_url(pe->music_bed.strmedia);
-          run_data.xmms[intsession].setvol((get_pe_vol(pe->music_bed.strvol)*intvol)/100, false);
+          run_data.xmms[intsession].setvol((get_pe_vol(pe->music_bed.strvol)*intvol)/100);
           run_data.xmms[intsession].setrepeat(false);
 
           // Start the session
