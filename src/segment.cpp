@@ -82,8 +82,13 @@ void segment::reset() {
 }
 
 void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const string & strdefault_music_source, const datetime dtmtime) {
-  // Read details for a segement [lngfc_seg_arg], from the database(db), into this object  
+  // Read details for a segment [lngfc_seg_arg], from the database(db), into this object  
   // Is a -1 lngfc_seg_arg specified? (ie, load default music profile)
+  
+  // First reset all existing info & stats:
+  reset();
+  
+  // Now start the loading:
   lngfc_seg = lngfc_seg_arg;
   try {
     if (lngfc_seg == -1) {
