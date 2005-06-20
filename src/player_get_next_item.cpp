@@ -762,7 +762,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     log_message("Loading new Format Clock segment (id: " + itostr(lngfc_seg) + ")");
 
     // A -1 lngfc_seg means load the default music profile instead
-    run_data.current_segment.load_from_db(db, lngfc_seg, config.strdefault_music_source, dtmnext_starts);
+    run_data.current_segment.load_from_db(db, lngfc_seg, config.strdefault_music_source, dtmdelayed);
     
     // Log some basic details about the new segment.
     log_line(run_data.current_segment.cat.strname + " segment is scheduled for " + format_datetime(run_data.current_segment.scheduled.dtmstart, "%T") + " to " + format_datetime(run_data.current_segment.scheduled.dtmend, "%T") + " (" + itostr(run_data.current_segment.scheduled.dtmend - run_data.current_segment.scheduled.dtmstart + 1) + "s)");
