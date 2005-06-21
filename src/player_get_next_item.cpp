@@ -663,7 +663,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     
     if (dtmlast_checked != datetime_error && dtmlast_checked/(60*60) != dtmnow/(60*60) && run_data.intsegment_delay > 0) {
       log_warning("Hour has changed. Resetting segment delay (currently: " + itostr(run_data.intsegment_delay) + "s)");
-      log_warning("All segments that were scheduled to play between '" + format_datetime(dtmnow - run_data.intsegment_delay, "%T") + "' and '" + format_datetime(dtmnow, "%T") + "' will be missed!");
+      log_warning("All segments that were scheduled to play between '" + format_datetime(dtmnext_starts - run_data.intsegment_delay, "%T") + "' and '" + format_datetime((dtmnext_starts) - 1, "%T") + "' will be missed!");
       run_data.intsegment_delay = 0;
     }
     
