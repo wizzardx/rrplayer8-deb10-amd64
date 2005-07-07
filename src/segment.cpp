@@ -539,12 +539,15 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
           intmax_items = INT_MAX;
           
           // Check if the alternate category was defined:
-          if (alt_cat.cat == SCAT_UNKNOWN) my_throw("Alternate Category was not defined.");
-          
-          // Now load the new playlist & setup the iterator:
-          load_pe_list(programming_elements, alt_cat, alt_sub_cat, db);
-          next_item = programming_elements.begin();
-          blndone = true;
+          if (alt_cat.cat == SCAT_UNKNOWN) {
+            log_warning("Alternate Category was not defined.");
+          }
+          else {          
+            // Now load the new playlist & setup the iterator:
+            load_pe_list(programming_elements, alt_cat, alt_sub_cat, db);
+            next_item = programming_elements.begin();
+            blndone = true;
+          }
         } catch_exceptions;
       } break;
       case PBS_ALTERNATE: {

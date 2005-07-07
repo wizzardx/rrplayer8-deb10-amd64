@@ -4,6 +4,7 @@
 #include "common/linein.h"
 #include "common/my_string.h"
 #include "common/string_splitter.h"
+#include "common/system.h"
 
 void player::playback_transition(playback_events_info & playback_events) {
   // Go into an intensive timing section (5 checks every second) until we're done with the playback event. Logic for
@@ -425,8 +426,17 @@ void player::playback_transition(playback_events_info & playback_events) {
             run_data.xmms[intsession].play();
   
             // Log that we're playing it:
-            log_message("Playing (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(run_data.next_item.strvol)) + "%): \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\"");
-            
+            {
+              // Fetch the song length:
+              // - First sleep for 1/10th of a second. XMMS's get_song_length() gives a 
+              // confused output if you call it too soon after play().
+              sleep_ms(100); 
+              int intlength = run_data.xmms[intsession].get_song_length();
+              char chlength[10];
+              sprintf(chlength, "%d:%02d", intlength/60, intlength%60);
+              log_message("Playing (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(run_data.next_item.strvol)) + "%): \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\" (" + (string)chlength + ")");
+            }
+
             // If it is music, then log the details to the database:
             if (run_data.next_item.cat == SCAT_MUSIC) {
               log_song_played(mp3tags.get_mp3_description(run_data.next_item.strmedia));
