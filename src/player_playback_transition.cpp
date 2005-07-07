@@ -434,7 +434,7 @@ void player::playback_transition(playback_events_info & playback_events) {
               int intlength = run_data.xmms[intsession].get_song_length();
               char chlength[10];
               sprintf(chlength, "%d:%02d", intlength/60, intlength%60);
-              log_message("Playing (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(run_data.next_item.strvol)) + "%): \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\" (" + (string)chlength + ")");
+              log_message("Playing (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(run_data.next_item.strvol)) + "%): \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\" (" + (string)chlength + ". Ends: " + format_datetime(now() + intlength, "%T") + ")");
             }
 
             // If it is music, then log the details to the database:
