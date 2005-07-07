@@ -759,8 +759,21 @@ void player::correct_waiting_promos() {
 void player::write_errors_for_missed_promos() {
   // Look for ads from today that are older than [Config.intMinsToMissAdsAfter] minutes
   // have not yet been played (or scheduled to play)
-  string psql_EarliestTime = time_to_psql(time()- (60 * config.intmins_to_miss_promos_after));
-
+  
+  // Work out the earliest time today (adverts older than this have been missed)
+  string psql_EarliestTime = "";
+  {
+    // Make sure that our earliest time does not wrap around to late in the evening!
+    // - Not comparing datetime values in case after converting the earliest time to a 
+    // timetamp, it ends up as a later time of day anyway.
+    datetime dtmnow = now();
+    datetime dtmearliest = dtmnow - (60 * config.intmins_to_miss_promos_after);
+    string strnow      = format_datetime(dtmnow,      "%T");
+    string strearliest = format_datetime(dtmearliest, "%T");
+    if (strearliest > strnow) dtmearliest = dtmnow;      
+    psql_EarliestTime = time_to_psql(dtmearliest);
+  }
+  
   string strSQL = "SELECT tblSchedule_TZ_Slot.lngTZ_Slot, tblSched.strFilename, tblSched.strProductCat, "
      "tblSchedule_TZ_Slot.dtmDay, tblSlot_Assign.dtmStart, tblSlot_Assign.dtmEnd, "
      "tblSched.strPriorityOriginal, tblSched.strPriorityConverted, "
