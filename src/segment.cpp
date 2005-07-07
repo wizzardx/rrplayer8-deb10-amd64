@@ -271,7 +271,7 @@ void segment::setup_as_music_profile(const string & strmusic_source, const strin
   blnmusic_bed   = false; // Music profiles don't have underlying music.
 
   // Now generate a music playlist from the specified location:
-  generate_playlist(programming_elements, strmusic_source, cat.cat, db); // Also shuffles the list
+  generate_playlist(programming_elements, strmusic_source, SCAT_MUSIC, db); // Also shuffles the list
 
   // Shuffle it:
   shuffle_pel(programming_elements);
