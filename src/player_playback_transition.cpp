@@ -66,33 +66,31 @@ void player::playback_transition(playback_events_info & playback_events) {
         }
         blnsegment_change = lngfc_seg_before != run_data.current_segment.lngfc_seg;
       }
-
+      
       // Are crossfades allowed now?
-      blncrossfade = false;
-      if (run_data.current_item.blnloaded && (blnsegment_change || run_data.current_segment.blncrossfading)) {
-        // Yes. Are we in one of the following situations? :
-        // * Imaging -> Music
-        // * Music   -> Music
-        // * Music   -> Sweepers
-        // * Music   -> Links
-        // * Links   -> Music
-        // * Sweeper -> Music
-        blncrossfade = (run_data.current_item.cat == SCAT_IMAGING  && run_data.next_item.cat == SCAT_MUSIC) ||
-                       (run_data.current_item.cat == SCAT_MUSIC    && run_data.next_item.cat == SCAT_MUSIC) ||
-                       (run_data.current_item.cat == SCAT_MUSIC    && run_data.next_item.cat == SCAT_SWEEPERS) ||
-                       (run_data.current_item.cat == SCAT_MUSIC    && run_data.next_item.cat == SCAT_LINKS) ||
-                       (run_data.current_item.cat == SCAT_LINKS    && run_data.next_item.cat == SCAT_MUSIC) ||
-                       (run_data.current_item.cat == SCAT_SWEEPERS && run_data.next_item.cat == SCAT_MUSIC);
-
-        // We can't crossfade when going between LineIn and LineIn:
-        if (run_data.current_item.strmedia == "LineIn" && run_data.next_item.strmedia == "LineIn") {
-          testing_throw;
-          blncrossfade = false;
-        }
+      // Crossfades take place:
+      // 1) Always when the segment changes. OR
+      // 2) Always when crossfades are allowed in this segment. OR
+      // 3) When transitioning from a non-music item to a music item, or the other way.
+      //   (but not from music -> music. The segment needs to allow it in this case).
+      blncrossfade = run_data.current_item.blnloaded &&
+                       (blnsegment_change ||
+                       run_data.current_segment.blncrossfading ||
+                         ((run_data.current_item.cat == SCAT_MUSIC ||
+                           run_data.next_item.cat == SCAT_MUSIC)
+                           &&
+                          (run_data.current_item.cat != SCAT_MUSIC ||
+                           run_data.next_item.cat != SCAT_MUSIC)));
+      
+      // However, we can't crossfade when goinng between linein and linein.
+      if (blncrossfade && (run_data.current_item.strmedia == "LineIn" && run_data.next_item.strmedia == "LineIn")) {
+        testing_throw;
+        blncrossfade = false;
       }
 
       // So, do we crossfade between this item and the next?
       if (blncrossfade) {
+        log_line("Will crossfade between this item and the next.");
         // Yes:
         // - This means that for a period of time, two items will be playing together.
         // - When we crossfade music & non-music, only the music volume is shifted. The
@@ -125,6 +123,7 @@ void player::playback_transition(playback_events_info & playback_events) {
         // No: Current item will end without a volume fade.
         // If we don't have a current item, (or we do have a current item, and it is not music)
         // and the next item is music, then we fade in the music:
+        log_line("Will not crossfade between this item and the next item.");
         if ((!run_data.current_item.blnloaded || run_data.current_item.cat != SCAT_MUSIC) && run_data.next_item.cat == SCAT_MUSIC) {
           // We fade in the next item
           // Queue:
@@ -133,6 +132,7 @@ void player::playback_transition(playback_events_info & playback_events) {
           queue_event(events, "setup_next", playback_events.intitem_ends_ms + 1);
 
           if (run_data.next_item.strmedia != "LineIn") {
+            log_line("The next item will fade in after this item ends.");
             // Next item plays through XMMS:
             //  2) "setvol_next 0" (Only if XMMS)
             queue_event(events, "setvol_next 0", playback_events.intitem_ends_ms + 2);
@@ -161,6 +161,7 @@ void player::playback_transition(playback_events_info & playback_events) {
         else {
           // Just queue the next item to play when this one ends.
           // Queue:
+          log_line("No fading will take place");
           //  1) "setup_next" (Only if XMMS).
           queue_event(events, "setup_next", playback_events.intitem_ends_ms);
           //  2) "setvol_next 100" (100% of the volume it is listed to play at)
