@@ -408,7 +408,7 @@ void player::load_store_status(const bool blnverbose) {
   {
     string strsql = "SELECT dtmOpeningTime, dtmClosingTime FROM tblStoreHours WHERE intDayNumber = " + itostr(weekday(now()));
     pg_result rs = db.exec(strsql);
-    if (rs.recordcount() != 1) log_error("An error with table tblstorehours. Query returned " + itostr(rs.recordcount()) + " rows! (expected 1)");
+    if (rs.recordcount() != 1) my_throw("An error with table tblstorehours. Query returned " + itostr(rs.recordcount()) + " rows! (expected 1)");
     datetime dtmopen  = parse_psql_time(rs.field("dtmopeningtime"));
     datetime dtmclose = parse_psql_time(rs.field("dtmclosingtime"));
 
