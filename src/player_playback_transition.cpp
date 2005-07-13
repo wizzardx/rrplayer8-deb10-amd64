@@ -5,6 +5,7 @@
 #include "common/my_string.h"
 #include "common/string_splitter.h"
 #include "common/system.h"
+#include <fstream>
 
 void player::playback_transition(playback_events_info & playback_events) {
   // Go into an intensive timing section (5 checks every second) until we're done with the playback event. Logic for
@@ -425,7 +426,7 @@ void player::playback_transition(playback_events_info & playback_events) {
   
             // Start it playing now.
             run_data.xmms[intsession].play();
-  
+            
             // Log that we're playing it:
             {
               // Fetch the song length:
@@ -436,6 +437,19 @@ void player::playback_transition(playback_events_info & playback_events) {
               char chlength[10];
               sprintf(chlength, "%d:%02d", intlength/60, intlength%60);
               log_message("Playing (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(run_data.next_item.strvol)) + "%): \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\" (" + (string)chlength + ". Ends: " + format_datetime(now() + intlength, "%T") + ")");
+            }
+            
+            // Create a text file listing the new xmms session number. This is used by
+            // the rrxmms-status tool.
+            {
+              string strfile = "/tmp/.player_active_xmms_session.txt";
+              ofstream output_file(strfile.c_str());
+              if (!output_file) {
+                log_warning("Could not open file for writing: " + strfile);
+              }
+              else {
+                output_file << itostr(intsession) << endl;
+              }
             }
 
             // If it is music, then log the details to the database:
