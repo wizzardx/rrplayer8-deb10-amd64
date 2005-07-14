@@ -455,6 +455,10 @@ void player::playback_transition(playback_events_info & playback_events) {
             // If it is music, then log the details to the database:
             if (run_data.next_item.cat == SCAT_MUSIC) {
               log_song_played(mp3tags.get_mp3_description(run_data.next_item.strmedia));
+              
+              // Also maintain a list of the most recently played media.
+              // This helps to prevent repeating of songs (eg: change from music -> links -> music)
+              run_data.remember_recent_music(run_data.next_item.strmedia);
             }
   
             // Check if there are any music bed events (for the next item) that will occur *during* the current
@@ -674,4 +678,3 @@ void player::queue_volslide(transition_event_list & events, const string & strwh
     queue_event(events, strevent, intwhen_ms + intlength_ms);
   }
 }
-

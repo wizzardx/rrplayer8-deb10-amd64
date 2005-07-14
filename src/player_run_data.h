@@ -57,6 +57,15 @@ public:
   
   /// Set to true when the player wants to log 1) the XMMS music playlist, and 2) All available music on the machine.
   bool blnlog_all_music_to_db; 
+  
+  // A list of the most recent media files played. This helps us to prevent songs
+  // from playing that have been played recently.
+private:  
+  vector <string> recent_music;
+public:  
+  // Some functions to manipulate the list:
+  void remember_recent_music(const string & strfile);
+  bool music_played_recently(const string & strfile);
 };
 
 #endif

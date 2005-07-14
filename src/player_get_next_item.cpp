@@ -818,6 +818,28 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     }
   }
 
-  // Now fetch the next item to play, from the segment:
-  run_data.current_segment.get_next_item(next_item, db, config.strdefault_music_source, intstarts_ms);
+  // Now fetch the next item to play, from the segment. Make sure it isn't a 
+  // song which was played recently:
+  get_next_item_not_recent_music(next_item, intstarts_ms);
+}
+
+void player::get_next_item_not_recent_music(programming_element & next_item, const int intstarts_ms) {
+  // This function stops songs from playing too soon after each other.
+  // eg: segment changes from music to non-music and back to music.
+  
+  bool blnok      = false; // Set to true when we find an item which isn't a recently-played song
+  int intattempts_left = intno_repeat_music*2; // Try this many times to find an ok item.
+  
+  while (!blnok && intattempts_left > 0) {
+    // Fetch the next item:
+    run_data.current_segment.get_next_item(next_item, db, config.strdefault_music_source, intstarts_ms);
+    // Is the item ok to use?
+    blnok = next_item.cat != SCAT_MUSIC || !run_data.music_played_recently(next_item.strmedia);
+    if (!blnok) log_message("Skipping song, it was played recently: " + next_item.strmedia);
+    // If this check failed then go to the next attempt:
+    if (!blnok) --intattempts_left;
+  }
+  
+  // Did we find an item which isn't a recently-played song?
+  if (!blnok) my_throw("I was unable to find a song which has not been played recently!"); 
 }

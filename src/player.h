@@ -161,6 +161,7 @@ private:
 
   // Functions called by get_item_format_clock:
     long get_fc_segment(const long lngfc, const string & strsql_time);
+    void get_next_item_not_recent_music(programming_element & item, const int intstarts_ms);
 
   // Fetch timing info about events that will take place during playback of the current item
   // (music bed starts, music bed ends, item ends).
