@@ -7,7 +7,6 @@
  ***************************************************************************/
 
 #include "player.h"
-#include <stdlib.h>
 #include "common/exception.h"
 #include "common/rr_misc.h"
 
