@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Player preinst: Kill the Player when installing a new version
+
+set -e # Quit if there are any errors
+(killall -q -9 -w player) # Kill the Player. Brackets ignore errors
+
+exit 0

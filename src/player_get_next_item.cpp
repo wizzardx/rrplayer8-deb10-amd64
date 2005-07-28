@@ -254,7 +254,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
           blnSkipItem = true;
         }
         else {
-          testing;
           // We found 1 matching record, and found it. Now check the current date against the listed global expiry date, and
           // the current lifespan, of the prerecorded item.
           int intglobalexp = strtoi(rsPrerecItem.field("intglobalexp", "-1"));
@@ -277,7 +276,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
             log_error("Advert skipped because the period it was purchased for has expired: " + scFileName);
             blnSkipItem = true;
           }
-          testing;
         }
       }
     }

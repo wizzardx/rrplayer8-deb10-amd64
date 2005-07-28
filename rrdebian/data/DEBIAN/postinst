@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Player postinst:
+set -e                                # Quit immediately if there are errors
+
+# Delete old, now unused player files and directories:
+rm -rvf /data/radio_retail/progs/player/binary/ # Debian now manages our binary versions
+rm -vf /data/radio_retail/progs/player/player_email.txt
+
+# Player permissions and ownership:
+chown radman:radman /data/radio_retail/progs/player/player
+chmod 0700          /data/radio_retail/progs/player/player
+
+# If the old logfile (player_log.txt) still exists, then move it to player.log instead:
+if [ -f /data/radio_retail/progs/player/player_log.txt ]; then
+  mv /data/radio_retail/progs/player/player_log.txt /data/radio_retail/progs/player/player.log
+fi
+
+# Start the player:
+(killall -9 -q -w player)
+su radman -c "/data/radio_retail/progs/player/player &> /dev/null < /dev/null &" # Start the player as radman
+

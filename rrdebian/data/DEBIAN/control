@@ -1,0 +1,13 @@
+Package: rrplayer-fc
+Version: 7.3.268
+Section: radio-retail
+Priority: optional
+Architecture: i386
+Depends: libc6 (>= 2.3.2.ds1-4), libglib1.2 (>= 1.2.0), libpqxx-2.1.3, mp3info, rrschedule-db (>=3.26), rrxmms (>=rr.2-1.2.10), rrxmms-config, ccrypt
+Conflicts: rrplayer
+Installed-Size: 790
+Maintainer: David Purdy <david@radioretail.co.za>
+Description: Format Clock version of the Instore Player.
+ Controls playback of music and announcements instore.
+ Playback times, schedules, etc are determined by settings
+ in the instore Schedule database.
