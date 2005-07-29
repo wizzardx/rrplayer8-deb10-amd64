@@ -71,12 +71,17 @@ void player::playback_transition(playback_events_info & playback_events) {
       // Are crossfades allowed now?
       // Crossfades take place:
       // 1) Always when the segment changes, OR
-      // 2) The current segment allows crossfades, OR
+      // 2.1) The current segment allows crossfades, AND
+      // 2.2) The 2 items have the same category as the segment (ie: Not for promos that play during a music segment), OR
       // 3) When transitioning from a non-music item to a music item, or the other way.
       //   (but not from music -> music. The segment needs to allow it in this case).
       blncrossfade = run_data.current_item.blnloaded &&
                        (blnsegment_change ||
-                       run_data.current_segment.blncrossfading ||
+                       
+                       (run_data.current_segment.blncrossfading &&
+                        run_data.current_item.cat == run_data.current_segment.cat.cat &&
+                        run_data.next_item.cat    == run_data.current_segment.cat.cat) ||
+                        
                          ((run_data.current_item.cat == SCAT_MUSIC ||
                            run_data.next_item.cat == SCAT_MUSIC)
                            &&
