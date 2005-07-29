@@ -110,6 +110,11 @@ void player::log(const log_info & LI) {
   rr_log_instore(LI, PLAYER_LOG_FILE, db);
 }
 
+// Enable or disable extra messages sent to cout...
+void player::debug(const bool _blndebug) {
+  blndebug = _blndebug;
+}
+
 void player::init() {
   // Log the player version:
   rr_log_prog_starting();

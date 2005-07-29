@@ -68,7 +68,10 @@ void player::maintenance_operational_check(const datetime dtmcutoff) {
     // Done now:
     run_data.blnlog_all_music_to_db = false;
   }
-  
+
+  // Check for ads that have been missed (they were meant to play but it's been too long since the correct time.
+  write_errors_for_missed_promos();
+    
   // If the cached mp3 tags have changed, write them to disk now:
   mp3tags.save_changes();
 }

@@ -57,8 +57,11 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
 
 // Functions called by get_next_item():
 void player::get_next_item_promo(programming_element & item, const int intstarts_ms) {
+  if (blndebug) cout << "Checking if there is a promo (regular Radio Retail announcement) to play..." << endl;
+
   // Are there any promos waiting to be returned?
   if (run_data.waiting_promos.size() != 0) {
+    if (blndebug) cout << "Using a promo from a previously retrieved batch" << endl;
     // Yes: Return the promo and then leave this function
     item = run_data.waiting_promos[0];
     run_data.waiting_promos.pop_front();
@@ -82,7 +85,10 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   }
 
   // Check that enough time has passed since the last time this function was called:
-  if (dtmlast_run != datetime_error && (dtmnow/30 != dtmlast_run/30)) return;
+  if (dtmlast_run != datetime_error && (dtmnow/30 == dtmlast_run/30)) {
+    if (blndebug) cout << "Function was called within the last 30 seconds, not running main logic..." << endl;
+    return;
+  }
   
   // Now remember the last time we ran:
   dtmlast_run = dtmnow;
@@ -96,6 +102,19 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
                                 run_data.current_segment.blnpromos &&
                                 (dtmnow >= dtmlast_promo_batch + 60 * config.intmin_mins_between_batches);
 
+  if (blndebug) {
+    if (blnAdBatchesAllowedNow) {
+      cout << "Regular advert batches are allowed to play now." << endl;
+    }
+    else {
+      cout << "Regular advert batches are not allowed to play now." << endl;
+      if (!run_data.current_segment.blnloaded) cout << " - Format Clock segment not yet loaded." << endl;
+      if (!run_data.current_segment.blnpromos) cout << " - Segment does not allow promos." << endl;
+      if (!(dtmnow >= dtmlast_promo_batch + 60 * config.intmin_mins_between_batches)) cout << " - Last promo batch played too recently." << endl;
+      cout << "However, promos with 'forced' times will still be played." << endl;
+    }
+  }
+                                
   // Correct announcements that were previously interrupted during playback...
   correct_waiting_promos();
 
@@ -146,7 +165,9 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
   // - Player v6.15 - Now the announcement priority code (CA=1,SP=2,AD=3) actually has an effect on the announcement
   // playback priority (ORDER BY tblSched.strPriorityConverted)
+  if (blndebug) cout << "Querying database for adverts. SQL: " << strSQL << endl;
   pg_result RS = db.exec(strSQL);
+  if (blndebug) cout << "Returned rows: " << RS.recordcount() << endl;
 
   // 6.14: This loop is now where announcement limiting takes place
   while (!RS.eof() && AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
@@ -610,9 +631,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
                                    // So we grab the current time to ensure a minimum amount of music
                                    // before the next set of announcements can play.
     }
-
-    // Check for ads that have been meant (they were meant to play but it's been too long since the correct time.
-    write_errors_for_missed_promos();
 
     // Now return a promo to the calling func:
     item = run_data.waiting_promos[0];

@@ -11,6 +11,5 @@ const int intmax_segment_push_back = 2*60*60;        ///< Maximum amount of time
                                                      ///< "pushed back" because previous segments played for too long.
 const int intno_repeat_music       = 20;             ///< After a music item is played, this number of different songs must be played before the song may be repeated again
                                                      ///< This comes into effect when the segment category changes from music to non-music, and back to music again.
-const bool blndebug = false;                         ///< Is the player in debugging mode? The player will log extra output.
 
 #endif
