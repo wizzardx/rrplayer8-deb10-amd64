@@ -224,17 +224,14 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     string strFilePrefix = lcase(substr(scFileName, 0, 2));
 
     if (strFilePrefix == "ca") {
-      testing_throw;
       strFilePath = config.dirs.strannouncements; // Announcements
     }
     else if (strFilePrefix == "sp") {
-      strFilePath = config.dirs.strspecials;  // Specials
+      strFilePath = config.dirs.strspecials; // Specials
     } else if (strFilePrefix == "ad") {
-      testing_throw;
       strFilePath = config.dirs.stradverts; // Adverts
     }
     else {
-      testing_throw;
       log_error ("Advert filename " + scFileName + " has an unknown prefix " + strFilePrefix);
       strFilePath = config.dirs.strmp3; // Default to the music folder
     }
