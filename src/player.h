@@ -70,7 +70,7 @@ private:
     /// Database connection details (player.conf)
     struct db {
       string strserver; ///< Server hostname, IP address, etc
-      string strdb;  ///< The name of the MySQL database
+      string strdb;  ///< The name of the database
       string struser;  ///< The user name
       string strpassword;  ///< The password
       string strport;  ///< The port
