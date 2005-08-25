@@ -678,7 +678,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       // Process records:
       {
         int intadded=0; // Number if items we've added to the file list
-        while (!rs.eof()) {
+        while (rs) {
           // Fetch the file from the database:
           string strfile = rs.field("strfile", "");
           // Exists on the harddrive?
@@ -692,7 +692,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
             // No. Log a warning:
             log_warning("File listed in the database, but not found on disk: " + strdir + strfile);
           }
-          rs.movenext();
+          rs++;
         }
         // Did we add any entries?
         if (intadded <= 0) {
@@ -710,18 +710,17 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       // Load all MP3 files into the list
       {
         dir_list dir(strdir, ".mp3", DT_REG | DT_LNK);
-        string strfile = dir;
-        while (strfile != "") {
+        while (dir) {
+          string strfile = dir;        
           file_list.push_back(strdir + strfile);
           ++intadded;
-          strfile = dir;
         }
       }
 
       // Load all M3U files into the list (but only if our recursion level is high enough)
       dir_list dir(strdir, ".m3u", DT_REG | DT_LNK);
-      string strfile = dir;
-      while (strfile != "") {
+      while (dir) {
+        string strfile = dir;      
         if (intrecursion_level > 0) {
           // Process contents of the M3U file:
           recursive_add_to_string_list(file_list, strdir + strfile, intrecursion_level - 1, db);
@@ -733,7 +732,6 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
           log_warning("Not processing M3U file " + strdir + strfile + ". I am already at my maxiumum search depth.");
           testing;
         }
-        strfile = dir;
       }
 
       // Log a warning if we didn't find any files:
@@ -809,7 +807,7 @@ void segment::list_music_bed_media(pg_connection & db) {
   pg_result rs = db.exec(strsql);
   if (rs.recordcount() == 0) my_throw("Could not find music bed media in the database (lngsub_cat=" + music_bed.strsub_cat + ")!");
 
-  while(!rs.eof()) {
+  while(rs) {
     string strfile = ensure_last_char(rs.field("strdir"), '/') + rs.field("strfile");
     if (!file_exists(strfile)) {
       log_warning("Music bed media listed in database but not found on disk: " + strfile);
@@ -817,7 +815,7 @@ void segment::list_music_bed_media(pg_connection & db) {
     else {
       music_bed_media.push_back(strfile);
     }
-    rs.movenext();
+    rs++;
   }
   
   // Check if we have any music bed files:

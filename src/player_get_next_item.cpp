@@ -170,7 +170,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   if (blndebug) cout << "Returned rows: " << RS.recordcount() << endl;
 
   // 6.14: This loop is now where announcement limiting takes place
-  while (!RS.eof() && AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
+  while (RS && AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
     string strdbPos, scPriority, scPriorityConv, scFileName, tmplngTZslot, strProductCat, strPlayAtPercent, strAnnCode;
     datetime dtmTime;
 
@@ -352,7 +352,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
         AnnounceMissed_SameVoice.push_back(Announce);
       }
     }
-    RS.movenext(); // Move to the next record...
+    RS++; // Move to the next record...
   }
 
   // We've reached either the end of the recordset, or the limit for number of announcements to play in a single batch.

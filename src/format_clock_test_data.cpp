@@ -58,30 +58,29 @@ void format_clock_test_data::generate_test_data() {
   {
     int intsub_cat_count = 0;      
     pg_result rs = db.exec("SELECT lngfc_cat, strdir FROM tlkfc_cat");
-    while (!rs.eof()) {
+    while (rs) {
       long lngfc_cat = strtoi(rs.field("lngfc_cat"));
       string strdir = rs.field("strdir", "");
 
       if (dir_exists(strdir)) {
         // We have a category sub-directory. List the sub-directories
         dir_list cat_dir(strdir, "", DT_DIR);
-        string strsub_cat_dir=cat_dir;
-        while (strsub_cat_dir != "") {
+        while (cat_dir) {
+          string strsub_cat_dir=cat_dir;        
           // Add a sub-category...
           ++intsub_cat_count;
           db.exec("INSERT INTO tlkfc_sub_cat (lngfc_sub_cat, lngfc_cat, strname, strdir) VALUES (" + itostr(intsub_cat_count) + ", " + itostr(lngfc_cat) + ", '" + strsub_cat_dir + "', '" + strdir + strsub_cat_dir +  "/')");
 
           // Go into each sub-directory, list the media and add to tblfc_media
           dir_list sub_cat_dir(strdir + strsub_cat_dir +  "/");
-          string strfile = sub_cat_dir;
-          while (strfile != "") {
+          
+          while (sub_cat_dir) {
+            string strfile = sub_cat_dir;          
             db.exec("INSERT INTO tblfc_media (strfile, lngcat, lngsub_cat, dtmrelevant_from, dtmrelevant_until) VALUES ('" + strfile + "', " + ltostr(lngfc_cat) + ", " + itostr(intsub_cat_count) + ", '2005-01-01', '2005-12-31')");
-            strfile = sub_cat_dir;
           }
-          strsub_cat_dir=cat_dir;          
         }
       }
-      rs.movenext();
+      rs ++;
     }
   }
 
@@ -112,7 +111,7 @@ void format_clock_test_data::generate_test_data() {
           int intrand = rand() % rs.recordcount();
           rs.movefirst();
           for (int i = 0; i < intrand; i++) {
-            rs.movenext();
+            rs++;
           }
           lngcat = strtol(rs.field("lngfc_cat"));
           lngsub_cat = rs.field("lngfc_sub_cat");
@@ -131,7 +130,7 @@ void format_clock_test_data::generate_test_data() {
           int intrand= rand() % rs.recordcount();
           rs.movefirst();
           for (int i = 0; i < intrand; i++) {
-            rs.movenext();
+            rs++;
           }
           lngalt_cat = strtol(rs.field("lngfc_cat"));
           lngalt_sub_cat = rs.field("lngfc_sub_cat");
@@ -156,7 +155,7 @@ void format_clock_test_data::generate_test_data() {
           int intrand = rand() % rsmedia.recordcount();
           rsmedia.movefirst();
 
-          for (int i = 0; i < intrand; i++) rsmedia.movenext();
+          for (int i = 0; i < intrand; i++) rsmedia++;
           lngspecific_seq_media = rsmedia.field("lngfc_media");
         }
 
@@ -169,7 +168,7 @@ void format_clock_test_data::generate_test_data() {
         if (lngcat != 2) {         
           pg_result rs = db.exec("SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE lngfc_cat = 8");          
           int intrand = rand() % rs.recordcount();
-          for (int i=0; i<intrand; i++) rs.movenext();
+          for (int i=0; i<intrand; i++) rs++;
           lngunderlying_music_sub_cat = rs.field("lngfc_sub_cat");
           ysnunderlying_music = true;
         }     

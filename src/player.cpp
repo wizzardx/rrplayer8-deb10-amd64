@@ -510,7 +510,7 @@ void player::write_liveinfo() {
   string strMusicVol, strAnnouncementVol;
   strMusicVol = strAnnouncementVol = "";
 
-  if (!RS.eof()) {
+  if (RS) {
     strMusicVol = RS.field("intmusicvolume", "DB error");
     strAnnouncementVol = RS.field("intannvolume", "DB error");
   }
@@ -528,7 +528,7 @@ void player::write_liveinfo() {
   RS = db.exec(strSQL);
 
   string strNumAdsToday;
-  if (!RS.eof()) {
+  if (RS) {
     strNumAdsToday = RS.field("Counter");
   }
   else {
@@ -578,7 +578,7 @@ void player::write_liveinfo_setting(const string & strname, const string & strva
   pg_result rs = db.exec(strSQL);
   // Generate part of the SQL string - if strValue is empty then a NULL value
   // must be written.
-  if (rs.eof())
+  if (!rs)
     // A new status setting - INSERT
     strSQL = "INSERT INTO tblliveinfo (strstatusname, strstatusvalue) VALUES (" + psql_str(strname) + ", " + psql_str(strvalue) + ")";
   else
@@ -591,8 +591,6 @@ void player::write_liveinfo_setting(const string & strname, const string & strva
 void player::check_received() {
   // this procedure checks the apppaths.recieved directory for the following files to process
   // .cmd
-  string FileName; // used to read file names from a folder.
-  string Full_Path;
 
   // Go through all files in the received folder and where necessary reset their
   // Read-Only attribute
@@ -600,10 +598,10 @@ void player::check_received() {
 
   // Process command files
   dir_list Dir_CMD(config.dirs.strreceived, ".cmd");
-  FileName = Dir_CMD.item();
-  while (FileName != "") {
+  while (Dir_CMD) {
+    string FileName = Dir_CMD; // used to read file names from a folder.  
     // Create the full path
-    Full_Path = config.dirs.strreceived + FileName;
+    string Full_Path = config.dirs.strreceived + FileName;
     log_message("Processing CMD file: " + FileName);
     // Load the command file into the database
     try {
@@ -611,9 +609,6 @@ void player::check_received() {
       process_waiting_cmds();
     } catch_exceptions;
     rm(Full_Path);
-
-    // Next file
-    FileName = Dir_CMD.item();
   }
 }
 
@@ -638,7 +633,7 @@ void player::process_waiting_cmds() {
     string strSQL = "SELECT lngWaitingCMD, strCommand, strParams, dtmProcessed, bitComplete, bitError FROM tblWaitingCMD WHERE (bitComplete = '0') OR (bitComplete IS NULL)";
     pg_result rsCMD = db.exec(strSQL);
 
-    while(!rsCMD.eof()) {
+    while(rsCMD) {
       string strCommand = ucase(rsCMD.field("strCommand", ""));
       string strParams = rsCMD.field("strParams", "");
       lngWaitingCMD = strtoi(rsCMD.field("lngWaitingCMD"));
@@ -733,7 +728,7 @@ void player::process_waiting_cmds() {
         strSQL = "UPDATE tblWaitingCMD SET bitComplete = '1', bitError = '1', dtmProcessed = " + psql_now + " WHERE lngWaitingCMD = " + rsCMD.field("lngWaitingCMD", "-1");
         db.exec(strSQL);
       }
-      rsCMD.movenext();
+      rsCMD++;
     }
   }
   catch(...) {
@@ -816,7 +811,7 @@ void player::write_errors_for_missed_promos() {
   datetime dtmmissed_first=datetime_error;
   datetime dtmmissed_last=datetime_error;
 
-  while (!RS.eof()) {
+  while (RS) {
     string strTZ_Slot = RS.field("lngTZ_Slot");
     datetime dtmDay  = parse_psql_date(RS.field("dtmDay"));
     datetime dtmTime = parse_psql_time(RS.field("dtmForcePlayAt", RS.field("dtmStart", " ").c_str()));
@@ -863,7 +858,7 @@ void player::write_errors_for_missed_promos() {
     db.exec(strSQL);
 
     // Now move to the next record.
-    RS.movenext();
+    RS++;
   }
 
   // Now, at the end of the loop, write the details for the last missed announcement that we
@@ -1136,17 +1131,17 @@ void player::log_song_played(const string & strdescr) {
 
   int intCounter = 0;
 
-  if (!rs.eof())
+  if (rs)
     intCounter = strtoi(rs.field("Counter", "0"));
 
   if (intCounter > 100) {
     // There are more then 100 MP3's Listed - erase the oldest
     strsql = "SELECT lngPlayedMP3 FROM tblMusicHistory ORDER BY lngPlayedMP3 LIMIT " + itostr(intCounter - 100);
     rs = db.exec(strsql);
-    while (!rs.eof()) {
+    while (rs) {
       strsql = "DELETE FROM tblMusicHistory WHERE lngPlayedMP3 = " + rs.field("lngPlayedMP3", "-1");
       db.exec(strsql);
-      rs.movenext();
+      rs++;
     }
   }
 }
