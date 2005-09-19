@@ -43,7 +43,7 @@
         <envvars/>
         <configargs/>
         <topsourcedir/>
-        <cppflags>-I /usr/include/postgresql/ -I /usr/include/glib-1.2/ -I /usr/lib/glib/include/</cppflags>
+        <cppflags>-I /usr/include/postgresql/ -I /usr/include/glib-1.2/ -I /usr/lib/glib/include/ -DRR_MISC_DB</cppflags>
         <ldflags/>
         <ccompilerbinary/>
         <cxxcompilerbinary/>
