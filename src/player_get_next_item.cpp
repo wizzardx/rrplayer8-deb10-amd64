@@ -19,15 +19,15 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
 
   // Check if the item is already loaded:
   if (item.blnloaded) my_throw("Item is already loaded! Can't load it again! Reset it first!");
-  
+
   // Reset "next_item"
   item.reset();
-  
+
   // If the current promo batch queue is not empty, then fetch the next item:
   if (!item.blnloaded && run_data.waiting_promos.size() != 0) {
     get_next_item_promo(item, intstarts_ms);
   }
-  
+
   // Update the store status, check if the store is currently open or closed:
   load_store_status();
 
@@ -89,7 +89,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     if (blndebug) cout << "Function was called within the last 30 seconds, not running main logic..." << endl;
     return;
   }
-  
+
   // Now remember the last time we ran:
   dtmlast_run = dtmnow;
 
@@ -114,7 +114,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
       cout << "However, promos with 'forced' times will still be played." << endl;
     }
   }
-                                
+
   // Correct announcements that were previously interrupted during playback...
   correct_waiting_promos();
 
@@ -634,21 +634,21 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       run_data.intsegment_delay = intnew_segment_delay;
     }
   }
-  
+
   // Check here: has the hour changed?
   // If it has, then we reset the current segment delay factor.
   {
     static datetime dtmlast_checked = datetime_error;
-    
+
     // Has the hour changed?
     datetime dtmnow = now();
-    
+
     if (dtmlast_checked != datetime_error && dtmlast_checked/(60*60) != dtmnow/(60*60) && run_data.intsegment_delay > 0) {
       log_warning("Hour has changed. Resetting segment delay (currently: " + itostr(run_data.intsegment_delay) + "s)");
       log_warning("All segments that were scheduled to play between '" + format_datetime(dtmnext_starts - run_data.intsegment_delay, "%T") + "' and '" + format_datetime((dtmnext_starts) - 1, "%T") + "' will be missed!");
       run_data.intsegment_delay = 0;
     }
-    
+
     // We've done the check now (or not, if this is the first time the function was called)
     // Wait until the next hour:
     dtmlast_checked = dtmnow;
@@ -745,7 +745,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
 
     // A -1 lngfc_seg means load the default music profile instead
     run_data.current_segment.load_from_db(db, lngfc_seg, config.strdefault_music_source, dtmdelayed);
-    
+
     // Log some basic details about the new segment.
     log_line(run_data.current_segment.cat.strname + " segment is scheduled for " + format_datetime(run_data.current_segment.scheduled.dtmstart, "%T") + " to " + format_datetime(run_data.current_segment.scheduled.dtmend, "%T") + " (" + itostr(run_data.current_segment.scheduled.dtmend - run_data.current_segment.scheduled.dtmstart + 1) + "s)");
 
@@ -754,7 +754,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
 
     // Is our difference negative?
     if (intdiff < 0) my_throw("Logic Error!");
-    
+
     // Did we query part-way into the segment?
     if (intdiff > 0) {
       log_line("Currently " + itostr(intdiff) + "s into the new segment. Compensating...");
@@ -792,7 +792,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
 
     // Now log how log what time the segment will start at, and for how long it will play.
     log_message("New segment will run from " + format_datetime(run_data.current_segment.dtmstart, "%T") + " to " + format_datetime(run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1, "%T") + " (" + itostr(run_data.current_segment.intlength) + "s)");
-    
+
     // If this is a music playlist then log it to the database:
     if (run_data.current_segment.cat.cat == SCAT_MUSIC) {
       // Log the XMMS playlist, and the system's available music later:
@@ -800,7 +800,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     }
   }
 
-  // Now fetch the next item to play, from the segment. Make sure it isn't a 
+  // Now fetch the next item to play, from the segment. Make sure it isn't a
   // song which was played recently:
   get_next_item_not_recent_music(next_item, intstarts_ms);
 }
@@ -808,10 +808,10 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
 void player::get_next_item_not_recent_music(programming_element & next_item, const int intstarts_ms) {
   // This function stops songs from playing too soon after each other.
   // eg: segment changes from music to non-music and back to music.
-  
+
   bool blnok      = false; // Set to true when we find an item which isn't a recently-played song
   int intattempts_left = intno_repeat_music*2; // Try this many times to find an ok item.
-  
+
   while (!blnok && intattempts_left > 0) {
     // Fetch the next item:
     run_data.current_segment.get_next_item(next_item, db, config.strdefault_music_source, intstarts_ms);
@@ -821,7 +821,7 @@ void player::get_next_item_not_recent_music(programming_element & next_item, con
     // If this check failed then go to the next attempt:
     if (!blnok) --intattempts_left;
   }
-  
+
   // Did we find an item which isn't a recently-played song?
-  if (!blnok) my_throw("I was unable to find a song which has not been played recently!"); 
+  if (!blnok) my_throw("I was unable to find a song which has not been played recently!");
 }

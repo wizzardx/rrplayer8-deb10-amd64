@@ -8,7 +8,7 @@
 
 #ifndef CATEGORIES_H
 #define CATEGORIES_H
- 
+
 // These are the predefined Format Clock Segment categories:
 enum seg_category {
   SCAT_UNKNOWN,

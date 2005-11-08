@@ -10,7 +10,7 @@
 #include "player_run_data.h"
 
 using namespace std;
-                                                     
+
 /// Information about "events" that take place during playback of the current item.
 class playback_events_info {
 public:
@@ -42,11 +42,11 @@ public:
   ~player(); ///< Destructor
   void run(); ///< Main logic
   void log(const log_info & LI); ///< Call this to write a log to the player logfile & to the schedule database.
-  void debug(const bool blndebug); // Additional messages are sent to cout...  
+  void debug(const bool blndebug); // Additional messages are sent to cout...
 private:
   void init();  ///< Called by the constructor to do the actual init (kdevelop breakpoint problems).
 
-  // FUNCTIONS AND ATTRIBUTES USED DURING INIT():  
+  // FUNCTIONS AND ATTRIBUTES USED DURING INIT():
   void reset(); ///< Reset ALL object attributes to default, uninitialized values.
   void remove_waiting_mediaplayer_cmds(); ///< Remove waiting MediaPlayer commands (pause, stop, resume, etc)
   void write_liveinfo(); ///< Write status info to a table for the Global Reporter to read.
@@ -120,7 +120,7 @@ private:
      /// Additionally, these volumes are converted to 80% of their original to prevent distortion of louder
      /// levels. After calling "load_store_status()", player logic can use the levels here directly for playback.
      /// Volumes in this struct are reset to 0% when the store is closed.
-     /// Current volumes, adjusted correctly     
+     /// Current volumes, adjusted correctly
      struct volumes {
        int intmusic;    ///< Has hourly adjustment vol added
        int intannounce; ///< Has music volume (adjusted) added.
@@ -153,7 +153,7 @@ private:
   // must take place when transitioning to the next item. When we reach the store closing hour, the next
   // item is automatically the "Silence" category (overriding anything else that might want to play now)
   // Also here must come logic for when a) repeat runs out before the segment end, and b) when some time of
-  // the next segement is used up by accident (push slots forwards by up to 6 mins, reclaim space by using up music time).   
+  // the next segement is used up by accident (push slots forwards by up to 6 mins, reclaim space by using up music time).
   void get_next_item(programming_element & item, const int intstarts_ms); // intstarts_ms - how long from now (in ms) the item will be played.
 
   // Functions called by get_next_item():
@@ -177,7 +177,7 @@ private:
   void playback_transition(playback_events_info & playback_events);
     // Used by playback_transition():
     void queue_event(transition_event_list & events, const string & strevent, const int intwhen_ms);
-    void queue_volslide(transition_event_list & events, const string & strwhich_item, const int intfrom_vol_percent, const int intto_vol_percent, const int intwhen_ms, const int intlength_ms);    
+    void queue_volslide(transition_event_list & events, const string & strwhich_item, const int intfrom_vol_percent, const int intto_vol_percent, const int intwhen_ms, const int intlength_ms);
 
   // Fetch actual volumes to use, based on item's "strvol" or "strunderlying_media_vol" settings.
   int get_pe_vol(const string & strpe_vol);

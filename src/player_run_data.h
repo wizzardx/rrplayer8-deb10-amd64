@@ -52,17 +52,17 @@ public:
   // limit (6 mins), and then is reduced when we hit a music segment. Music segments are reduced down to a minimum
   // of 30 seconds to reclaim time back from this "puch back" factor.
   int intsegment_delay;
-  
+
   programming_element_list waiting_promos; ///< List of promos waiting to play. Populated by get_next_item_promo
-  
+
   /// Set to true when the player wants to log 1) the XMMS music playlist, and 2) All available music on the machine.
-  bool blnlog_all_music_to_db; 
-  
+  bool blnlog_all_music_to_db;
+
   // A list of the most recent media files played. This helps us to prevent songs
   // from playing that have been played recently.
-private:  
+private:
   vector <string> recent_music;
-public:  
+public:
   // Some functions to manipulate the list:
   void remember_recent_music(const string & strfile);
   bool music_played_recently(const string & strfile);

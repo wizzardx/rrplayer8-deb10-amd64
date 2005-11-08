@@ -6,15 +6,6 @@
     email                : david@radioretail.co.za
  ***************************************************************************/
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-
 #ifndef FORMAT_CLOCK_TEST_DATA_H
 #define FORMAT_CLOCK_TEST_DATA_H
 
@@ -25,21 +16,21 @@
   */
 
 
-// Class that exists only to create Format Clock test data.  
+// Class that exists only to create Format Clock test data.
 class format_clock_test_data {
-public: 
+public:
   format_clock_test_data(pg_connection & DB) : db(DB) {};
   ~format_clock_test_data() {};
 
   void clear_tables();
-  void generate_test_data();  
+  void generate_test_data();
 
-private:  
+private:
   pg_connection & db;
 
 
-  
- 
+
+
 };
 
 #endif

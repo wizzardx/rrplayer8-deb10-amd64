@@ -93,7 +93,7 @@ void player::maintenance_player_running(const datetime dtmcutoff) {
     int intsession = run_data.get_xmms_used(SU_CURRENT_FG);
     strline += "xmms " + itostr(intsession) + ": " + itostr(run_data.xmms[intsession].getvol()) + "%";
 
-    // Fetch the volume of the music bed, if one is being used: 
+    // Fetch the volume of the music bed, if one is being used:
     try {
       intsession = run_data.get_xmms_used(SU_CURRENT_BG); // Try to fetch the session
       // No exception thrown, so we have an xmms session for the music bed.
@@ -130,14 +130,14 @@ void player::log_music_playlist_to_db() {
   // Create a postgresql transaction. We're going to be doing a lot of updates:
   pg_transaction transaction(db);
 
-  const string strPlaylistDescr = "playlist";    
+  const string strPlaylistDescr = "playlist";
 
   // Remove all existing playlist records:
   string strsql = "DELETE FROM tblplayeroutput WHERE strmsgdesc = " + psql_str(strPlaylistDescr);
   transaction.exec(strsql);
 
   // Now proceed through the playlist:
-  programming_element_list::const_iterator pe = run_data.current_segment.programming_elements.begin();  
+  programming_element_list::const_iterator pe = run_data.current_segment.programming_elements.begin();
 
   while (pe != run_data.current_segment.programming_elements.end()) {
     try {
@@ -172,7 +172,7 @@ void player::log_machine_avail_music_to_db() {
 
   // Build up a linux command to list all of the machine's music MP3s into a text-file
   // - The textfule is "avail_music.txt"
-  string strCommand = "ls " + config.dirs.strmp3 +  "*.[Mm][Pp]3 > " + stravail_list_file + 
+  string strCommand = "ls " + config.dirs.strmp3 +  "*.[Mm][Pp]3 > " + stravail_list_file +
                      "; find " + config.dirs.strprofiles + " | grep \"\\.[Mm][Pp]3\" >> " + stravail_list_file;
   system(strCommand.c_str());
 

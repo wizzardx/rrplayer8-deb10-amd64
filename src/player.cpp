@@ -602,7 +602,7 @@ void player::check_received() {
   // Process command files
   dir_list Dir_CMD(config.dirs.strreceived, ".cmd");
   while (Dir_CMD) {
-    string FileName = Dir_CMD; // used to read file names from a folder.  
+    string FileName = Dir_CMD; // used to read file names from a folder.
     // Create the full path
     string Full_Path = config.dirs.strreceived + FileName;
     log_message("Processing CMD file: " + FileName);
@@ -767,7 +767,7 @@ void player::write_errors_for_missed_promos() {
   string psql_EarliestTime = "";
   {
     // Make sure that our earliest time does not wrap around to late in the evening!
-    // - Not comparing datetime values in case after converting the earliest time to a 
+    // - Not comparing datetime values in case after converting the earliest time to a
     // timetamp, it ends up as a later time of day anyway.
     datetime dtmnow = now();
     datetime dtmearliest = dtmnow - (60 * config.intmins_to_miss_promos_after);
@@ -1041,7 +1041,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   }
 
   // If we're playing linein or silence, then check for the next item:
-  if (run_data.current_item.blnloaded && 
+  if (run_data.current_item.blnloaded &&
       run_data.current_item.strmedia == "LineIn" || run_data.current_item.cat == SCAT_SILENCE) {
     // Is the next item loaded?
     if (!run_data.next_item.blnloaded) {
@@ -1063,7 +1063,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
     // If the details match the current item (linein, silence, etc), then
     // reset the info now:
     if (run_data.next_item.blnloaded) {
-      if (run_data.current_item.cat      == run_data.next_item.cat && 
+      if (run_data.current_item.cat      == run_data.next_item.cat &&
           run_data.current_item.strmedia == run_data.next_item.strmedia) {
         // Yep. So we're still playing linein/silence. Hasn't change.d
         // Reset the info about the next item:

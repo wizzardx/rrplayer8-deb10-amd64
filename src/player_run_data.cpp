@@ -45,12 +45,12 @@ void player_run_data::init() {
   intsegment_delay = 0; // Segments are currently delayed by this number of seconds.
 
   waiting_promos.clear(); // List of promos waiting to play. Populated by get_next_item_promo
-  
+
   blnlog_all_music_to_db = false; // Set to true when the player wants to log all available music (and the current XMMS playlist) to the database.
-  
+
   // Clear the list of recently-played music:
   recent_music.clear();
-  
+
   // Set the PCM volume to 90% - we use software mixing not hardware!
   string strout;
   system_capture_out_throw("/usr/bin/aumix -w 90", strout);
@@ -191,10 +191,10 @@ void player_run_data::remember_recent_music(const string & strfile) {
   // purpose of the list is to prevent a song from being repeated too soon after
   // the last time it played. This can happen for example when the segment category
   // changes from music to non-music and then back to music again.
-  
+
   // Append the file to the end of the list:
   recent_music.push_back(strfile);
-  
+
   // If our list is long enough, we start removing items from the beginning of the list:
   while (recent_music.size() > intno_repeat_music) {
     recent_music.erase(recent_music.begin());

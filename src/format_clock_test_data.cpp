@@ -6,15 +6,6 @@
     email                : david@radioretail.co.za
  ***************************************************************************/
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-
 #include "format_clock_test_data.h"
 #include "common/my_string.h"
 #include "common/file.h"
@@ -26,7 +17,7 @@ void format_clock_test_data::clear_tables() {
   db.exec("DELETE FROM tblfc_seg");
   db.exec("DELETE FROM tblfc_media");
   db.exec("DELETE FROM tlkfc_sub_cat");
-  db.exec("DELETE FROM tblfc_sched_day");  
+  db.exec("DELETE FROM tblfc_sched_day");
   db.exec("DELETE FROM tblfc_sched");
   db.exec("DELETE FROM tblfc");
 }
@@ -56,7 +47,7 @@ void format_clock_test_data::generate_test_data() {
 
   // tblfc_sub_cat
   {
-    int intsub_cat_count = 0;      
+    int intsub_cat_count = 0;
     pg_result rs = db.exec("SELECT lngfc_cat, strdir FROM tlkfc_cat");
     while (rs) {
       long lngfc_cat = strtoi(rs.field("lngfc_cat"));
@@ -66,16 +57,16 @@ void format_clock_test_data::generate_test_data() {
         // We have a category sub-directory. List the sub-directories
         dir_list cat_dir(strdir, "", DT_DIR);
         while (cat_dir) {
-          string strsub_cat_dir=cat_dir;        
+          string strsub_cat_dir=cat_dir;
           // Add a sub-category...
           ++intsub_cat_count;
           db.exec("INSERT INTO tlkfc_sub_cat (lngfc_sub_cat, lngfc_cat, strname, strdir) VALUES (" + itostr(intsub_cat_count) + ", " + itostr(lngfc_cat) + ", '" + strsub_cat_dir + "', '" + strdir + strsub_cat_dir +  "/')");
 
           // Go into each sub-directory, list the media and add to tblfc_media
           dir_list sub_cat_dir(strdir + strsub_cat_dir +  "/");
-          
+
           while (sub_cat_dir) {
-            string strfile = sub_cat_dir;          
+            string strfile = sub_cat_dir;
             db.exec("INSERT INTO tblfc_media (strfile, lngcat, lngsub_cat, dtmrelevant_from, dtmrelevant_until) VALUES ('" + strfile + "', " + ltostr(lngfc_cat) + ", " + itostr(intsub_cat_count) + ", '2005-01-01', '2005-12-31')");
           }
         }
@@ -144,7 +135,7 @@ void format_clock_test_data::generate_test_data() {
 
         // Choose a sequence (1-3)
         string lngspecific_seq_media = "NULL";
-        
+
         long lngseq=rand()%3 + 1;
         if (lngseq==3 && lngcat != 2) { // Only choose a specific file if this is not a music segment...
           // Specific
@@ -165,13 +156,13 @@ void format_clock_test_data::generate_test_data() {
         // Has a music bed? .. yes, if it is not a music segment
         bool ysnunderlying_music = false;
         string lngunderlying_music_sub_cat = "NULL";
-        if (lngcat != 2) {         
-          pg_result rs = db.exec("SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE lngfc_cat = 8");          
+        if (lngcat != 2) {
+          pg_result rs = db.exec("SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE lngfc_cat = 8");
           int intrand = rand() % rs.recordcount();
           for (int i=0; i<intrand; i++) rs++;
           lngunderlying_music_sub_cat = rs.field("lngfc_sub_cat");
           ysnunderlying_music = true;
-        }     
+        }
 
         // Crossfade in this segment? (half of the time yes, half of the time no)
         bool ysncrossfade=(rand() % 2);
@@ -203,6 +194,6 @@ void format_clock_test_data::generate_test_data() {
         intfrom_min += 5;
         intto_min += 5;
       }
-    }    
+    }
   }
 }

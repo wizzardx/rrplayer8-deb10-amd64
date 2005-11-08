@@ -19,7 +19,7 @@ segment::~segment() {
 // Reset all segment info
 void segment::reset() {
   blnloaded = false;
-  
+
   // Information about the format clock:
   fc.lngfc   = -1;
   fc.strname = "";
@@ -82,12 +82,12 @@ void segment::reset() {
 }
 
 void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const string & strdefault_music_source, const datetime dtmtime) {
-  // Read details for a segment [lngfc_seg_arg], from the database(db), into this object  
+  // Read details for a segment [lngfc_seg_arg], from the database(db), into this object
   // Is a -1 lngfc_seg_arg specified? (ie, load default music profile)
-  
+
   // First reset all existing info & stats:
   reset();
-  
+
   // Now start the loading:
   lngfc_seg = lngfc_seg_arg;
   try {
@@ -96,16 +96,16 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
       setup_as_music_profile(strdefault_music_source, "<Default Music Profile>", db);
       playback_state = PBS_DEFAULT_MUSIC;
       blnloaded = true;
-  
+
       // Fill in a bogus scheduled from and to:
       scheduled.dtmstart = dtmtime;
       scheduled.dtmend = dtmtime + 60*60 - 1;
-      
+
       return; // Now return to the caller
     }
-  
+
     // Otherwise, load details from the database:
-  
+
     // Build main query:
     string strsql =
       "SELECT "
@@ -138,27 +138,27 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
       "INNER JOIN tlkfc_seq ON tblfc_seg.lngseq = tlkfc_seq.lngfc_seq "
       "LEFT OUTER JOIN tblfc_media ON tblfc_seg.lngspecific_seq_media = tblfc_media.lngfc_media "
       "WHERE lngfc_seg = " + ltostr(lngfc_seg);
-  
+
     // Fetch results
     pg_result rs = db.exec(strsql);
-  
+
     // Check rowcount:
     if (rs.recordcount() != 1) my_throw("Error! " + itostr(rs.recordcount()) + " results were returned here instead of 1!");
-  
+
     // Now load object fields of the resultset:
-  
+
     // Information about the format clock:
     fc.lngfc   = strtol(rs.field("lngfc"));
     fc.strname = rs.field("strfc_name");
-  
+
     // Category
     cat.lngcat  = strtol(rs.field("lngcat"));
     cat.strname = rs.field("strcat_name");
     cat.cat     = parse_category_string(cat.strname);
-    
+
     // Sub-category
     load_sub_cat_struct(sub_cat, rs.field("strsub_cat"), db, cat, lngfc_seg, "Sub-category", "strsub_cat");
-  
+
     // Alternative category
     alt_cat.lngcat  = strtol(rs.field("lngalt_cat", "-1"));
     alt_cat.strname = rs.field("stralt_cat_name", "");
@@ -167,39 +167,39 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
       alt_cat.cat = SCAT_UNKNOWN;
     }
     else {
-      // Alternative category was defined. 
-      alt_cat.cat = parse_category_string(alt_cat.strname);    
-  
+      // Alternative category was defined.
+      alt_cat.cat = parse_category_string(alt_cat.strname);
+
       // Alternative sub-category:
       // Do we have an alternative sub-category?
       string stralt_sub_cat=rs.field("stralt_sub_cat", "");
       if (stralt_sub_cat == "") my_throw("Alternative category defined but not the alternative sub-category!");
-      
+
       load_sub_cat_struct(alt_sub_cat, rs.field("stralt_sub_cat", ""), db, alt_cat, lngfc_seg, "Alternative sub-category", "stralt_sub_cat");
     }
-  
+
     // Segment-specific info
     sequence            = parse_sequence_string(rs.field("strseq"));  // Random, Sequential, Specific
     strspecific_media   = ensure_last_char(rs.field("strspecific_media_dir", ""), '/') + rs.field("strspecific_media", "");        // Media to play if the user chose Specific
-  
+
     blnpromos           = strtobool(rs.field("ysnpromos"));          // Promos allowed in this segment?
     blnmusic_bed        = strtobool(rs.field("ysnmusic_bed"));       // Does this segment have a music bed?
-  
+
     // Information about the music bed.
     music_bed.strsub_cat = rs.field("lngmusic_bed_sub_cat", "-1");
     music_bed.strname    = rs.field("strmusic_bed_name", "");
     music_bed.strdir     = rs.field("strmusic_bed_dir", "");
-    
+
     // Don't allow music beds to play with Music segments:
     if (blnmusic_bed && cat.cat == SCAT_MUSIC) my_throw("Music segments aren't allowed to have music beds!");
-  
+
     blncrossfading = strtobool(rs.field("ysncrossfade")); // Crossfade music & announcements in this segment?
     blnmax_age   = !(rs.field_is_null("intmax_age"));   // Does this segment limit the maximum age of sub-category media played?
     intmax_age   = strtoi(rs.field("intmax_age", "-1"));      // If so, this is the maximum age.
     blnpremature = strtobool(rs.field("ysnpremature"));   // Ignore the "Relevant from" setting of sub-category media
     blnrepeat    = strtobool(rs.field("ysnrepeat"));   // Repeat sub-category media in this segment?
     intmax_items = strtoi(rs.field("intmax_items", itostr(INT_MAX).c_str()));
-    
+
     // Try to load the list of programming elements:
     playback_state = PBS_CATEGORY; // If this fails, we go to alternate segment, default music, etc.
     {
@@ -214,12 +214,12 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
         revert_down(db, strdefault_music_source);
       }
     }
-  
+
     // Calculate scheduled.dtmstart and scheduled.dtmend  (full date & time, not just minute and second).
     {
       datetime dtmstart = parse_time_string(rs.field("dtmstart"));
       datetime dtmend   = parse_time_string(rs.field("dtmend"));
-  
+
       // Fetch the full version of "dtmstart"
       {
         tm tmall  = datetime_to_tm(dtmtime);
@@ -228,7 +228,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
         tmall.tm_sec = tmmmss.tm_sec;
         scheduled.dtmstart = mktime(&tmall);
       }
-  
+
       // Fetch the full version of "dtmend"
       {
         tm tmall  = datetime_to_tm(dtmtime);
@@ -238,19 +238,19 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
         scheduled.dtmend = mktime(&tmall);
       }
     }
-    
+
     // Everything was successfully loaded:
     blnloaded = true;
-  } 
+  }
   catch (const exception & e) {
     // There was a problem loading the segment. Try reverting to default music instead.
     // Were already processing the default music profile?
     if (lngfc_seg == -1) throw;
-    
+
     // Otherwise, attempt to revert to default music:
     log_error((string)"The following error occured while loading the segment details: " + e.what());
     log_message("Reverting to the default music profile.");
-    
+
     load_from_db(db, -1, strdefault_music_source, dtmtime);
     lngfc_seg = lngfc_seg_arg; // And restore the value. We are playing default music, but our segment remains unchanged.
   }
@@ -263,7 +263,7 @@ void segment::setup_as_music_profile(const string & strmusic_source, const strin
   // Segment-specific info
   cat.cat     = SCAT_MUSIC;
   cat.strname = "Music";
-  
+
   sequence       = SSEQ_RANDOM; // Play music in random order
   blnpromos      = true; // Allow announcement playback during this segment.
   blnrepeat      = true; // Music
@@ -281,7 +281,7 @@ void segment::setup_as_music_profile(const string & strmusic_source, const strin
 
   // And at the end:
   blnloaded = true; // Our segment is now loaded.
-}   
+}
 
 void segment::get_next_item(programming_element & pe, pg_connection & db, const string & strdefault_music_source, const int intstarts_ms) {
   // Have we already fetched the maximum allowed number of items for this segment?
@@ -295,11 +295,11 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
     if (blnfirst_fetched) {
       // First item has already been fetched. Go to the next item
       // (ie, we don't progress to the next item until the 2nd item is being retrieved).
-  
+
       // Are we at the end of the current list?
       if (next_item == programming_elements.end()) my_throw("Logic Error!"); // Should never be at end before advancing!
       next_item++; // Go to the next item.
-  
+
       // At the last item now?
       if (next_item == programming_elements.end()) {
         // Yes. Does the segment allow repeating?
@@ -320,7 +320,7 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
 
   // Check: Do we have a "next" item to return?
   if (next_item == programming_elements.end()) my_throw("Logic Error!"); // This should never happen...
-  
+
   // Now return it:
   pe = *next_item;
 
@@ -394,7 +394,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
         log_warning("Music source lists # LineIn entries. This is weird, please look into this.");
         // Reset the list, push just 1 "LineIn" entry into it:
         file_list.clear();
-        file_list.push_back("LineIn");        
+        file_list.push_back("LineIn");
       }
       testing_throw;
     }
@@ -431,8 +431,8 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
     my_throw("Could not find any media for the playlist: \"" + strsource + "\"");
   }
   else if (cat.cat == SCAT_MUSIC && pel.size() < 10) {
-    // Log a warning if this is a music segment and there are very few entries:    
-    log_warning("The new music playlist only has " + itostr(pel.size()) + " song(s)!");    
+    // Log a warning if this is a music segment and there are very few entries:
+    log_warning("The new music playlist only has " + itostr(pel.size()) + " song(s)!");
   }
 }
 
@@ -469,7 +469,7 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
   }
 
   string strsource = ""; // The file, sub-directory or playlist we use:
-  
+
   // Is the sequence "Specific"? (ie, use only 1 media item)
   if (sequence == SSEQ_SPECIFIC) {
     // Prepare a single programming element and add it to the list.
@@ -495,16 +495,16 @@ testing_throw;
       // strsub_cat is non-numeric. Use it directly as our "source" to build a playlist from:
       strsource = sub_cat.strsub_cat;
     }
-  
+
     // Do we shuffle the media?
     blnshuffle_pel = (sequence == SSEQ_RANDOM);
   }
-  
+
   // List the music bed items to be used during this segment:
   if (blnmusic_bed) {
     list_music_bed_media(db);
   }
-  
+
   // Build up our list of items to play:
   generate_playlist(pel, strsource, cat.cat, db);
 
@@ -522,12 +522,12 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
   // with the alternate category, we attempt to revert to the default music profile. If there are still problems
   // we throw an exception. This function is called to revert from the current playback status to the next lower.
   bool blndone = false; // Set to true when we find the state to revert to.
-  
+
   while (!blndone) {
     // Reset pe list, and current element pointer.
     programming_elements.clear();
     next_item = programming_elements.begin();
-  
+
     switch (playback_state) {
       case PBS_CATEGORY: {
         log_message("Reverting to Alternative Category & Sub-Category");
@@ -537,12 +537,12 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
           blnmusic_bed = false;
           sequence = SSEQ_RANDOM;
           intmax_items = INT_MAX;
-          
+
           // Check if the alternate category was defined:
           if (alt_cat.cat == SCAT_UNKNOWN) {
             log_warning("Alternate Category was not defined.");
           }
-          else {          
+          else {
             // Now load the new playlist & setup the iterator:
             load_pe_list(programming_elements, alt_cat, alt_sub_cat, db);
             next_item = programming_elements.begin();
@@ -647,7 +647,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
     pg_result rs = db.exec(strsql);
     if (rs.recordcount() > 0) {
       long lngfc_sub_cat = strtol(rs.field("lngfc_sub_cat"));
-      
+
       // A format clock sub-category directory. Fetch relevant MP3s from the database:
       string strsql_date = "'" + format_datetime(date(), "%F") + "'"; // Current date, in psql form.
       string strsql = "SELECT strfile FROM tblfc_media WHERE "
@@ -711,7 +711,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       {
         dir_list dir(strdir, ".mp3", DT_REG | DT_LNK);
         while (dir) {
-          string strfile = dir;        
+          string strfile = dir;
           file_list.push_back(strdir + strfile);
           ++intadded;
         }
@@ -720,7 +720,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       // Load all M3U files into the list (but only if our recursion level is high enough)
       dir_list dir(strdir, ".m3u", DT_REG | DT_LNK);
       while (dir) {
-        string strfile = dir;      
+        string strfile = dir;
         if (intrecursion_level > 0) {
           // Process contents of the M3U file:
           recursive_add_to_string_list(file_list, strdir + strfile, intrecursion_level - 1, db);
@@ -817,14 +817,14 @@ void segment::list_music_bed_media(pg_connection & db) {
     }
     rs++;
   }
-  
+
   // Check if we have any music bed files:
   if (music_bed_media.size() == 0) my_throw("Could not find any Music Bed media!");
-  
+
   // Shuffle the list:
   srand(now());
   random_shuffle(music_bed_media.begin(), music_bed_media.end(), myrand);
-  
+
   // Now setup the iterator:
   music_bed_media_it = music_bed_media.begin();
 }
@@ -832,14 +832,14 @@ void segment::list_music_bed_media(pg_connection & db) {
 string segment::get_music_bed_media() {
   // Fetch the next listed music bed item:
   if (music_bed_media.size() == 0) my_throw("Logic Error!");
-  
+
   string strret = *music_bed_media_it;
   ++music_bed_media_it;
-  
+
   if (music_bed_media_it == music_bed_media.end()) {
     music_bed_media_it=music_bed_media.begin();
   }
-  
+
   return strret;
 }
 

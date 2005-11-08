@@ -44,11 +44,11 @@ int main(int argc, char *argv[])
           return EXIT_SUCCESS;
         } else if (strarg == "debug") {
           log_line("Starting the Player in debug mode.");
-          blndebug = true;          
+          blndebug = true;
         } else my_throw("Unknown argument: " + strarg);
       }
     }
-    
+
     //  Init the player:
     player player;
 

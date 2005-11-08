@@ -13,7 +13,7 @@ using namespace std;
 // segment, 15:00 - 17:00, I could have a news segment. But in the news segment I could allow
 // advertising to be inserted. A segment is not the same as a production element. A segment can
 // contain different categories. (This is a new term we've coined, ie not in regular radio usage).
-// The sections in the pie chart earlier are all segments. 
+// The sections in the pie chart earlier are all segments.
 
 class segment {
 public:
@@ -36,7 +36,7 @@ public:
 
   //  Information about the category & alternative category:
   struct cat {
-    seg_category cat; // A symbolic enum name ... faster processing etc   
+    seg_category cat; // A symbolic enum name ... faster processing etc
     long lngcat;      // Database reference to a  tlkfc_cat record
     string strname;   // Name of the category
   } cat, alt_cat;
@@ -48,7 +48,7 @@ public:
     string strdir;   // Directory where sub-category files are found.
   } sub_cat, alt_sub_cat;
 
-  // Segment-specific info:  
+  // Segment-specific info:
   long lngfc_seg; // Database id (reference to a tlkfc_seg record)
   enum seg_sequence {
     SSEQ_UNKNOWN,
@@ -91,7 +91,7 @@ private:
 
   bool blnfirst_fetched; ///< Set to true when the first item is fetched. Helps
                          ///< logic for navigating the segment items.
-                         
+
   int intnum_fetched;   ///< Number of items fetched so far. Used with intmax_items
                         ///< to limit the number of items played in a segment.
 
@@ -117,12 +117,12 @@ private:
   // A recursive function used to load m3u files that contain directories, and directories which contain m3us:
   // Also applies special logic to format clock sub-category directories
   void recursive_add_to_string_list(vector <string> & file_list, const string & strsource, const int intrecursion_level, pg_connection & db);
-  
+
   // Cached list of music bed items to use during this segment:
   vector <string> music_bed_media;
   vector <string>::const_iterator music_bed_media_it;
   void list_music_bed_media(pg_connection & db); // Setup the music_bed_media list (and shuffle)
-  string get_music_bed_media();  
+  string get_music_bed_media();
 };
 
 #endif
