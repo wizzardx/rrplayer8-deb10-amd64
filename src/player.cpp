@@ -28,7 +28,7 @@ player * pplayer = NULL; // A pointer to the player object, used by callback fun
 
 // Constructor
 playback_events_info::playback_events_info() {
-  reset();  
+  reset();
 }
 
 void playback_events_info::reset() {
@@ -50,7 +50,7 @@ player::player(){
   // Throw an exception if there is already a player object instantiated:
   if (pplayer != NULL) my_throw("Only one player object is allowed!");
 
-  pplayer = this;  
+  pplayer = this;
 
   // Call a separate function to do the init, because kdevelop breakpoints set in the constructor don't work.
   init();
@@ -71,7 +71,7 @@ void player::run() {
 */
   // Reset data used during this loop:
   run_data.init();
-  
+
   while (true) {
     try {
       // Sleep 1 second
@@ -79,13 +79,13 @@ void player::run() {
 
       // Check playback status of XMMS, LineIn, etc. Throw errors here if there is something wrong.
       check_playback_status();
-      
+
       // Fetch info about how long it is to go until: (item ends, music bed ends, music bed starts, next event)
       playback_events_info playback_events;
       // If a promo is going to interrupt the music, we will first fade out the music, ie it will only start after
       // [intcrossfade_length_ms] milliseconds have elapsed.
       get_playback_events_info(playback_events, config.intcrossfade_length_ms);
-      
+
       int intnext_playback_safety_margin_ms = get_next_playback_safety_margin_ms();
       if (playback_events.intnext_ms > intnext_playback_safety_margin_ms) {
         // If we have enough time left (> Safety margin, or unknown), then:
@@ -95,7 +95,7 @@ void player::run() {
       else {
         // We're close to one or more a playback events. Handle them in an intensive timing section.
         playback_transition(playback_events);
-      }      
+      }
     } catch(const exception & E) {
       log_error((string)"An unexpected error occured!");
       log_error(E.what());
@@ -157,7 +157,7 @@ void player::init() {
 
   // If the player is in debugging mode then say so:
   if (blndebug) log_warning("Player was compiled in debugging mode");
-  
+
   // Reload all config settings from the database:
   load_db_config();
 
@@ -243,7 +243,7 @@ void player::reset() {
   // Format clock settings:
   config.blnformat_clocks_enabled = false;
   config.lngdefault_format_clock  = false;
-  
+
   // Crossfade settings:
   config.intcrossfade_length_ms = 8000; // Defaults to 8 seconds.
 
@@ -252,6 +252,9 @@ void player::reset() {
   store_status.volumes.intmusic    = -1;
   store_status.volumes.intannounce = -1;
   store_status.volumes.intlinein   = -1;
+
+  // Debugging output:
+  blndebug = false;
 }
 
 
@@ -334,7 +337,7 @@ void player::load_db_config() {
   if (!dir_exists(config.dirs.strreceived))      log_error("Received directory not found: " + config.dirs.strreceived);
   if (!dir_exists(config.dirs.strtoday))         log_error("Today directory not found: "    + config.dirs.strtoday);
   if (!dir_exists(config.dirs.strprofiles))      log_error("Profiles directory not found: "    + config.dirs.strprofiles);
-  
+
   // Default music source
   config.strdefault_music_source = load_tbldefs(db, "strDefaultMusicSource", config.dirs.strmp3, "str");
 
@@ -373,10 +376,10 @@ void player::load_db_config() {
     if (rs.recordcount() != 1) log_error("Invalid tbldefs:lngDefaultFormatClock value! Found " + itostr(rs.recordcount()) + " matching Format Clock records!");
   }
   else my_throw("Format Clocks are not enabled!");
-  
+
   // Read the crossfade length:
   config.intcrossfade_length_ms = strtoi(load_tbldefs(db, "intCrossfadeLength", "8000", "int"));
-  
+
   // Check the setting:
   if (config.intcrossfade_length_ms < 500) {
     log_warning("Config setting for Crossfade length (" + itostr(config.intcrossfade_length_ms) + "ms) is too short! (defaulting to 500ms)");
@@ -393,20 +396,20 @@ void player::load_store_status(const bool blnverbose) {
   {
     static datetime dtmlast_run = datetime_error;
     datetime dtmnow = now();
-    
+
     // Check for problems caused by clock changes:
     if (dtmlast_run > dtmnow) {
       log_message("System clock was set backwards, adjusting logic");
       dtmlast_run = datetime_error;
     }
-    
+
     // Now check if it is too soon to run the logic again:
     // (once every 30s)
     if (dtmlast_run/30 == dtmnow/30) return;
-    
+
     dtmlast_run = dtmnow;
   }
-  
+
   // Update the current store status
 
   // Is the store open now?
@@ -418,7 +421,7 @@ void player::load_store_status(const bool blnverbose) {
     datetime dtmclose = parse_psql_time(rs.field("dtmclosingtime"));
 
     datetime dtmtime = time();
-    
+
     // Check if the store's open/closed state changes:
     bool blnprev_store_open = store_status.blnopen;
 
@@ -428,7 +431,7 @@ void player::load_store_status(const bool blnverbose) {
     else { // Weird cases, eg: Store opens at 11 PM and closes at 2 AM.
       store_status.blnopen = !((dtmtime >= dtmclose) && (dtmtime <= dtmopen));
     }
-    
+
     // Did the store status change?
     if (blnverbose || blnprev_store_open != store_status.blnopen) {
       string strmessage = (string) "Store is now " + (store_status.blnopen ? "Open" : "Closed");
@@ -625,7 +628,7 @@ void player::process_waiting_cmds() {
     bool blnVolZones = false;
     double volChange;
     string chDay, chZone, chTime;
-    
+
     string psql_Time;
     string psql_Now;
 
@@ -643,7 +646,7 @@ void player::process_waiting_cmds() {
       try {
         if (strCommand=="RPLS") {
           undefined_throw; // Profiles not yet supported in the new player
-/*        
+/*
           // Added by David - 12 November 2002
           // This is a new command in player version 6.02 when this command is found, the player will instantly stop
           // playing, reload the strmp3 path (where music is expected to be found), check the current music profile,
@@ -675,7 +678,7 @@ void player::process_waiting_cmds() {
             // The profile changed but the player is not currently active. Log a message
             log_message("The playlist was updated, but playback is not enabled (the player is currently paused, stopped, or the time is now outside of store hours)");
           }
-*/          
+*/
         }
         // Some commands added in version 6.11 - allow the user to pause, stop and resume the media playback.
         //
@@ -686,7 +689,7 @@ void player::process_waiting_cmds() {
           // Log a warning if there are args
           if (strParams != "") log_warning("This command does not take arguments!");
           Media_Pause();
-*/          
+*/
         }
         else if (strCommand=="MPST") {
           undefined_throw;
@@ -704,7 +707,7 @@ void player::process_waiting_cmds() {
           // Log a warning if there are args
           if (strParams != "") log_warning("This command does not take arguments!");
           Media_Resume();
-         */          
+         */
         }
         else if (strCommand=="RCFG") {
           // Added in version 6.14 on 05/08/2003 - the player now loads some of it's config options from the
@@ -759,7 +762,7 @@ void player::correct_waiting_promos() {
 void player::write_errors_for_missed_promos() {
   // Look for ads from today that are older than [Config.intMinsToMissAdsAfter] minutes
   // have not yet been played (or scheduled to play)
-  
+
   // Work out the earliest time today (adverts older than this have been missed)
   string psql_EarliestTime = "";
   {
@@ -770,10 +773,10 @@ void player::write_errors_for_missed_promos() {
     datetime dtmearliest = dtmnow - (60 * config.intmins_to_miss_promos_after);
     string strnow      = format_datetime(dtmnow,      "%T");
     string strearliest = format_datetime(dtmearliest, "%T");
-    if (strearliest > strnow) dtmearliest = dtmnow;      
+    if (strearliest > strnow) dtmearliest = dtmnow;
     psql_EarliestTime = time_to_psql(dtmearliest);
   }
-  
+
   string strSQL = "SELECT tblSchedule_TZ_Slot.lngTZ_Slot, tblSched.strFilename, tblSched.strProductCat, "
      "tblSchedule_TZ_Slot.dtmDay, tblSlot_Assign.dtmStart, tblSlot_Assign.dtmEnd, "
      "tblSched.strPriorityOriginal, tblSched.strPriorityConverted, "
@@ -1009,17 +1012,17 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
       event_info.intmusic_bed_starts_ms = run_data.current_item.music_bed.intstart_ms - intxmms_song_pos_ms;
       // Music bed end:
       event_info.intmusic_bed_ends_ms = event_info.intmusic_bed_starts_ms + run_data.current_item.music_bed.intlength_ms;
-      
+
       // If the item is going to end sooner than the music bed, then use the item's end instead:
       if (event_info.intitem_ends_ms < event_info.intmusic_bed_ends_ms) {
         event_info.intmusic_bed_ends_ms = event_info.intitem_ends_ms;
       }
-      
+
       // Now reset fields if they were already handled
       // (eg, we don't list ms until the music bed start if it was already
       // handled).
       if (run_data.current_item.music_bed.already_handled.blnstart) event_info.intmusic_bed_starts_ms = INT_MAX;
-      if (run_data.current_item.music_bed.already_handled.blnstop)  event_info.intmusic_bed_ends_ms   = INT_MAX;      
+      if (run_data.current_item.music_bed.already_handled.blnstop)  event_info.intmusic_bed_ends_ms   = INT_MAX;
     }
   }
 
@@ -1036,7 +1039,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
       event_info.intpromo_interrupt_ms = intinterrupt_promo_delay;
     }
   }
-  
+
   // If we're playing linein or silence, then check for the next item:
   if (run_data.current_item.blnloaded && 
       run_data.current_item.strmedia == "LineIn" || run_data.current_item.cat == SCAT_SILENCE) {
@@ -1056,7 +1059,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
         } catch(...) {};
       }
     }
-    
+
     // If the details match the current item (linein, silence, etc), then
     // reset the info now:
     if (run_data.next_item.blnloaded) {
@@ -1066,11 +1069,11 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
         // Reset the info about the next item:
         run_data.next_item.reset();
       }
-    }    
-    
+    }
+
     // If we have the next item, then setup the end time of the current item:
     if (run_data.next_item.blnloaded) {
-      // Linein/Silence ends immediately if there is another item    
+      // Linein/Silence ends immediately if there is another item
       event_info.intitem_ends_ms = 0;
     }
   }
@@ -1124,7 +1127,7 @@ void player::mark_promo_complete(const long lngtz_slot) {
 void player::log_song_played(const string & strdescr) {
   string strsql = "INSERT INTO tblMusicHistory (dtmTime, strDescription) VALUES (" + psql_now + ", " + psql_str(strdescr) + ")";
   pg_result rs = db.exec(strsql);
-  
+
   // If there are more than 100 MP3s listed then erase the oldest MP3s
   strsql = "SELECT COUNT(lngPlayedMP3) AS Counter FROM tblMusicHistory";
   rs = db.exec(strsql);

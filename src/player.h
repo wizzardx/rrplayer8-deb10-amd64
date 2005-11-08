@@ -109,7 +109,7 @@ private:
     // Crossfade settings:
     int intcrossfade_length_ms; ///< Crossfades run for 8000ms. Also music fade-ins and fade-outs.
   } config;
-  
+
   void read_config_file(); ///< Read database connection settings from the player config file into the config.db structure.
   void load_db_config();   ///< Load all the other settings (besides config.db) into the config structure.
 
@@ -139,7 +139,7 @@ private:
   };
 
   // FUNCTIONS AND ATTRIBUTES USED DURING RUN():
-  
+
   /// Sub-class containing "run" data. ie XMMS info, "current" programming element, "next" PE, current segment, etc, etc.
   player_run_data run_data;
 
@@ -167,7 +167,7 @@ private:
   // Fetch timing info about events that will take place during playback of the current item
   // (music bed starts, music bed ends, item ends).
   void get_playback_events_info(playback_events_info & event_info, const int intinterrupt_promo_delay);
-  
+
   // Do background maintenance (separate function). Events have frequencies, (sometimes desired "second" to take place at), and are prioritiesed.
   //  - Also includes resetting info about the next playback item (highest priority, every 30 seconds..., seconds: 00, 30)
   void player_maintenance(const int intmax_time_ms);
@@ -202,7 +202,7 @@ private:
   // This is an internal function used only by playback_transition. It is called when
   // an announcement plays, to log to the database that it has played.
   void mark_promo_complete(const long lngtz_slot);
-  
+
   // Timed player maintenance events. Run when there is spare time during playback.
   // - Called by player_maintenance();
   void maintenance_check_received(const datetime dtmcutoff);
@@ -214,12 +214,12 @@ private:
   // Functions called by maintenance_operational_check:
   void log_music_playlist_to_db(); ///< Log the contents of the current music playlist to the database
   void log_machine_avail_music_to_db(); ///< Scan the harddrive for available music, and log to the database.
-  
+
   mp3_tags mp3tags; ///< A cache of mp3 tags, used for quickly retrieving mp3 details.
 
   // Called by playback_transition:
   void log_song_played(const string & strdescr); ///< Log the latest song to tblmusichistory
-  
+
   // Fetch the current playback safety margin:
   //   How long before important playback events, the player should be ready and
   //   not run other logic which could cut into time needed for crossfading, etc.

@@ -126,7 +126,7 @@ void player::log_music_playlist_to_db() {
   // - Check that the current segment is loaded and has a music category:
   if (!run_data.current_segment.blnloaded) my_throw("Current Format Clock segment is not loaded!");
   if (run_data.current_segment.cat.cat != SCAT_MUSIC) my_throw("Current Segment does not have a MUSIC category");
-  
+
   // Create a postgresql transaction. We're going to be doing a lot of updates:
   pg_transaction transaction(db);
 
@@ -142,7 +142,7 @@ void player::log_music_playlist_to_db() {
   while (pe != run_data.current_segment.programming_elements.end()) {
     try {
       string strfile = pe->strmedia;
-      string strtitle = mp3tags.get_mp3_description(strtitle);
+      string strtitle = mp3tags.get_mp3_description(strfile);
       string strmessage = pe->strmedia + "||" + strtitle; ///< Goes into tblplayeroutput.strmessage
       string strsql = "INSERT INTO tblplayeroutput (strmessage, strmsgdesc, dtmtime) VALUES (" + psql_str(strmessage) + ", " + psql_str(strPlaylistDescr) + ", now())";
       transaction.exec(strsql);
