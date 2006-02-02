@@ -69,29 +69,71 @@ void player::playback_transition(playback_events_info & playback_events) {
       }
 
       // Are crossfades allowed now?
+
       // Crossfades take place:
-      // 1) Always when the segment changes, OR
-      // 2.1) The current segment allows crossfades, AND
-      // 2.2) The 2 items have the same category as the segment (ie: Not for promos that play during a music segment), OR
-      // 3) When transitioning from a non-music item to a music item, or the other way.
-      //   (but not from music -> music. The segment needs to allow it in this case).
-      blncrossfade = run_data.current_item.blnloaded &&
-                       (blnsegment_change ||
+      // 1) Never if the current item is not available (ie, the player has just started, meaning
+      //    that we have the next item but not the current item at this time).
+      // 2) Never when the current or next item is a promo
+      // 3) Never when going between Linin and Linein (even if in a music segment which allows crossfades)
+      //
+      //    OTHERWISE:
+      //
+      // 4) Always when the segment changes, OR
+      // 5) The current segment allows crossfades AND
+      // 6.1)   The 2 items have the same category as the segment (ie: Not for promos that happen to
+      //        play during a music segment), OR
+      // 6.2)   When transitioning from a non-music item to a music item, or the other way.
+      //        (but not from music -> music. The segment needs to allow it in this case).
 
-                       (run_data.current_segment.blncrossfading &&
-                        run_data.current_item.cat == run_data.current_segment.cat.cat &&
-                        run_data.next_item.cat    == run_data.current_segment.cat.cat) ||
+      bool blncrossfade = false;
 
-                         ((run_data.current_item.cat == SCAT_MUSIC ||
-                           run_data.next_item.cat == SCAT_MUSIC)
-                           &&
-                          (run_data.current_item.cat != SCAT_MUSIC ||
-                           run_data.next_item.cat != SCAT_MUSIC)));
+      // Break up the logic:
+      {
+        // Is this or the next item a promo?
+        bool blnthis_or_next_is_promo = run_data.current_item.cat == SCAT_PROMOS ||
+                                        run_data.next_item.cat    == SCAT_PROMOS;
 
-      // However, we can't crossfade when goinng between linein and linein.
-      if (blncrossfade && (run_data.current_item.strmedia == "LineIn" && run_data.next_item.strmedia == "LineIn")) {
-        testing_throw;
-        blncrossfade = false;
+        // Do both items have the same catagory as the segment?
+        bool blnitem_categories_match_segment  =
+               run_data.current_item.cat == run_data.current_segment.cat.cat &&
+               run_data.next_item.cat    == run_data.current_segment.cat.cat;
+
+
+        // Transitioning between LineIn and LineIn?
+        bool blnlinein_to_linein_transition =
+               run_data.current_item.strmedia == "LineIn" &&
+               run_data.next_item.strmedia    == "LineIn";
+
+        // Transitioning between non-music and music, or the reverse?
+        bool blnmusic_non_music_transition = (run_data.current_item.cat == SCAT_MUSIC ||
+                                              run_data.next_item.cat == SCAT_MUSIC)
+                                             &&
+                                             (run_data.current_item.cat != SCAT_MUSIC ||
+                                              run_data.next_item.cat != SCAT_MUSIC);
+
+        // Now put it all together:
+        blncrossfade =
+          // 1) Never if the current item is not available
+          run_data.current_item.blnloaded &&
+
+          // 2) Never if this or the next item is a promo
+          !blnthis_or_next_is_promo &&
+
+          // 3) Never when transitioning between LineIn and LineIn:
+          !blnlinein_to_linein_transition &&
+
+          // OTHERWISE:
+          (
+            // 4) Always when the segment changes, OR
+            blnsegment_change ||
+            (
+               // 5) The current segment allows crossfades AND
+               // 6.1)   The 2 items have the same category as the segment, OR
+               // 6.2)   When transitioning between non-music and music (or the reverse)
+               run_data.current_segment.blncrossfading &&
+                 (blnitem_categories_match_segment || blnmusic_non_music_transition)
+            )
+          );
       }
 
       // So, do we crossfade between this item and the next?
