@@ -645,8 +645,6 @@ void player::process_waiting_cmds() {
 
       try {
         if (strCommand=="RPLS") {
-          undefined_throw; // Profiles not yet supported in the new player
-/*
           // Added by David - 12 November 2002
           // This is a new command in player version 6.02 when this command is found, the player will instantly stop
           // playing, reload the strmp3 path (where music is expected to be found), check the current music profile,
@@ -657,13 +655,17 @@ void player::process_waiting_cmds() {
           // Log a warning if there are args
           if (strParams != "") log_warning("This command does not take arguments!");
 
-          // 1) Reload strmp3path (and all the other paths)
+          // 1) Reload various database & store details from the database:
           load_db_config();
+          load_store_status();
 
-          // 2) Check the volume levels.
-          load_store_hours
-          volZones();
+          // 2) Format Clocks player does not (yet) handle music profiles:
+          log_warning("Music profiles not yet implemented! Will only reload Format Clock segment");
 
+          // 3) Cause the player to re-load the current segments playlist:
+          run_data.blnreload_segment_playlist = true;
+
+/*
           // 3) Check the current music profile, and also rebuild the playlist (whether or not the
           // music profile changed).
           CheckMusicProfile(true);
@@ -678,7 +680,7 @@ void player::process_waiting_cmds() {
             // The profile changed but the player is not currently active. Log a message
             log_message("The playlist was updated, but playback is not enabled (the player is currently paused, stopped, or the time is now outside of store hours)");
           }
-*/
+
         }
         // Some commands added in version 6.11 - allow the user to pause, stop and resume the media playback.
         //

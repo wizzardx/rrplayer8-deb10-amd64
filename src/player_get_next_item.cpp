@@ -739,7 +739,13 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
   }
 
   // Has the current segment changed?
-  if (!run_data.current_segment.blnloaded || lngfc_seg != run_data.current_segment.lngfc_seg) {
+  if (!run_data.current_segment.blnloaded ||
+       lngfc_seg != run_data.current_segment.lngfc_seg ||
+       run_data.blnreload_segment_playlist) {
+
+    // Reset the "reload segment playlist" control variable:
+    run_data.blnreload_segment_playlist = false;
+
     // Load the new segment:
     log_message("Loading new Format Clock segment (id: " + itostr(lngfc_seg) + ")");
 

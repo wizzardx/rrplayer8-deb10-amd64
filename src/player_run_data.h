@@ -58,6 +58,9 @@ public:
   /// Set to true when the player wants to log 1) the XMMS music playlist, and 2) All available music on the machine.
   bool blnlog_all_music_to_db;
 
+  /// Set to true when the player wants to reload the current segments playlist (ie, a RPLS command was found)
+  bool blnreload_segment_playlist;
+
   // A list of the most recent media files played. This helps us to prevent songs
   // from playing that have been played recently.
 private:
