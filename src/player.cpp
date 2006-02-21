@@ -632,8 +632,8 @@ void player::process_waiting_cmds() {
     string psql_Time;
     string psql_Now;
 
-    // Run through the waiting queries
-    string strSQL = "SELECT lngWaitingCMD, strCommand, strParams, dtmProcessed, bitComplete, bitError FROM tblWaitingCMD WHERE (bitComplete = '0') OR (bitComplete IS NULL)";
+    // Run through the waiting player commands
+    string strSQL = "SELECT lngWaitingCMD, strCommand, strParams, dtmProcessed, bitComplete, bitError FROM tblwaitingcmd LEFT OUTER JOIN tblcmdtype USING (lngcmdtype) LEFT OUTER JOIN tblapp USING (lngapp) WHERE COALESCE(bitComplete, '0') = '0' AND lower(COALESCE(tblapp.strdescr, 'player')) = 'player'";
     pg_result rsCMD = db.exec(strSQL);
 
     while(rsCMD) {
