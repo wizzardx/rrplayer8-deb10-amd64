@@ -99,7 +99,7 @@ void format_clock_test_data::generate_test_data() {
         long lngcat = 0;
         string lngsub_cat = "0";
         {
-          int intrand = rand() % rs.recordcount();
+          int intrand = rand() % rs.size();
           rs.movefirst();
           for (int i = 0; i < intrand; i++) {
             rs++;
@@ -118,7 +118,7 @@ void format_clock_test_data::generate_test_data() {
         long lngalt_cat = 0;
         string lngalt_sub_cat = "0";
         {
-          int intrand= rand() % rs.recordcount();
+          int intrand= rand() % rs.size();
           rs.movefirst();
           for (int i = 0; i < intrand; i++) {
             rs++;
@@ -143,7 +143,7 @@ void format_clock_test_data::generate_test_data() {
           // Choose a random media item for "specific" playback:
           pg_result rsmedia = db.exec("SELECT lngfc_media FROM tblfc_media WHERE lngcat=" + ltostr(lngcat) + " AND lngsub_cat=" + lngsub_cat);
 
-          int intrand = rand() % rsmedia.recordcount();
+          int intrand = rand() % rsmedia.size();
           rsmedia.movefirst();
 
           for (int i = 0; i < intrand; i++) rsmedia++;
@@ -158,7 +158,7 @@ void format_clock_test_data::generate_test_data() {
         string lngunderlying_music_sub_cat = "NULL";
         if (lngcat != 2) {
           pg_result rs = db.exec("SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE lngfc_cat = 8");
-          int intrand = rand() % rs.recordcount();
+          int intrand = rand() % rs.size();
           for (int i=0; i<intrand; i++) rs++;
           lngunderlying_music_sub_cat = rs.field("lngfc_sub_cat");
           ysnunderlying_music = true;

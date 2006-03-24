@@ -319,7 +319,7 @@ void player::load_db_config() {
   // Directories
   {
     pg_result rs = db.exec("SELECT strmp3, stradverts, strannouncements, strspecials, strreceived, strtoday, strprofiles FROM tblapppaths");
-    if (rs.recordcount() != 1) log_error("Invalid number of records (" + itostr(rs.recordcount()) + ") found in tblapppaths!");
+    if (rs.size() != 1) log_error("Invalid number of records (" + itostr(rs.size()) + ") found in tblapppaths!");
     config.dirs.strmp3           = ensure_last_char(rs.field("strmp3"), '/');
     config.dirs.stradverts       = ensure_last_char(rs.field("stradverts"), '/');
     config.dirs.strannouncements = ensure_last_char(rs.field("strannouncements"), '/');
@@ -373,7 +373,7 @@ void player::load_db_config() {
     config.lngdefault_format_clock = strtoi(load_tbldefs(db, "lngDefaultFormatClock", "-1", "lng"));
     // CHECK:
     pg_result rs = db.exec("SELECT lngfc FROM tblfc WHERE lngfc = " + itostr(config.lngdefault_format_clock));
-    if (rs.recordcount() != 1) log_error("Invalid tbldefs:lngDefaultFormatClock value! Found " + itostr(rs.recordcount()) + " matching Format Clock records!");
+    if (rs.size() != 1) log_error("Invalid tbldefs:lngDefaultFormatClock value! Found " + itostr(rs.size()) + " matching Format Clock records!");
   }
   else my_throw("Format Clocks are not enabled!");
 
@@ -416,7 +416,7 @@ void player::load_store_status(const bool blnverbose) {
   {
     string strsql = "SELECT dtmOpeningTime, dtmClosingTime FROM tblStoreHours WHERE intDayNumber = " + itostr(weekday(now()));
     pg_result rs = db.exec(strsql);
-    if (rs.recordcount() != 1) my_throw("An error with table tblstorehours. Query returned " + itostr(rs.recordcount()) + " rows! (expected 1)");
+    if (rs.size() != 1) my_throw("An error with table tblstorehours. Query returned " + itostr(rs.size()) + " rows! (expected 1)");
     datetime dtmopen  = parse_psql_time(rs.field("dtmopeningtime"));
     datetime dtmclose = parse_psql_time(rs.field("dtmclosingtime"));
 
@@ -460,7 +460,7 @@ void player::load_store_status(const bool blnverbose) {
     // * Fetch current music & announce volumes from the database, and calculate live settings.
     {
       pg_result rs=db.exec("SELECT intmusicvolume, intannvolume from tblstore");
-      if (rs.recordcount() != 1) log_error("Invalid number of records (" + itostr(rs.recordcount()) + ") found in tblstore!");
+      if (rs.size() != 1) log_error("Invalid number of records (" + itostr(rs.size()) + ") found in tblstore!");
       // Fetch values:
       store_status.volumes.intmusic    = strtoi(rs.field("intmusicvolume", "45"));
       store_status.volumes.intannounce = strtoi(rs.field("intannvolume", "90"));
@@ -749,7 +749,7 @@ void player::correct_waiting_promos() {
   // like this. Correct any, and log that there was a correction
   string strsql = "SELECT lngtz_slot FROM tblschedule_tz_slot WHERE bitscheduled = '" + itostr(ADVERT_LISTED_TO_PLAY) + "'";
   pg_result RS = db.exec(strsql);
-  long lngcorrected = RS.recordcount();
+  long lngcorrected = RS.size();
 
   // Now run a query to fix all these hanging 'waiting' announcements.
   strsql = "UPDATE tblschedule_tz_slot SET bitscheduled = '" + itostr(ADVERT_SNS_LOADED) + "' WHERE bitscheduled = '" + itostr(ADVERT_LISTED_TO_PLAY) + "'";
@@ -973,8 +973,8 @@ long player::get_fc_segment(const long lngfc, const string & strsql_time) {
   pg_result rs = db.exec(strsql);
 
   // Check the number of rows returned:
-  if (rs.recordcount() == 0) my_throw("Could not find a segment in the format clock!");
-  if (rs.recordcount() > 1) log_warning("Found " + itostr(rs.recordcount()) + " matching segments! Invalid Data! Using the newest segment.");
+  if (rs.size() == 0) my_throw("Could not find a segment in the format clock!");
+  if (rs.size() > 1) log_warning("Found " + itostr(rs.size()) + " matching segments! Invalid Data! Using the newest segment.");
 
   // Return the segment:
   return strtoi(rs.field("lngfc_seg"));

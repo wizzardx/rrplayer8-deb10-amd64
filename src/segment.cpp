@@ -143,7 +143,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
     pg_result rs = db.exec(strsql);
 
     // Check rowcount:
-    if (rs.recordcount() != 1) my_throw("Error! " + itostr(rs.recordcount()) + " results were returned here instead of 1!");
+    if (rs.size() != 1) my_throw("Error! " + itostr(rs.size()) + " results were returned here instead of 1!");
 
     // Now load object fields of the resultset:
 
@@ -487,7 +487,7 @@ testing_throw;
       // strsub_cat is numeric. Fetch the sub-category's sub-directory.
       string strsql = "SELECT strdir FROM tlkfc_sub_cat WHERE lngfc_sub_cat = " + sub_cat.strsub_cat;
       pg_result rs = db.exec(strsql);
-      if (rs.recordcount() == 0) my_throw("This segment lists it's sub-category (lngfc_sub_cat) as " + sub_cat.strsub_cat + ", but I could not find any matching tlkfc_sub_cat records.");
+      if (rs.size() == 0) my_throw("This segment lists it's sub-category (lngfc_sub_cat) as " + sub_cat.strsub_cat + ", but I could not find any matching tlkfc_sub_cat records.");
       strsource = rs.field("strdir");
       if (!dir_exists(strsource)) my_throw("The sub-category directory's is missing: " + strsource);
     }
@@ -608,7 +608,7 @@ void segment::load_sub_cat_struct(struct sub_cat & sub_cat, const string strsub_
     pg_result rs = db.exec(strsql);
 
     // Check # of returned rows:
-    if (rs.recordcount() != 1) my_throw("Found " + itostr(rs.recordcount()) + " " + strdescr + " records for segment " + ltostr(lngfc_seg) + ", expected 1!");
+    if (rs.size() != 1) my_throw("Found " + itostr(rs.size()) + " " + strdescr + " records for segment " + ltostr(lngfc_seg) + ", expected 1!");
 
     // Fetch the category name and directory:
     sub_cat.strname = rs.field("strname");
@@ -645,7 +645,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
     string strdir = ensure_last_char(strsource, '/');
     string strsql = "SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE strdir = " + psql_str(strdir);
     pg_result rs = db.exec(strsql);
-    if (rs.recordcount() > 0) {
+    if (rs.size() > 0) {
       long lngfc_sub_cat = strtol(rs.field("lngfc_sub_cat"));
 
       // A format clock sub-category directory. Fetch relevant MP3s from the database:
@@ -669,7 +669,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       pg_result rs = db.exec(strsql);
 
       // Did we get anything?
-      if (rs.recordcount() == 0) {
+      if (rs.size() == 0) {
         // No:
         log_warning("Database does not list any usable format clock sub-category media under this directory: " + strdir);
         return;
@@ -805,7 +805,7 @@ void segment::list_music_bed_media(pg_connection & db) {
   music_bed_media.clear();
   string strsql = "SELECT strfile, strdir FROM tblfc_media INNER JOIN tlkfc_sub_cat ON tblfc_media.lngsub_cat = tlkfc_sub_cat.lngfc_sub_cat WHERE lngsub_cat = " + music_bed.strsub_cat;
   pg_result rs = db.exec(strsql);
-  if (rs.recordcount() == 0) my_throw("Could not find music bed media in the database (lngsub_cat=" + music_bed.strsub_cat + ")!");
+  if (rs.size() == 0) my_throw("Could not find music bed media in the database (lngsub_cat=" + music_bed.strsub_cat + ")!");
 
   while(rs) {
     string strfile = ensure_last_char(rs.field("strdir"), '/') + rs.field("strfile");

@@ -3,8 +3,8 @@
 # This script gets run by build-rr-deb before the .deb file is created.
 
 # Copy the Player binary & strip debugging info:
-cp ../debug/src/player ./data/data/radio_retail/progs/player/
+cp ../optimized/src/player ./data/data/radio_retail/progs/player/
 strip --strip-unneeded ./data/data/radio_retail/progs/player/player
 
 # Setup some vars that the caller will use:
-REVISION_FILES="../debug/src/player.revision ./data/data/radio_retail/progs/player/player.revision"
+REVISION_FILES="./data/data/radio_retail/progs/player/player.revision"

@@ -3,7 +3,7 @@
   <general>
     <author>David Purdy</author>
     <email>david@radioretail.co.za</email>
-    <version>7.9</version>
+    <version>7.10</version>
     <projectmanagement>KDevAutoProject</projectmanagement>
     <primarylanguage>C++</primarylanguage>
     <keywords>
@@ -19,7 +19,7 @@
   <kdevautoproject>
     <general>
       <activetarget>src/player</activetarget>
-      <useconfiguration>debug</useconfiguration>
+      <useconfiguration>optimized</useconfiguration>
     </general>
     <run>
       <mainprogram>src/player</mainprogram>
@@ -179,7 +179,7 @@
     <AUTHOR>David Purdy</AUTHOR>
     <EMAIL>david@radioretail.co.za</EMAIL>
     <LICENSE>Custom</LICENSE>
-    <VERSION>7.9</VERSION>
+    <VERSION>7.10</VERSION>
     <YEAR>2005</YEAR>
     <dest>/home/radman/david_stuff/development/player</dest>
   </substmap>

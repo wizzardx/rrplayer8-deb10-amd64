@@ -323,11 +323,11 @@ void player::playback_transition(playback_events_info & playback_events) {
           string_splitter event_split(current_event->strevent);
 
           // Check split result:
-          if (event_split.count() < 1 || event_split.count() > 2) my_throw("Logic error");
+          if (event_split.size() < 1 || event_split.size() > 2) my_throw("Logic error");
 
           // Fetch main command, and an arg if present.
           strcmd = event_split[0];
-          if (event_split.count() == 2) {
+          if (event_split.size() == 2) {
             strarg = event_split[1];
           }
         }

@@ -167,7 +167,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   // playback priority (ORDER BY tblSched.strPriorityConverted)
   if (blndebug) cout << "Querying database for adverts. SQL: " << strSQL << endl;
   pg_result RS = db.exec(strSQL);
-  if (blndebug) cout << "Returned rows: " << RS.recordcount() << endl;
+  if (blndebug) cout << "Returned rows: " << RS.size() << endl;
 
   // 6.14: This loop is now where announcement limiting takes place
   while (RS && AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
@@ -266,9 +266,9 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
         pg_result rsPrerecItem = db.exec(strSQL);
         // Check the results of the query.
-        if (rsPrerecItem.recordcount() != 1) {
+        if (rsPrerecItem.size() != 1) {
           // We expected to find 1 matching record, but a different number was found
-          log_error(itostr(rsPrerecItem.recordcount()) + " prerecorded items match media reference " + strPrerecMediaRef + ". Cannot play " + scFileName);
+          log_error(itostr(rsPrerecItem.size()) + " prerecorded items match media reference " + strPrerecMediaRef + ". Cannot play " + scFileName);
           blnSkipItem = true;
         }
         else {
@@ -684,7 +684,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       pg_result rs = db.exec(strsql);
 
       // How many results?
-      if (rs.recordcount() <= 0) { // No format clocks scheduled.
+      if (rs.size() <= 0) { // No format clocks scheduled.
         log_warning("No Format Clocks scheduled for this hour. Will revert to the default Format Clock.");
       } else { // User scheduled 1 or more format clocks.
         // We found a user-scheduled format clock. Fetch the segment:
@@ -716,7 +716,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
         string strsql = "SELECT lngfc FROM tblfc WHERE lngfc = " + ltostr(config.lngdefault_format_clock);
         pg_result rs = db.exec(strsql);
         // Did we find 1 record?
-        if (rs.recordcount() != 1) {
+        if (rs.size() != 1) {
           // Nope
           log_warning("Could not find the Default Format clock! (lngfc=" + ltostr(config.lngdefault_format_clock) +"). I will revert to the default music profile.");
         }
