@@ -759,7 +759,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     int intdiff = dtmdelayed - run_data.current_segment.scheduled.dtmstart;
 
     // Is our difference negative?
-    if (intdiff < 0) my_throw("Logic Error!");
+    if (intdiff < 0) LOGIC_ERROR;
 
     // Did we query part-way into the segment?
     if (intdiff > 0) {

@@ -3,7 +3,11 @@
 #include "common/file.h"
 #include "common/dir_list.h"
 #include "common/my_string.h"
+#include "common/rr_misc.h"
 #include <fstream>
+#include <linux/cdrom.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 
 using namespace std;
 
@@ -297,7 +301,7 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
       // (ie, we don't progress to the next item until the 2nd item is being retrieved).
 
       // Are we at the end of the current list?
-      if (next_item == programming_elements.end()) my_throw("Logic Error!"); // Should never be at end before advancing!
+      if (next_item == programming_elements.end()) LOGIC_ERROR; // Should never be at end before advancing!
       next_item++; // Go to the next item.
 
       // At the last item now?
@@ -319,7 +323,7 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   }
 
   // Check: Do we have a "next" item to return?
-  if (next_item == programming_elements.end()) my_throw("Logic Error!"); // This should never happen...
+  if (next_item == programming_elements.end()) LOGIC_ERROR; // This should never happen...
 
   // Now return it:
   pe = *next_item;
@@ -364,39 +368,35 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   }
 
   // Check for LineIn. Can't be mixed with MP3s, etc
+  bool blnlinein = false; // Set to true below if the playlist specifies LineIn
   {
     int intnon_linein=0; // Count how many non-linein entries we find
     int intlinein=0;     // Count how many linein entries we find.
 
     vector <string>::iterator i=file_list.begin();
     while (i != file_list.end()) {
-      if (*i == "LineIn") {
-        testing_throw;
+      if (*i == "LineIn")
         ++intlinein;
-      }
-      else {
+      else
         ++intnon_linein;
-      }
       ++i;
     }
 
     if (intlinein > 0) {
-      testing_throw;
-      // Yes. Were there non-linein entries?
+      // Yes.
+      blnlinein = true; // Used later in this function
+      // Were there non-linein entries?
       if (intnon_linein > 0) {
-        testing_throw;
         // Yes. This music source has both linein and non-linein entries
         my_throw("Invalid music source! It has both LineIn and non-LineIn entries: " + strsource);
       }
       // Did we find more than one line-in entry?
       if (intlinein > 1) {
-        testing_throw;
         log_warning("Music source lists # LineIn entries. This is weird, please look into this.");
         // Reset the list, push just 1 "LineIn" entry into it:
         file_list.clear();
         file_list.push_back("LineIn");
       }
-      testing_throw;
     }
   }
 
@@ -407,7 +407,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
       // Create a new programming element:
       programming_element pe;
       // Basic details:
-      pe.cat = cat.cat;
+      pe.cat = pel_cat;
       pe.strmedia = *i;
       pe.strvol = (pel_cat == SCAT_MUSIC ? "MUSIC" : "PROMO");
       // Add a Music bed?
@@ -430,8 +430,8 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
     // Throw an exception if there are no entries:
     my_throw("Could not find any media for the playlist: \"" + strsource + "\"");
   }
-  else if (cat.cat == SCAT_MUSIC && pel.size() < 10) {
-    // Log a warning if this is a music segment and there are very few entries:
+  else if (cat.cat == SCAT_MUSIC && !blnlinein && pel.size() < 10) {
+    // Log a warning if this is a non-linein music segment and there are very few entries:
     log_warning("The new music playlist only has " + itostr(pel.size()) + " song(s)!");
   }
 }
@@ -465,7 +465,7 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
     case SCAT_MUSIC_BED: log_warning("This is a Music Bed segment!");
 
     // All other categories: Invalid! They aren't meant to be used for the segment!
-    default: my_throw("Logic Error!");
+    default: LOGIC_ERROR;
   }
 
   string strsource = ""; // The file, sub-directory or playlist we use:
@@ -483,7 +483,6 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
     if (sub_cat.strsub_cat == "") my_throw("strsub_cat is not set!");
 
     if (isint(sub_cat.strsub_cat)) {
-testing_throw;
       // strsub_cat is numeric. Fetch the sub-category's sub-directory.
       string strsql = "SELECT strdir FROM tlkfc_sub_cat WHERE lngfc_sub_cat = " + sub_cat.strsub_cat;
       pg_result rs = db.exec(strsql);
@@ -538,6 +537,9 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
           sequence = SSEQ_RANDOM;
           intmax_items = INT_MAX;
 
+          // If the alternate category is musical, then allow repetition:
+          if (alt_cat.cat == SCAT_MUSIC) blnrepeat = true;
+
           // Check if the alternate category was defined:
           if (alt_cat.cat == SCAT_UNKNOWN) {
             log_warning("Alternate Category was not defined.");
@@ -556,8 +558,6 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
         try {
           setup_as_music_profile(strdefault_music_source, "<Default Music Profile>", db);
           next_item = programming_elements.begin();
-          // Also allow promos to play now:
-          blnpromos = true;
           blndone = true;
         } catch_exceptions;
       } break;
@@ -565,7 +565,7 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
         my_throw("There was a problem with the Default music profile, but there is nothing else to play!");
         blndone = true;
       } break;
-      default: my_throw("Logic Error!");
+      default: LOGIC_ERROR;
     }
   }
 }
@@ -600,7 +600,6 @@ void segment::load_sub_cat_struct(struct sub_cat & sub_cat, const string strsub_
 
   // sub-category in integer form?
   if (isint(strsub_cat)) {
-  testing_throw;
     // strsub_cat points to a tlkfc_sub_cat record
 
     // Fetch category details:
@@ -616,7 +615,7 @@ void segment::load_sub_cat_struct(struct sub_cat & sub_cat, const string strsub_
   }
   else {
     // strsub_cat lists a sub-directory or m3u file:
-    if (!file_exists(strsub_cat) && !dir_exists(strsub_cat)) my_throw("Could not find a file or directory called '" + strsub_cat + "'");
+    if (!file_exists(strsub_cat) && !dir_exists(strsub_cat) && strsub_cat != "LineIn" && strsub_cat != "/dev/cdrom") my_throw("Could not find a file or directory called '" + strsub_cat + "'");
     sub_cat.strname = strsub_cat;
   }
 }
@@ -630,17 +629,30 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
   // apply special logic to see which files to actually use (relevant from, until, etc)
 
   // Bomb out if our recursion level is too low (ie, this function was called incorrectly)
-  if (intrecursion_level < 0) my_throw("Logic Error!");
+  if (intrecursion_level < 0) LOGIC_ERROR;
 
-  // LineIn?
-  if (strsource == "LineIn") {
-    testing_throw;
+  // LineIn or CD-ROM?
+  if (strsource == "LineIn") {      // LineIn?
     file_list.push_back(strsource);
-    return; // Done handling the source.
   }
+  else if (strsource == "/dev/cdrom") { // CD-ROM?
+    // Fetch the tracks on the cdrom
+    // Logic ripped & adapted from XMMSs cdaudio library
+    try {
+      const int CDOPENFLAGS = O_RDONLY | O_NONBLOCK;
+      int fd = CHECK_LIBC(open(strsource.c_str(), CDOPENFLAGS), "open: " + strsource);
+      struct cdrom_tochdr tochdr;
+      CHECK_LIBC(ioctl(fd, CDROMREADTOCHDR, &tochdr), "Error querying " + strsource + " for audio tracks");
 
-  // A directory?
-  if (dir_exists(strsource)) {
+      // We have the # of the 1st and last tracks. Store playlist entries:
+      for (int i = tochdr.cdth_trk0; i <= tochdr.cdth_trk1; i++) {
+        //file_list.push_back(strsource + "/" + pad_left(itostr(i), '0', 2) + "-track.cdr");
+        file_list.push_back("/cdrom/Track " + pad_left(itostr(i), '0', 2) + ".cda");
+      }
+    } catch_exceptions;
+  } else if (file_is_cd_track(strsource)) { // A CD track file?
+    file_list.push_back(strsource);
+  } else if (dir_exists(strsource)) { // A directory?
     // One of the format clock sub-category directories?
     string strdir = ensure_last_char(strsource, '/');
     string strsql = "SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE strdir = " + psql_str(strdir);
@@ -651,7 +663,6 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       // A format clock sub-category directory. Fetch relevant MP3s from the database:
       string strsql_date = "'" + format_datetime(date(), "%F") + "'"; // Current date, in psql form.
       string strsql = "SELECT strfile FROM tblfc_media WHERE "
-                      "lngcat = " + ltostr(cat.lngcat) + " AND "
                       "lngsub_cat = " + ltostr(lngfc_sub_cat) + " AND "
                       "COALESCE(dtmrelevant_until, '9999-12-25') >= " + strsql_date;
       // Now modify the query, using the Max Age and Premature segment settings.
@@ -660,8 +671,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       }
 
       if (blnmax_age) { // Max age means maximum # of days after dtmrelevant_from that the media will be played.
-        testing_throw;
-        strsql += " AND COALESCE(dtmrelevant_from, '0000-01-01') + " + itostr(intmax_age - 1) + " >= " + strsql_date;
+        strsql += " AND COALESCE(dtmrelevant_from, '9999-12-25') + " + itostr(intmax_age - 1) + " >= " + strsql_date;
       }
 
       // Order the media by filename:
@@ -739,11 +749,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
         log_warning("Didn't find any usable files under this directory: " + strdir);
       }
     }
-    return; // Done with directory source handling.
-  }
-
-  // A file?
-  if (file_exists(strsource)) {
+  } else if (file_exists(strsource)) { // A file?
     // What is the file extension?
     string strext=lcase(right(strsource, 4));
     if (strext==".mp3") {
@@ -795,9 +801,8 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
     }
     return; // Done with the file source handling.
   }
-
   // Could not find the source:
-  log_warning("Source not found: \"" + strsource + "\"");
+  else log_warning("Source not found: \"" + strsource + "\"");
 }
 
 void segment::list_music_bed_media(pg_connection & db) {
@@ -831,7 +836,7 @@ void segment::list_music_bed_media(pg_connection & db) {
 
 string segment::get_music_bed_media() {
   // Fetch the next listed music bed item:
-  if (music_bed_media.size() == 0) my_throw("Logic Error!");
+  if (music_bed_media.size() == 0) LOGIC_ERROR;
 
   string strret = *music_bed_media_it;
   ++music_bed_media_it;

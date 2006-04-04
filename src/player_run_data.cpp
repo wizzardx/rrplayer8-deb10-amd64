@@ -121,7 +121,8 @@ bool player_run_data::sound_usage_allocated(const sound_usage sound_usage) {
     // No error. So there is an XMMS session reserved for this usage.
     return true;
   } catch (...) {
-    // Couldn't find an XMMS session. So there aren't any LineIn sessions allocated.
+    // Couldn't find an XMMS session.
+    // ie, this "sound usage" hasn't been set to LineIn or an XMMS session
     return false;
   }
 }
@@ -138,15 +139,19 @@ void player_run_data::next_becomes_current() {
       // No.
       // Does it's foreground use Linein?
       if (current_item.strmedia == "LineIn") {
-        testing_throw;
-        // Does the next item use LineIn?
-        if (next_item.strmedia != "LineIn") {
-          testing_throw;
-          // No. Set the volume to 0.
-          linein_setvol(0);
+        // Is the next item also LineIn?
+        if (next_item.strmedia == "LineIn") {
+          // Next item is also linein:
+          linein_usage = SU_UNUSED; // LineIn no longer used for anything
         }
-        // Don't do any further LineIn usage manipulation here. It was already changed, by earlier logic.
-        testing_throw;
+        else {
+          // Next item is not linein:
+          // Set the volume to 0.
+          linein_setvol(0);
+          linein_usage = SU_UNUSED; // LineIn no longer used for anything
+        }
+        // If the next item is LineIn, don't update the linein usage here. It was already setup. See
+        // "setup_next" handler in player_playback_transition.cpp
       }
       else {
         // Current item used XMMS. So Stop it's XMMS (it probably already is, but do it anyway).
@@ -173,12 +178,22 @@ void player_run_data::next_becomes_current() {
   for (int intsession=0; intsession<intmax_xmms; intsession++) {
     switch(xmms_usage[intsession]) {
       case SU_UNUSED: break; // Do nothing.
-      case SU_CURRENT_FG: my_throw("Logic Error!"); break; //An error. This should have been set to UNUSED earlier!
-      case SU_CURRENT_BG: my_throw("Logic Error!"); break; //An error. This should have been set to UNUSED earlier!
+      case SU_CURRENT_FG: LOGIC_ERROR; break; //An error. This should have been set to UNUSED earlier!
+      case SU_CURRENT_BG: LOGIC_ERROR; break; //An error. This should have been set to UNUSED earlier!
       case SU_NEXT_FG: xmms_usage[intsession] = SU_CURRENT_FG; break; // Next FG becomes current FG.
       case SU_NEXT_BG: xmms_usage[intsession] = SU_CURRENT_BG; break; // Next BG becomes current FG.
       default: my_throw("Logic error!"); // Unknown XMMS usage for the session!
     }
+  }
+
+  // Also change over LineIn:
+  switch (linein_usage) {
+    case SU_UNUSED: break; // Do nothing.
+    case SU_CURRENT_FG: LOGIC_ERROR; break; //An error. This should have been set to UNUSED earlier!
+    case SU_CURRENT_BG: LOGIC_ERROR; break; // Cannot use Linein as a music bed!
+    case SU_NEXT_FG: linein_usage = SU_CURRENT_FG; break; // Next FG becomes current FG.
+    case SU_NEXT_BG: LOGIC_ERROR; break; // Cannot use Linein as a music bed!
+    default: LOGIC_ERROR; // Unknown XMMS usage for the session!
   }
 
   // Now change next_item over to the current_item:

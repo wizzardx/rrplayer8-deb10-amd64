@@ -11,12 +11,11 @@
 #include "common/file.h"
 #include "common/dir_list.h"
 #include "common/logging.h"
+#include "common/exception.h"
 
 void format_clock_test_data::clear_tables() {
   log_message("Deleting data from Format Clock tables...");
   db.exec("DELETE FROM tblfc_seg");
-  db.exec("DELETE FROM tblfc_media");
-  db.exec("DELETE FROM tlkfc_sub_cat");
   db.exec("DELETE FROM tblfc_sched_day");
   db.exec("DELETE FROM tblfc_sched");
   db.exec("DELETE FROM tblfc");
@@ -45,36 +44,6 @@ void format_clock_test_data::generate_test_data() {
   db.exec("INSERT INTO tblfc_sched_day VALUES (3, 1, 4, time '17:00:00', time '18:59:59')");
   db.exec("INSERT INTO tblfc_sched_day VALUES (4, 1, 5, time '19:00:00', time '23:59:59')");
 
-  // tblfc_sub_cat
-  {
-    int intsub_cat_count = 0;
-    pg_result rs = db.exec("SELECT lngfc_cat, strdir FROM tlkfc_cat");
-    while (rs) {
-      long lngfc_cat = strtoi(rs.field("lngfc_cat"));
-      string strdir = rs.field("strdir", "");
-
-      if (dir_exists(strdir)) {
-        // We have a category sub-directory. List the sub-directories
-        dir_list cat_dir(strdir, "", DT_DIR);
-        while (cat_dir) {
-          string strsub_cat_dir=cat_dir;
-          // Add a sub-category...
-          ++intsub_cat_count;
-          db.exec("INSERT INTO tlkfc_sub_cat (lngfc_sub_cat, lngfc_cat, strname, strdir) VALUES (" + itostr(intsub_cat_count) + ", " + itostr(lngfc_cat) + ", '" + strsub_cat_dir + "', '" + strdir + strsub_cat_dir +  "/')");
-
-          // Go into each sub-directory, list the media and add to tblfc_media
-          dir_list sub_cat_dir(strdir + strsub_cat_dir +  "/");
-
-          while (sub_cat_dir) {
-            string strfile = sub_cat_dir;
-            db.exec("INSERT INTO tblfc_media (strfile, lngcat, lngsub_cat, dtmrelevant_from, dtmrelevant_until) VALUES ('" + strfile + "', " + ltostr(lngfc_cat) + ", " + itostr(intsub_cat_count) + ", '2005-01-01', '2005-12-31')");
-          }
-        }
-      }
-      rs ++;
-    }
-  }
-
   // tblfc_seg
   {
     // Populate all the format clock segments.
@@ -99,6 +68,7 @@ void format_clock_test_data::generate_test_data() {
         long lngcat = 0;
         string lngsub_cat = "0";
         {
+          if (rs.size() == 0) LOGIC_ERROR;
           int intrand = rand() % rs.size();
           rs.movefirst();
           for (int i = 0; i < intrand; i++) {
@@ -109,15 +79,23 @@ void format_clock_test_data::generate_test_data() {
         }
 
         // Also a 1 in 3 chance that we will override the category & use music...
-        if(rand()%3 == 0) {
+        if (rand()%3 == 0) {
           lngcat=2;
-          lngsub_cat = "'/home/radman/david_stuff/music/ff8music/'";
+
+          // Choose between LineIn, ff8music, and cdrom:
+          switch (rand()%3) {
+            case 0: lngsub_cat = "'/data/DAVID_STUFF/music/ff8music/'"; break;
+            case 1: lngsub_cat = "'LineIn'"; break;
+            case 2: lngsub_cat = "'/dev/cdrom'"; break;
+            default: LOGIC_ERROR; break;
+          }
         }
 
         // Also get a random alternate category & sub-category:
         long lngalt_cat = 0;
         string lngalt_sub_cat = "0";
         {
+          if (rs.size() == 0) LOGIC_ERROR;
           int intrand= rand() % rs.size();
           rs.movefirst();
           for (int i = 0; i < intrand; i++) {
@@ -130,49 +108,62 @@ void format_clock_test_data::generate_test_data() {
         // Also a 1 in 3 chance that we will override the alternate category & use music...
         if(rand()%3 == 0) {
           lngalt_cat=2;
-          lngalt_sub_cat = "'/home/radman/david_stuff/music/ff7music/'";
+          lngalt_sub_cat = "'/data/DAVID_STUFF/music/ff7music/'";
         }
 
         // Choose a sequence (1-3)
         string lngspecific_seq_media = "NULL";
 
         long lngseq=rand()%3 + 1;
-        if (lngseq==3 && lngcat != 2) { // Only choose a specific file if this is not a music segment...
-          // Specific
 
-          // Choose a random media item for "specific" playback:
-          pg_result rsmedia = db.exec("SELECT lngfc_media FROM tblfc_media WHERE lngcat=" + ltostr(lngcat) + " AND lngsub_cat=" + lngsub_cat);
+        // Specific?
+        if (lngseq==3) {
+          // Music? We don't use "specific" files for music segments:
+          if (lngcat == 2)
+            // A music segment. Change the sequence to random instead:
+            lngseq = 1;
+          else {
+            // Not a music segment. Fetch a random format clock item:
+            pg_result rsmedia = db.exec("SELECT lngfc_media FROM tblfc_media WHERE lngcat=" + ltostr(lngcat) + " AND lngsub_cat=" + lngsub_cat);
+            if (rsmedia.size() == 0) {
+              log_message("SELECT lngfc_media FROM tblfc_media WHERE lngcat=" + ltostr(lngcat) + " AND lngsub_cat=" + lngsub_cat);
+              LOGIC_ERROR;
+            }
+            int intrand = rand() % rsmedia.size();
+            rsmedia.movefirst();
 
-          int intrand = rand() % rsmedia.size();
-          rsmedia.movefirst();
-
-          for (int i = 0; i < intrand; i++) rsmedia++;
-          lngspecific_seq_media = rsmedia.field("lngfc_media");
+            for (int i = 0; i < intrand; i++) rsmedia++;
+            lngspecific_seq_media = rsmedia.field("lngfc_media");
+          }
         }
 
         // Allow promos if this is a music segment...
         bool ysnpromos = (lngcat == 2);
 
-        // Has a music bed? .. yes, if it is not a music segment
+        // Has a music bed? .. (Currently disabled, we aren't using underlying music at this time...)
         bool ysnunderlying_music = false;
         string lngunderlying_music_sub_cat = "NULL";
+
+/*
         if (lngcat != 2) {
           pg_result rs = db.exec("SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE lngfc_cat = 8");
+          if (rs.size() == 0) LOGIC_ERROR;
           int intrand = rand() % rs.size();
           for (int i=0; i<intrand; i++) rs++;
           lngunderlying_music_sub_cat = rs.field("lngfc_sub_cat");
           ysnunderlying_music = true;
         }
+*/
 
         // Crossfade in this segment? (half of the time yes, half of the time no)
         bool ysncrossfade=(rand() % 2);
 
         int intmax_age=1000;
         bool ysnpremature = false; // No premature ads...
-        bool ysnrepeat    = (rand() % 2); // Repeat media in this segment?
+        bool ysnrepeat    = rand() % 2; // Repeat media in this segment?
 
         // Now we have all the info we need to add a segment.
-        db.exec("INSERT INTO tblfc_seg (lngfc, lngcat, strsub_cat, lngseq, lngspecific_seq_media, dtmstart, dtmend, ysnpromos, lngalt_cat, stralt_sub_cat, ysnmusic_bed, lngmusic_bed_sub_cat, ysncrossfade, intmax_age, ysnpremature, ysnrepeat) "
+        db.exec("INSERT INTO tblfc_seg (lngfc, lngcat, strsub_cat, lngseq, lngspecific_seq_media, dtmstart, dtmend, ysnpromos, lngalt_cat, stralt_sub_cat, ysnmusic_bed, lngmusic_bed_sub_cat, ysncrossfade, intmax_age, ysnpremature, ysnrepeat, intmax_items) "
                                "VALUES (" + itostr(lngfc) + ", " +
                                itostr(lngcat) + ", " +
                                lngsub_cat + ", " +
@@ -188,7 +179,8 @@ void format_clock_test_data::generate_test_data() {
                                (ysncrossfade?"'1'":"'0'") + ", " +
                                itostr(intmax_age) + ", " +
                                (ysnpremature?"'1'":"'0'") + ", " +
-                               (ysnrepeat?"'1'":"'0'") + ");");
+                               (ysnrepeat?"'1'":"'0'") + ", " +
+                               "3);");
 
         // Go to the next 5 minutes:
         intfrom_min += 5;

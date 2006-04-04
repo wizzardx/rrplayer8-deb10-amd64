@@ -5,6 +5,7 @@
 #include "common/my_string.h"
 #include "common/string_splitter.h"
 #include "common/system.h"
+#include "common/rr_misc.h"
 #include <fstream>
 
 void player::playback_transition(playback_events_info & playback_events) {
@@ -74,15 +75,16 @@ void player::playback_transition(playback_events_info & playback_events) {
       // 1) Never if the current item is not available (ie, the player has just started, meaning
       //    that we have the next item but not the current item at this time).
       // 2) Never when the current or next item is a promo
-      // 3) Never when going between Linin and Linein (even if in a music segment which allows crossfades)
+      // 3) Never when going between Linin and Linein
+      // 4) Never when going between 2 CD tracks
       //
       //    OTHERWISE:
       //
-      // 4) Always when the segment changes, OR
-      // 5) The current segment allows crossfades AND
-      // 6.1)   The 2 items have the same category as the segment (ie: Not for promos that happen to
+      // 5) Always when the segment changes, OR
+      // 6) The current segment allows crossfades AND
+      // 7.1)   The 2 items have the same category as the segment (ie: Not for promos that happen to
       //        play during a music segment), OR
-      // 6.2)   When transitioning from a non-music item to a music item, or the other way.
+      // 7.2)   When transitioning from a non-music item to a music item, or the other way.
       //        (but not from music -> music. The segment needs to allow it in this case).
 
       bool blncrossfade = false;
@@ -104,6 +106,11 @@ void player::playback_transition(playback_events_info & playback_events) {
                run_data.current_item.strmedia == "LineIn" &&
                run_data.next_item.strmedia    == "LineIn";
 
+        // Transitioning between 2 CD tracks?
+        bool blncdtrack_to_cdtrack_transition =
+               file_is_cd_track(run_data.current_item.strmedia) &&
+               file_is_cd_track(run_data.next_item.strmedia);
+
         // Transitioning between non-music and music, or the reverse?
         bool blnmusic_non_music_transition = (run_data.current_item.cat == SCAT_MUSIC ||
                                               run_data.next_item.cat == SCAT_MUSIC)
@@ -122,14 +129,17 @@ void player::playback_transition(playback_events_info & playback_events) {
           // 3) Never when transitioning between LineIn and LineIn:
           !blnlinein_to_linein_transition &&
 
+          // 4) Never when going between 2 CD tracks:
+          !blncdtrack_to_cdtrack_transition &&
+
           // OTHERWISE:
           (
-            // 4) Always when the segment changes, OR
+            // 5) Always when the segment changes, OR
             blnsegment_change ||
             (
-               // 5) The current segment allows crossfades AND
-               // 6.1)   The 2 items have the same category as the segment, OR
-               // 6.2)   When transitioning between non-music and music (or the reverse)
+               // 6) The current segment allows crossfades AND
+               // 7.1)   The 2 items have the same category as the segment, OR
+               // 7.2)   When transitioning between non-music and music (or the reverse)
                run_data.current_segment.blncrossfading &&
                  (blnitem_categories_match_segment || blnmusic_non_music_transition)
             )
@@ -160,9 +170,10 @@ void player::playback_transition(playback_events_info & playback_events) {
         if (run_data.next_item.cat == SCAT_MUSIC) {
           queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms - config.intcrossfade_length_ms + 2, config.intcrossfade_length_ms);
         }
-        // 3) "next_play",
-        queue_event(events, "next_play", playback_events.intitem_ends_ms - config.intcrossfade_length_ms + 3);
-
+        // 3) "next_play" (ony if XMMS)
+        if (run_data.next_item.strmedia != "LineIn") {
+          queue_event(events, "next_play", playback_events.intitem_ends_ms - config.intcrossfade_length_ms + 3);
+        }
         // 4) "next_becomes_current"
         queue_event(events, "next_becomes_current", playback_events.intitem_ends_ms + 3);
         intnext_becomes_current_ms = playback_events.intitem_ends_ms+3;
@@ -174,25 +185,32 @@ void player::playback_transition(playback_events_info & playback_events) {
         log_line("Will not crossfade between this item and the next item.");
         if ((!run_data.current_item.blnloaded || run_data.current_item.cat != SCAT_MUSIC) && run_data.next_item.cat == SCAT_MUSIC) {
           // We fade in the next item
-          // Queue:
+          log_line("The next item will fade in after this item ends.");
 
-          //  1) "setup_next"
+          // Queue commands that will fade in either XMMS or LineIn music when the current item ends:
+
+          //  1) "setup_next" (ie, prepare LineIn or an available XMMS session for playback):
           queue_event(events, "setup_next", playback_events.intitem_ends_ms + 1);
 
+          // The fade-in method we use differs for LineIn and XMMS.
           if (run_data.next_item.strmedia != "LineIn") {
-            log_line("The next item will fade in after this item ends.");
             // Next item plays through XMMS:
+            // - Queue: Set volume to 0, start playback, and then fade:
+
             //  2) "setvol_next 0" (Only if XMMS)
             queue_event(events, "setvol_next 0", playback_events.intitem_ends_ms + 2);
             //  3) "next_play" (ony if XMMS)
-            queue_event(events, "next_play", playback_events.intitem_ends_ms + 3);
-            // 3) A volume slide from current vol (if LineIn, or 0 if XMMS) to full music
+            if (run_data.next_item.strmedia != "LineIn") {
+              queue_event(events, "next_play", playback_events.intitem_ends_ms + 3);
+            }
+            // 4) A volume slide from current vol (if LineIn, or 0 if XMMS) to full music
             queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms + 4, config.intcrossfade_length_ms);
           }
           else {
-            // Next item plays through Linein
-            testing_throw;
-            // 3) A volume slide from current vol (if LineIn, or 0 if XMMS) to full music
+            // Next item plays through Linein. Queue appropriate commands:
+
+            // If the current linein volume is 0, then simply queue a fade-in.
+            // But if the current linein volume is not 0, we immediately set the linein volume to full.
             if (linein_getvol() == 0) {
               // If linein is 0, we slide it up to full
               queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms + 4, config.intcrossfade_length_ms);
@@ -202,6 +220,7 @@ void player::playback_transition(playback_events_info & playback_events) {
               queue_event(events, "setvol_next 100", playback_events.intitem_ends_ms + 4);
             }
           }
+
           //  4) "next_becomes_current" (transition is over)
           queue_event(events, "next_becomes_current", playback_events.intitem_ends_ms + 5 + config.intcrossfade_length_ms);
           intnext_becomes_current_ms = playback_events.intitem_ends_ms + 5 + config.intcrossfade_length_ms;
@@ -214,9 +233,11 @@ void player::playback_transition(playback_events_info & playback_events) {
           queue_event(events, "setup_next", playback_events.intitem_ends_ms);
           //  2) "setvol_next 100" (100% of the volume it is listed to play at)
           queue_event(events, "setvol_next 100", playback_events.intitem_ends_ms+1);
-          //  2) "next_play" (Only if XMMS)
-          queue_event(events, "next_play", playback_events.intitem_ends_ms+2);
-          //  3) "next_becomes_current" (transition is over)
+          //  3) "next_play" (Only if XMMS)
+          if (run_data.next_item.strmedia != "LineIn") {
+            queue_event(events, "next_play", playback_events.intitem_ends_ms+2);
+          }
+          //  4) "next_becomes_current" (transition is over)
           queue_event(events, "next_becomes_current", playback_events.intitem_ends_ms+3);
           intnext_becomes_current_ms = playback_events.intitem_ends_ms+3;
         }
@@ -255,8 +276,10 @@ void player::playback_transition(playback_events_info & playback_events) {
       queue_volslide(events, "current", 100, 0, playback_events.intpromo_interrupt_ms, config.intcrossfade_length_ms);
       // Queue: setup an xmms for the next item.
       queue_event(events, "setup_next", playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 1);
-      // Queue: next item play
-      queue_event(events, "next_play", playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 2);
+      // Queue: next item play (Only if XMMS)
+      if (run_data.next_item.strmedia != "LineIn") {
+        queue_event(events, "next_play", playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 2);
+      }
       // Queue: next item -> current item.
       queue_event(events, "next_becomes_current", playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 3);
       intnext_becomes_current_ms = playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 3;
@@ -323,7 +346,7 @@ void player::playback_transition(playback_events_info & playback_events) {
           string_splitter event_split(current_event->strevent);
 
           // Check split result:
-          if (event_split.size() < 1 || event_split.size() > 2) my_throw("Logic error");
+          if (event_split.size() < 1 || event_split.size() > 2) LOGIC_ERROR;
 
           // Fetch main command, and an arg if present.
           strcmd = event_split[0];
@@ -338,15 +361,15 @@ void player::playback_transition(playback_events_info & playback_events) {
           // also load the item into XMMS, setup the volume, etc.
 
           // Is the next_item loaded?
-          if (!run_data.next_item.blnloaded) my_throw("Logic Error!");
+          if (!run_data.next_item.blnloaded) LOGIC_ERROR;
+
           // Are  there already XMMS or LineIn sessions allocated for the next item? (background or foreground)
-          if (run_data.sound_usage_allocated(SU_NEXT_FG) || run_data.sound_usage_allocated(SU_NEXT_BG)) my_throw("Logic Error!");
+          if (run_data.sound_usage_allocated(SU_NEXT_FG) || run_data.sound_usage_allocated(SU_NEXT_BG)) LOGIC_ERROR;
 
           // Nope. So setup either XMMS or LineIn:
           // * Only run this logic if the item is not in a silence segment.
           if (run_data.next_item.cat != SCAT_SILENCE) {
             if (run_data.next_item.strmedia == "LineIn") {
-              testing_throw;
               // Next item will play through linein.
               // Is LineIn already allocated to something else?
               if (run_data.linein_usage != SU_UNUSED) log_message("LineIn is already used for something, but commandeering it anyway for the next item.");
@@ -354,8 +377,8 @@ void player::playback_transition(playback_events_info & playback_events) {
             }
             else {
               // Next item will play through XMMS.
-              // Does the item exist?
-              if (!file_exists(run_data.next_item.strmedia)) my_throw("File not found! " + run_data.next_item.strmedia);
+              // Does the item exist? (or is it a CD Track?)
+              if (!file_exists(run_data.next_item.strmedia) && !file_is_cd_track(run_data.next_item.strmedia)) my_throw("File not found! " + run_data.next_item.strmedia);
 
               // - Fetch a free XMMS session
               int intsession = run_data.get_free_xmms_session(); // Will throw an exception if there aren't any free.
@@ -395,11 +418,11 @@ void player::playback_transition(playback_events_info & playback_events) {
             item = &run_data.current_item;
             SU_FG = SU_CURRENT_FG;
             SU_BG = SU_CURRENT_BG;
-            intvol = &intvol_next;
+            intvol = &intvol_current;
           }
 
           // - Item loaded?
-          if (!item->blnloaded) my_throw("Logic Error!");
+          if (!item->blnloaded) LOGIC_ERROR;
 
           // Only run the rest of the logic if the item does not have a "Silence" category:
           if (item->cat != SCAT_SILENCE) {
@@ -415,7 +438,6 @@ void player::playback_transition(playback_events_info & playback_events) {
             // - LineIn or XMMS?
             if (item->strmedia == "LineIn") {
               // LineIn.
-              testing_throw;
               // Check: No music beds allowed with LineIn:
               if (run_data.sound_usage_allocated(SU_BG)) my_throw("Music Bed was allocated for LineIn music!");
 
@@ -437,7 +459,6 @@ void player::playback_transition(playback_events_info & playback_events) {
                 int intsession = -1;
                 try {
                   intsession = run_data.get_xmms_used(SU_BG);
-                  testing_throw;
                 } catch(...) {
                   // There is no music bed XMMS session allocated at this time. Do nothing.
                 }
@@ -445,7 +466,7 @@ void player::playback_transition(playback_events_info & playback_events) {
                   testing_throw;
                   // We have an XMMS session for the music bed.
                   // Extra check: Does the item actually have a music bed?
-                  if (!item->blnmusic_bed) my_throw("Logic Error!");
+                  if (!item->blnmusic_bed) LOGIC_ERROR;
                   run_data.xmms[intsession].setvol((get_pe_vol(item->music_bed.strvol) * intpercent)/100);
                 }
               }
@@ -460,7 +481,7 @@ void player::playback_transition(playback_events_info & playback_events) {
             // - Check for music bed events that will occur *during* the current fade (if any) and queue them.
 
             // Is the next item loaded?
-            if (!run_data.next_item.blnloaded) my_throw("Logic Error!");
+            if (!run_data.next_item.blnloaded) LOGIC_ERROR;
 
             // Next item can't be linein:
             if (run_data.next_item.strmedia == "LineIn") my_throw("Don't use next_play commands for LineIn!");
@@ -499,7 +520,8 @@ void player::playback_transition(playback_events_info & playback_events) {
               }
             }
 
-            // If it is music, then log the details to the database:
+            // If the next item is a music item (we know it isn't LineIn, see earlier check),
+            // then log the details to the database:
             if (run_data.next_item.cat == SCAT_MUSIC) {
               log_song_played(mp3tags.get_mp3_description(run_data.next_item.strmedia));
 
@@ -512,6 +534,7 @@ void player::playback_transition(playback_events_info & playback_events) {
             // fade (ie, before we switch over completely to the next item), and queue them here.
             if (blncrossfade && run_data.next_item.blnmusic_bed) {
   testing_throw;
+              if (blndebug) cout << "Queuing any music bed events (for the next item), during the upcoming crossfade..." << endl;
               // Work out the current time in ms, compared to when the queue started:
               timeval tvnow;
               gettimeofday(&tvnow, NULL);
@@ -578,7 +601,7 @@ void player::playback_transition(playback_events_info & playback_events) {
             testing_throw;
             blnfound = true;
           } catch(...) {};
-          if (blnfound) my_throw("Logic Error!");
+          if (blnfound) LOGIC_ERROR;
 
           // Fetch an available XMMS session
           int intsession = run_data.get_free_xmms_session(); // Will throw an exception if there aren't any free
@@ -604,8 +627,6 @@ void player::playback_transition(playback_events_info & playback_events) {
               pe->music_bed.intlength_ms = intmusic_bed_length_ms_xmms;
             }
           }
-
-          // If the music bed's length is unknown,
 
           // Record that this event has been handled:
           pe->music_bed.already_handled.blnstart = true;

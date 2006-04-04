@@ -19,7 +19,7 @@
 // Class that exists only to create Format Clock test data.
 class format_clock_test_data {
 public:
-  format_clock_test_data(pg_connection & DB) : db(DB) {};
+  format_clock_test_data(pg_connection & DB) : db(DB) { srand (time (0)); };
   ~format_clock_test_data() {};
 
   void clear_tables();
@@ -27,10 +27,6 @@ public:
 
 private:
   pg_connection & db;
-
-
-
-
 };
 
 #endif

@@ -73,6 +73,7 @@ void player::run() {
   run_data.init();
 
   while (true) {
+    bool blnsuccess = false; // Set to true at the end of each iteration where no exceptions are trapped
     try {
       // Sleep 1 second
       sleep (1);
@@ -96,9 +97,12 @@ void player::run() {
         // We're close to one or more a playback events. Handle them in an intensive timing section.
         playback_transition(playback_events);
       }
-    } catch(const exception & E) {
-      log_error((string)"An unexpected error occured!");
-      log_error(E.what());
+      blnsuccess=true; // No exception took place this iteration
+    } catch_exceptions;
+
+    // Did we catch an exception this iteration?
+    if (!blnsuccess) {
+      // Reset playback:
       log_error("Playback reset is now required.");
       run_data.init();
     }
@@ -922,7 +926,7 @@ void player::check_playback_status() {
         strplaying = run_data.next_item.music_bed.strmedia;
         intvol = get_pe_vol(run_data.current_item.music_bed.strvol);
       } break;
-      default: my_throw("Logic error!"); // This should never run.
+      default: LOGIC_ERROR; // This should never run.
     }
 
     // Is the XMMS session in use?
@@ -955,7 +959,7 @@ void player::check_playback_status() {
       case SU_CURRENT_BG: blnplaying = true;  break;
       case SU_NEXT_FG:    blnplaying = true;  break;
       case SU_NEXT_BG:    blnplaying = true;  break;
-      default: my_throw("Logic error!"); // This should never run
+      default: LOGIC_ERROR; // This should never run
     }
 
     // Now calculate the volume LineIn should be at:
@@ -981,8 +985,8 @@ long player::get_fc_segment(const long lngfc, const string & strsql_time) {
 }
 
 void player::get_playback_events_info(playback_events_info & event_info, const int intinterrupt_promo_delay) {
-  // Fetch timing info about events that will take place during playback of an item (assuming it is the current item).
-  // (music bed starts, music bed ends, item ends, item interrupted by a promo).
+  // Fetch timing info about events that will take place during playback of the current item
+  // (music bed starts, music bed ends, item ends, item interrupted by a promo, etc).
 
   // Reset the "event info" record.
   event_info.reset();
@@ -995,6 +999,8 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
     event_info.intitem_ends_ms = 0;
     return;
   }
+
+  // Get info about the current item being played.
 
   // Fetch which XMMS session is being used to play the current item. (or if linein is being used).
   bool blnlinein_used = run_data.uses_linein(SU_CURRENT_FG);
@@ -1032,7 +1038,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   if (run_data.current_item.cat == SCAT_MUSIC && !run_data.next_item.blnloaded) {
     // Current item is Music. Check if there are promos to play
 
-    // Check if there is a promo that wants to play now.
+    // Check if there is a promo that wants to play now (and is allowed to)
     get_next_item_promo(run_data.next_item, intinterrupt_promo_delay);
 
     // So, is there a promo that wants to play now?
@@ -1067,7 +1073,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
     if (run_data.next_item.blnloaded) {
       if (run_data.current_item.cat      == run_data.next_item.cat &&
           run_data.current_item.strmedia == run_data.next_item.strmedia) {
-        // Yep. So we're still playing linein/silence. Hasn't change.d
+        // Yep. So we're still playing linein/silence. Hasn't changed
         // Reset the info about the next item:
         run_data.next_item.reset();
       }
@@ -1157,3 +1163,4 @@ int player::get_next_playback_safety_margin_ms() {
   //   not run other logic which could cut into time needed for crossfading, etc.
   return config.intcrossfade_length_ms + 10000; // crossfade length + 10s.
 }
+

@@ -160,7 +160,7 @@ private:
     void get_next_item_promo(programming_element & next_item, const int intstarts_ms); // Populate argument with the next promo if there are promos waiting.
     void get_next_item_format_clock(programming_element & next_item, const int intstarts_ms); // Use Format Clocks to determine an item to be played.
 
-  // Functions called by get_item_format_clock:
+  // Functions called by get_next_item_format_clock:
     long get_fc_segment(const long lngfc, const string & strsql_time);
     void get_next_item_not_recent_music(programming_element & item, const int intstarts_ms);
 
