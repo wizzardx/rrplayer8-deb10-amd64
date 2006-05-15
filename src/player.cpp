@@ -644,28 +644,9 @@ void player::process_waiting_cmds() {
           load_db_config();
           load_store_status();
 
-          // 2) Format Clocks player does not (yet) handle music profiles:
-          log_warning("Music profiles not yet implemented! Will only reload Format Clock segment");
-
-          // 3) Cause the player to re-load the current segments playlist:
+          // 2) Tell the player to re-load the current segments playlist
+          //    - This also reloads the current Music Profile (if music profiles are playing)
           run_data.blnreload_segment_playlist = true;
-
-/*
-          // 3) Check the current music profile, and also rebuild the playlist (whether or not the
-          // music profile changed).
-          CheckMusicProfile(true);
-
-          // Change in player version 6.14 - if playback is not currently enabled (player is paused, stopped
-          // or it is outside store hours, then playback is not restarted here.
-          if (PlaybackEnabled()) {
-            MediaPlayer_Play(); // This function is clever enough not to interrupt current music if the music is correct.
-            log_message("The updated playlist is now playing.");
-          }
-          else {
-            // The profile changed but the player is not currently active. Log a message
-            log_message("The playlist was updated, but playback is not enabled (the player is currently paused, stopped, or the time is now outside of store hours)");
-          }
-
         }
         // Some commands added in version 6.11 - allow the user to pause, stop and resume the media playback.
         //

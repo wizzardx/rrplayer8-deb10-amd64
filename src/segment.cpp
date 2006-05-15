@@ -103,10 +103,11 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
       playback_state = PBS_MUSIC_PROFILE;
       blnloaded = true;
 
-      // Fill in a bogus scheduled from and to:
-      scheduled.dtmstart = dtmtime;
-      scheduled.dtmend = dtmtime + 60*60 - 1;
-
+      // Populate scheduled from & to fields.
+      // - From now, until the end of this hour. We want to check for a new music profile at the start
+      //   of the next hour
+      scheduled.dtmstart = dtmtime; // Now
+      scheduled.dtmend   = dtmtime - (dtmtime % (60*60)) + (60*60) - 1; // End of this hour
       return; // Now return to the caller
     }
 

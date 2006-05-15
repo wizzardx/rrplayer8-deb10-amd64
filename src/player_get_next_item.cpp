@@ -617,7 +617,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
   if (run_data.current_segment.blnloaded) {
     // We now have the time when the next item will start.
     // Work out if the current item will play past the end of the current segment.
-    // This logic works by assuming that the current item end on the second just before
+    // This logic works by assuming that the current item ends on the second just before
     // the next item starts. Based on that assumption, does the current item end after
     // the current segment ends? If so, by how many seconds?
     datetime dtmseg_end = run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1;
@@ -811,6 +811,10 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       // Log the XMMS playlist, and the system's available music later:
       run_data.blnlog_all_music_to_db = true;
     }
+  }
+  else {
+    // Segment has not changed. Just log the current segment and end time.
+    log_message("No segment change. " + run_data.current_segment.cat.strname + " segment (id: " + itostr(run_data.current_segment.lngfc_seg) + ") is scheduled to play until " + format_datetime(run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1, "%T"));
   }
 
   // Now fetch the next item to play, from the segment. Make sure it isn't a
