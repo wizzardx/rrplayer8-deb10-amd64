@@ -106,7 +106,8 @@ void player::maintenance_player_running(const datetime dtmcutoff) {
   {
     long lngseconds_remaining = dtmcutoff - now();
     if (lngseconds_remaining < 24*60*60) {
-      strline += ". Next playback event: " + itostr(lngseconds_remaining) +"s";
+      // Time of the next playback event is approximate, it may be off by 1 second.
+      strline += ". Next playback event: ~" + format_datetime(now() + lngseconds_remaining + 1, "%T") + " (" + itostr(lngseconds_remaining + 1) +"s)";
     }
   }
   strline += ")";
