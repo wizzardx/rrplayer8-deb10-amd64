@@ -3,7 +3,7 @@ Version: 7.4.356
 Section: radio-retail
 Priority: optional
 Architecture: i386
-Depends: libc6 (>= 2.3.2.ds1-4), libglib1.2 (>= 1.2.0), libpqxx-2.5.5, mp3info, rrschedule-db (>=3.38), rrxmms (>=rr.2-1.2.10), rrxmms-config, ccrypt, libstdc++6 (>= 3.4.6)
+Depends: libc6 (>= 2.3.2.ds1-4), libglib1.2 (>= 1.2.0), libpqxx-2.5.5c2a, mp3info, rrschedule-db (>=3.38), rrxmms (>=rr.2-1.2.10), rrxmms-config, ccrypt, libstdc++6 (>= 3.4.6)
 Conflicts: rrplayer
 Installed-Size: 812
 Maintainer: David Purdy <david@radioretail.co.za>

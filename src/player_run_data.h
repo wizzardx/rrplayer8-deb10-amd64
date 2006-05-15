@@ -65,6 +65,7 @@ public:
   // from playing that have been played recently.
 private:
   vector <string> recent_music;
+
 public:
   // Some functions to manipulate the list:
   void remember_recent_music(const string & strfile);

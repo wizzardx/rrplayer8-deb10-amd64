@@ -1,5 +1,7 @@
+
 #include "segment.h"
-#include "common/testing.h"
+#include "player_util.h"
+#include "common/exception.h"
 #include "common/file.h"
 #include "common/dir_list.h"
 #include "common/my_string.h"
@@ -67,8 +69,8 @@ void segment::reset() {
   blnrepeat    = false;   // Repeat sub-category media in this segment?
   intmax_items = INT_MAX; // Maximum number of items allowed to play during this segment;
 
-  // Current state (playing from category, alternate category, or default music profile)
-  playback_state = PBS_DEFAULT_MUSIC;
+  // Current state (playing from category, alternate category, or the current music profile)
+  playback_state = PBS_MUSIC_PROFILE;
 
   // Scheduled start and end time:
   scheduled.dtmstart = now();
@@ -85,9 +87,9 @@ void segment::reset() {
   intnum_fetched = 0;
 }
 
-void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const string & strdefault_music_source, const datetime dtmtime) {
+void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const datetime dtmtime, const player_config & config) {
   // Read details for a segment [lngfc_seg_arg], from the database(db), into this object
-  // Is a -1 lngfc_seg_arg specified? (ie, load default music profile)
+  // Is a -1 lngfc_seg_arg specified? (ie, attempt to load current music profile)
 
   // First reset all existing info & stats:
   reset();
@@ -96,9 +98,9 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
   lngfc_seg = lngfc_seg_arg;
   try {
     if (lngfc_seg == -1) {
-      log_message("Setting up default music profile...");
-      setup_as_music_profile(strdefault_music_source, "<Default Music Profile>", db);
-      playback_state = PBS_DEFAULT_MUSIC;
+      log_message("Setting up music profile...");
+      load_music_profile(db, config);
+      playback_state = PBS_MUSIC_PROFILE;
       blnloaded = true;
 
       // Fill in a bogus scheduled from and to:
@@ -209,13 +211,13 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
     {
       bool blnsuccess = false; // Set to true if we successfully load the list:
       try {
-        load_pe_list(programming_elements, cat, sub_cat, db);
+        load_pe_list(programming_elements, cat, sub_cat, db, config);
         next_item = programming_elements.begin();
         blnsuccess = true; // The above succeeded.
       } catch_exceptions;
       // If this fails, we revert to a lower level:
       if (!blnsuccess) {
-        revert_down(db, strdefault_music_source);
+        revert_down(db, config);
       }
     }
 
@@ -247,15 +249,15 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
     blnloaded = true;
   }
   catch (const exception & e) {
-    // There was a problem loading the segment. Try reverting to default music instead.
-    // Were already processing the default music profile?
+    // There was a problem loading the segment. Try reverting to the current music profile instead.
+    // Were already processing a music profile?
     if (lngfc_seg == -1) throw;
 
     // Otherwise, attempt to revert to default music:
     log_error((string)"The following error occured while loading the segment details: " + e.what());
-    log_message("Reverting to the default music profile.");
+    log_message("Reverting to a music profile.");
 
-    load_from_db(db, -1, strdefault_music_source, dtmtime);
+    load_from_db(db, -1, dtmtime, config);
     lngfc_seg = lngfc_seg_arg; // And restore the value. We are playing default music, but our segment remains unchanged.
   }
 
@@ -263,7 +265,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const s
   // This is used to help ensure that the segment does in fact play it's full length.
 }
 
-void segment::setup_as_music_profile(const string & strmusic_source, const string & strdesc, pg_connection & db) {
+void segment::load_music_profile(pg_connection & db, const player_config & config) {
   // Segment-specific info
   cat.cat     = SCAT_MUSIC;
   cat.strname = "Music";
@@ -274,25 +276,25 @@ void segment::setup_as_music_profile(const string & strmusic_source, const strin
   blncrossfading = true; // Music items crossfade into each other.
   blnmusic_bed   = false; // Music profiles don't have underlying music.
 
-  // Now generate a music playlist from the specified location:
-  generate_playlist(programming_elements, strmusic_source, SCAT_MUSIC, db); // Also shuffles the list
+  // Load the current music profile into the list of programming elements:
+  generate_playlist(programming_elements, "MusicProfile", SCAT_MUSIC, db, config); // Also shuffles the list
 
   // Shuffle it:
   shuffle_pel(programming_elements);
 
   // And setup the variables used to track which is the next item to be returned...
-  next_item    = programming_elements.begin(); // The next item to be returned when requested...
+  next_item = programming_elements.begin(); // The next item to be returned when requested...
 
   // And at the end:
   blnloaded = true; // Our segment is now loaded.
 }
 
-void segment::get_next_item(programming_element & pe, pg_connection & db, const string & strdefault_music_source, const int intstarts_ms) {
+void segment::get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config) {
   // Have we already fetched the maximum allowed number of items for this segment?
   if (intnum_fetched >= intmax_items) {
     // We've feched the maximum number of allowed items. Tell the user & revert down.
     log_message("Have already played the maximum allowed number of items for this segment (" + itostr(intmax_items) + ")");
-    revert_down(db, strdefault_music_source); // This will also setup "next_item"
+    revert_down(db, config); // This will also setup "next_item"
   }
   else {
     // Has the first item already been retrieved?
@@ -316,7 +318,7 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
           // Repeating not allowed. Revert to the alternate category.
           // "imaging filler", or we revert to the alternate category.
           log_line("Ran out of media for this segment (repeat=false)");
-          revert_down(db, strdefault_music_source); // This will also setup "next_item"
+          revert_down(db, config); // This will also setup "next_item"
         }
       }
     }
@@ -334,7 +336,7 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   ++intnum_fetched;
 }
 
-void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db) {
+void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db, const player_config & config) {
   // Process a directory or M3U file and generate a list of media to play during this segment.
   pel.clear(); // Clear anything already in the program element list.
 
@@ -344,7 +346,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   // apply special logic to see which files to actually use (relevant from, until, etc)
   vector <string> file_list;
 
-  recursive_add_to_string_list(file_list, strsource, 3, db);
+  recursive_add_to_string_list(file_list, strsource, 3, db, config);
 
   // Sort the entries:
   sort (file_list.begin(), file_list.end());
@@ -447,7 +449,7 @@ void segment::shuffle_pel(programming_element_list & pel) {
 }
 
 // Function called by load_from_db: Prepare a list of programming elements to use, based on the segment parameters.
-void segment::load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_connection & db) {
+void segment::load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_connection & db, const player_config & config) {
   // Clear out the current program element list:
   pel.clear();
   bool blnshuffle_pel = false; // Set to true if we are shuffle pel at the end of the function
@@ -505,7 +507,7 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
   }
 
   // Build up our list of items to play:
-  generate_playlist(pel, strsource, cat.cat, db);
+  generate_playlist(pel, strsource, cat.cat, db, config);
 
   // Did we get any files? (maybe they're all missing):
   if (pel.size() == 0) my_throw("I couldn't find anything to play!");
@@ -516,9 +518,9 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
   }
 }
 
-void segment::revert_down(pg_connection & db, const string & strdefault_music_source) {
+void segment::revert_down(pg_connection & db, const player_config & config) {
   // If there is a problem with playing category items, we revert to alternate category. If there is also a problem
-  // with the alternate category, we attempt to revert to the default music profile. If there are still problems
+  // with the alternate category, we attempt to revert to a music profile. If there are still problems
   // we throw an exception. This function is called to revert from the current playback status to the next lower.
   bool blndone = false; // Set to true when we find the state to revert to.
 
@@ -546,22 +548,22 @@ void segment::revert_down(pg_connection & db, const string & strdefault_music_so
           }
           else {
             // Now load the new playlist & setup the iterator:
-            load_pe_list(programming_elements, alt_cat, alt_sub_cat, db);
+            load_pe_list(programming_elements, alt_cat, alt_sub_cat, db, config);
             next_item = programming_elements.begin();
             blndone = true;
           }
         } catch_exceptions;
       } break;
       case PBS_ALTERNATE: {
-        log_message("Reverting to Default Music Profile");
-        playback_state = PBS_DEFAULT_MUSIC;
+        log_message("Reverting to a Music Profile");
+        playback_state = PBS_MUSIC_PROFILE;
         try {
-          setup_as_music_profile(strdefault_music_source, "<Default Music Profile>", db);
+          load_music_profile(db, config); // Automatically reverts to default music if no profile can be found
           next_item = programming_elements.begin();
           blndone = true;
         } catch_exceptions;
       } break;
-      case PBS_DEFAULT_MUSIC: {
+      case PBS_MUSIC_PROFILE: {
         my_throw("There was a problem with the Default music profile, but there is nothing else to play!");
         blndone = true;
       } break;
@@ -588,9 +590,9 @@ seg_category segment::parse_category_string(const string & strcat) {
 
 segment::seg_sequence segment::parse_sequence_string(const string & strseq) {
   string str = lcase(trim(strseq));
-  if (str == "random")   return SSEQ_RANDOM;
+  if (str == "random")     return SSEQ_RANDOM;
   if (str == "sequential") return SSEQ_SEQUENTIAL;
-  if (str == "specific") return SSEQ_SPECIFIC;
+  if (str == "specific")   return SSEQ_SPECIFIC;
   my_throw("Unknown Sequence Category: \"" + strseq + "\"");
 }
 
@@ -622,7 +624,7 @@ void segment::load_sub_cat_struct(struct sub_cat & sub_cat, const string strsub_
 
 // A recursive function used to load m3u files that contain directories, and directories which contain m3us:
 // Also applies special logic to format clock sub-category directories
-void segment::recursive_add_to_string_list(vector <string> & file_list, const string & strsource, const int intrecursion_level, pg_connection & db) {
+void segment::recursive_add_to_string_list(vector <string> & file_list, const string & strsource, const int intrecursion_level, pg_connection & db, const player_config & config) {
   // Call a recursive function to load directories, m3us, etc. Directories can contain M3U files
   // And M3U files can list directories. Go down to a maximum of 3 levels of recursion. Also, if
   // we encounter a directory, we check if it is one of the format clock-subdirectories. If it is, then
@@ -650,6 +652,16 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
         file_list.push_back("/cdrom/Track " + pad_left(itostr(i), '0', 2) + ".cda");
       }
     } catch_exceptions;
+  } else if (strsource == "MusicProfile") {
+    // A "MusicProfile" source means check the database for a music profile scheduled to play now.
+    if (intrecursion_level > 0) {
+      // Check for & load a music profile into the playlist:
+      add_music_profile_to_string_list(file_list, intrecursion_level - 1, db, config);
+    }
+    else {
+      // Can't process a Music Profile, have already reached the recurion limit!
+      log_warning("Not processing Music Profile. I am already at my maxiumum search depth.");
+    }
   } else if (file_is_cd_track(strsource)) { // A CD track file?
     file_list.push_back(strsource);
   } else if (dir_exists(strsource)) { // A directory?
@@ -698,7 +710,6 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
             ++intadded;
           }
           else {
-            testing;
             // No. Log a warning:
             log_warning("File listed in the database, but not found on disk: " + strdir + strfile);
           }
@@ -706,10 +717,8 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
         }
         // Did we add any entries?
         if (intadded <= 0) {
-          testing_throw;
           // No. Log a warning.
           log_warning("Could not find any usable format clock sub-category media under this directory: " + strdir);
-          testing_throw;
         }
       }
     }
@@ -733,14 +742,12 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
         string strfile = dir;
         if (intrecursion_level > 0) {
           // Process contents of the M3U file:
-          recursive_add_to_string_list(file_list, strdir + strfile, intrecursion_level - 1, db);
+          recursive_add_to_string_list(file_list, strdir + strfile, intrecursion_level - 1, db, config);
           ++intadded;
         }
         else {
-          testing;
           // Can't process the M3U file, have reached recursion level.
           log_warning("Not processing M3U file " + strdir + strfile + ". I am already at my maxiumum search depth.");
-          testing;
         }
       }
 
@@ -759,18 +766,14 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
     else if (strext==".m3u") {
       // A M3U file. Are we at our recursion level?
       if (intrecursion_level <= 0) {
-        testing_throw;
         // Yes. We can't process it.
         log_warning("Not processing M3U file " + strsource + ". I am already at my maxiumum search depth.");
-        testing_throw;
       }
       else {
         // No. Attempt to open and read lines from the file:
         ifstream m3u_file(strsource.c_str());
         if (!m3u_file) {
-          testing_throw;
           log_warning("Unable to open M3U file: " + strsource);
-          testing_throw;
         }
         else {
           // Process all lines in the M3U file:
@@ -780,29 +783,336 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
             // Skip empty lines and lines beginning with #:
             if (strline != "" && strline[0] != '#') {
               // Line should be fine. Process the line:
-              recursive_add_to_string_list(file_list, strline, intrecursion_level - 1, db);
+              recursive_add_to_string_list(file_list, strline, intrecursion_level - 1, db, config);
               ++intadded;
             }
           }
           // Did we get any usable lines?
           if (intadded <= 0) {
-            testing_throw;
             log_warning("Didn't find any usable lines in M3U file: " + strsource);
-            testing_throw;
           }
         }
       }
     }
     else {
-      testing_throw;
       // Invalid file extension. Log a warning
       log_warning("I don't recognise the '" + strext + "' extension on this file: " + strsource);
-      testing_throw;
     }
     return; // Done with the file source handling.
   }
   // Could not find the source:
   else log_warning("Source not found: \"" + strsource + "\"");
+}
+
+/// Utility function for segment::add_music_profile_to_string_list()
+bool check_short_weekday(const string & strShortWeekDay, int & intWeekDay) {
+  // Return true if strDay is mon, tue, wed, etc, and populate intWeekday with the weekday number - 1, 2, 3, etc.
+  bool blnresult = false;
+  intWeekDay = -1;
+
+  // Search for the string
+  const string ShortWeekDays[] = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"};
+  int i = 0; // Index into the ShortWeekDays array.
+
+  for (i=0; i < 7 && ShortWeekDays[i] != strShortWeekDay; ++i);
+
+  // Was the string found?
+  if (i < 7) {
+    // Yes. Return the index (+1) and a success value
+    intWeekDay = i+1;
+    blnresult = true;
+  }
+  return blnresult;
+}
+
+void segment::add_music_profile_to_string_list(vector <string> & file_list, const int intrecursion_level, pg_connection & db, const player_config & config) {
+  // Check the database for a music profile that wants to play now.
+  // If a music profile can't be found then load default music instead.
+  // -> Logic originally from non-format clocks player, player::CheckMusicProfile()
+
+  // Bomb out if our recursion level is too low (ie, this function was called incorrectly)
+  if (intrecursion_level < 0) LOGIC_ERROR;
+
+  long lngprofile_highest  = -1; // Database index of the highest tblmusicprofiles.lngprofile found so far.
+  string strProfileName    = ""; // Name of the profile to use... (empty = Default mp3 repository)
+  string strNewMusicSource = ""; // Source of music for the new profile
+
+  // ==========================================================================================
+  // Check #1 - Check tblmusicprofile fields (strstartday, dtmstarttime, strendday, dtmendtime)
+  // ==========================================================================================
+  {
+    bool blnprofile_found = false; // Set to true when a matching music profile is found
+
+    string strSQL = "SELECT * FROM tblMusicProfiles WHERE bitEnabled = '1' ORDER BY lngprofile DESC";
+    pg_result rs = db.exec(strSQL);
+
+    while (rs && !blnprofile_found) {
+      // Set some flags for this iteration:
+      bool blnskip_profile = false; // Set to true if for some reason this profile must be skipped (error, not applicable, etc)
+
+      // Get the details
+      strProfileName        = rs.field("strProfileName", "");
+      string strStartDay    = rs.field("strStartDay", "");
+      datetime dtmStartTime = parse_psql_time(rs.field("dtmStartTime", "0001-01-01 00:00:00"));
+      string strEndDay      = rs.field("strEndDay", "");
+      datetime dtmEndTime   = parse_psql_time(rs.field("dtmEndTime",   "0001-01-01 23:59:59"));
+      string strMusic       = rs.field("strMusic", "");
+      long lngprofile       = strtol(rs.field("lngprofile", "-1"));
+
+      int intStartWeekDay    = -1;
+      int intEndWeekDay      = -1;
+      bool blnStartIsWeekDay = false;
+      bool blnEndIsWeekDay   = false;
+      bool blnOnStartDay     = false;
+      bool blnOnEndDay       = false;
+
+      // Attempt to interpret the details.
+
+      // Check the start day
+      // - Is it empty? (ie, probably the profile is scheduled using tblmusicprofile_date, etc records)
+      if (strStartDay=="") {
+        // Empty start day. Ignore the profile in this loop, it will be found by the next section if it is meant to be activated.
+        blnskip_profile = true;
+      }
+
+      if (!blnskip_profile) {
+        // If the start day string is not empty, then all the other fields should be valid. Check them as normal, and
+        // report errors.
+        if (isdate(strStartDay)) {
+          blnStartIsWeekDay = false;
+        } // if (isdate(strStartDay))
+        else {
+          // It's not a date. Is it a week-day?
+          strStartDay = lcase(strStartDay);
+          strStartDay = strStartDay.substr(0, 3);
+          if (check_short_weekday(strStartDay, intStartWeekDay)) {
+            blnStartIsWeekDay = true;
+          }
+          else {
+            // Not a date or week-day - error! Go onto the next profile
+            log_error("Error with music profile \"" + strProfileName + "\" (invalid start day)");
+            blnskip_profile = true; // Don't check this particular profile any further...
+          } // if (!check_short_weekday(strStartDay, intStartWeekDay))
+        } // else
+      }
+
+      // Skip the next part if there was a profile error earlier...
+      if (!blnskip_profile) {
+        // Check the end day
+        if (isdate(strEndDay)) {
+          blnEndIsWeekDay = false;
+        } // if (isdate(strEndDay))
+        else {
+          strEndDay = lcase(strEndDay);
+          strEndDay = strEndDay.substr(0, 3);
+
+          // Check if strEndDay is a valid weekday name, and find which weekday number it is...
+          if (check_short_weekday(strEndDay, intEndWeekDay)) {
+            blnEndIsWeekDay = true;
+          }
+          else {
+            // Not a date or week-day - error! Go onto the next profile
+            log_error("Error with profile \"" + strProfileName + "\" (invalid end day)");
+            blnskip_profile = true; // Don't check the profile any further, skip and go to the next profile.
+          } // if (!check_short_weekday(strEndDay, intEndWeekDay))
+        } // else
+      } // if (!blnskip_profile)
+
+      bool blnDayCorrect = false; // This is set to true if the current date is within the profile's start and end day
+
+      if (!blnskip_profile) {
+        // Now that we have details of the start and end days, compare.
+        blnDayCorrect = false;
+
+        if (blnStartIsWeekDay != blnEndIsWeekDay) {
+          // Must both be date or both weekday
+          log_error("Error with profile \"" + strProfileName + "\" (start day type does not match end day type) ");
+          blnskip_profile = true; // Skip this profile and go to the next one.
+        } // if (blnStartIsWeekDay != blnEndIsWeekDay)
+      } // (!blnskip_profile)
+
+      if (!blnskip_profile) {
+        if (blnStartIsWeekDay) {
+          // Compare the weekdays
+          int intWeekDay = weekday(date());
+
+          if (intStartWeekDay > intEndWeekDay) {
+            // Weekday must not be between the 2
+            blnDayCorrect = (intWeekDay >= intStartWeekDay) || (intWeekDay <= intEndWeekDay);
+          } // if (intStartWeekDay > intEndWeekDay)
+          else {
+            // Weekday must be between the 2
+            blnDayCorrect = (intWeekDay >= intStartWeekDay) && (intWeekDay <= intEndWeekDay);
+          } // end else
+
+          blnOnStartDay = (intWeekDay == intStartWeekDay);
+          blnOnEndDay = (intWeekDay == intEndWeekDay);
+        } // if (blnStartIsWeekDay)
+        else {
+          // Compare the dates.
+          // - Convert the years of the dates to this year
+          datetime dtmStartDay, dtmEndDay;
+          dtmStartDay = parse_date_string(strStartDay);
+          dtmEndDay = parse_date_string(strEndDay);
+
+          int intNowYear, intNowMonth, intNowDay,
+              intStartYear, intStartMonth, intStartDay,
+              intEndYear, intEndMonth, intEndDay;
+
+          get_date_parts(now(), intNowYear, intNowMonth, intNowDay);
+          get_date_parts(dtmStartDay, intStartYear, intStartMonth, intStartDay);
+          get_date_parts(dtmEndDay, intEndYear, intEndMonth, intEndDay);
+
+          int intYearDiff = intStartYear - intNowYear;
+          intStartYear -= intYearDiff;
+          intEndYear -= intYearDiff;
+
+          dtmStartDay = make_date(intStartYear, intStartMonth, intStartDay);
+          dtmEndDay  = make_date(intEndYear, intEndMonth, intEndDay);
+
+          // A small correction: IN case this has moved the start day after today, but actually the start
+          // date must be last year and this is before the end date.
+          if (dtmStartDay > now()) {
+            intStartYear--;
+            intEndYear--;
+            dtmStartDay = make_date(intStartYear, intStartMonth, intStartDay);
+            dtmEndDay   = make_date(intEndYear, intEndMonth, intEndDay);
+          } // if (dtmStartDay > now())
+
+          // Now check the dates
+          blnDayCorrect = ((date() >= dtmStartDay) && (date() <= dtmEndDay));
+
+          blnOnStartDay = (date() == dtmStartDay);
+          blnOnEndDay   = (date() == dtmEndDay);
+        } // else
+
+        if (blnDayCorrect) {
+          // The day is correct. Check the times!
+          if (blnOnStartDay) {
+            if (time() < dtmStartTime) {
+              // Before the start time. Try the next profile
+              blnskip_profile = true;
+            } // if (time() < dtmStartTime)
+            else if (blnOnEndDay) {
+              if (time() > dtmEndTime) {
+                // After the end time. Try the next profile
+                blnskip_profile = true;
+              } // if (time() > dtmEndTime)
+            } // else if (blnOnEndDay)
+          } // if (blnOnStartDay)
+          if (!blnskip_profile) {
+            // === We have found a profile. Use it and quit the loop
+            strNewMusicSource = strMusic;
+            lngprofile_highest = lngprofile; // This is the highest "matching" lngprofile value found so far...
+            blnprofile_found = true;
+          } // if (!blnskip_profile)
+        } // if (blnDayCorrect)
+      } // if (!blnskip_profile)
+      rs++;
+    } // while ((!RS.eof()) && (!blnprofile_found))
+  }
+
+  // ===================================================================================
+  // Check #2 - Check tblmusicprofile_date and tblmusicprofile_timezone for any profiles
+  //            that have been *scheduled* to play in this hour.
+  // ===================================================================================
+  {
+    // Fetch the related tlktimezone record index...
+    long lngtimezone = -1; // The index of the timezone record...
+
+    // tlktimezone time fields do not contain seconds. ie no matching records will be returned when
+    // the current time is hh:59:ss - where ss is any second after 00.
+    // - Therefore - fetch the current time, and truncate the seconds.
+    datetime dtmApproxTime = (time() / 60) * 60; // datetime vars are stored as # seconds.
+    string psqlApproxTime  = time_to_psql(dtmApproxTime);
+
+    string strsql = "SELECT lngtimezone FROM tlktimezone WHERE dtmtzfrom <= " + psqlApproxTime + " AND " + psqlApproxTime + " <= dtmtzto";
+    pg_result rs = db.exec(strsql);
+
+    if (rs.size() != 1) {
+      // Expected 1 record to be found!
+      log_error("Error with tlktimezone table data. This query produced " +itostr(rs.size()) + " records where 1 was expected: " + strsql);
+      lngtimezone = -1;
+    } // if (RS.recordcount() != 1)
+    else {
+      // 1 record was found.
+      lngtimezone = strtol(rs.field("lngtimezone"));
+    } // else
+
+    // Now search for the most recently-added profile that was scheduled to play on this date & hour(timezone):
+    strsql = "SELECT tblmusicprofiles.lngprofile, tblmusicprofiles.strprofilename, tblmusicprofiles.strmusic "
+             "FROM tblmusicprofiles "
+             "INNER JOIN tblmusicprofile_date ON tblmusicprofiles.lngprofile = tblmusicprofile_date.lngprofile "
+             "INNER JOIN tblmusicprofile_timezone ON tblmusicprofile_date.lngprofile_date = tblmusicprofile_timezone.lngprofile_date "
+             "WHERE tblmusicprofiles.bitenabled='1' AND "
+             "tblmusicprofile_date.dtmday = " + psql_date + " AND "
+             "tblmusicprofile_timezone.lngtimezone = " + ltostr(lngtimezone) +
+             " ORDER BY tblmusicprofile_timezone.lngprofile_timezone DESC "
+             "LIMIT 1";
+    rs = db.exec(strsql);
+
+    // Was a tblmusicprofiles record retrieved for this date & hour(timezone)?
+    if (rs) {
+      // A tblmusicprofiles record was retrieved for this hour.
+      long lngprofile = strtol(rs.field("lngprofile","-1"));
+      strProfileName  = rs.field("strprofilename", "");
+      string strMusic = rs.field("strmusic", "");
+
+      // Compare this profile with the highest lngprofile found so far (ie, any retrieved from Check #1)
+      if (lngprofile > lngprofile_highest) {
+        // The lngprofile of this profile is higher than that of the profile found earlier (if one was found).
+        // - So use this profile instead, because it was created more recently.
+        strNewMusicSource = strMusic;
+        lngprofile_highest = lngprofile; // This is the highest "matching" lngprofile value found so far...
+      } // if (lngprofile > lngprofile_highest)
+    } // if (!RS.eof())
+  }
+
+  if (strNewMusicSource == "") {
+    // This means that no matching profile was found.
+    strNewMusicSource = config.strdefault_music_source;
+    strProfileName = "";
+  } // if (strNewMusicSource == "")
+
+  // Attempt to load the music profile:
+  bool blnload_success = false; // Set to true if we successfully load a playlist
+  log_message("Loading music profile \"" + (strProfileName=="" ? "default" : strProfileName) + "\": " + strNewMusicSource);
+  {
+    int intsize_before = file_list.size();
+    recursive_add_to_string_list(file_list, strNewMusicSource, intrecursion_level, db, config);
+    if (file_list.size() > intsize_before)
+      blnload_success = true;
+  }
+
+  // If there was an error, see if we can fall back to default music...
+  if (!blnload_success && (strNewMusicSource != config.strdefault_music_source)) {
+    // There was an error creating the random playlist... attempt to fall back to the default music location...
+    int intsize_before = file_list.size();
+    log_message("Error loading playlist, attempting to use default music location: " + config.strdefault_music_source);
+    recursive_add_to_string_list(file_list, config.strdefault_music_source, intrecursion_level, db, config);
+    if (file_list.size() > intsize_before)
+      blnload_success = true;
+  }
+
+  // If there was an error loading the default music location, see if we can fall back to the
+  // default mp3 repository directory:
+  if (!blnload_success && (strNewMusicSource != config.dirs.strmp3)) {
+    // There was an error creating the random playlist... attempt to fall back to the default music location...
+    log_message("Error creating playlist, attempting to use default mp3 repository: " + config.dirs.strmp3);
+    int intsize_before = file_list.size();
+    recursive_add_to_string_list(file_list, config.dirs.strmp3, intrecursion_level, db, config);
+    if (file_list.size() > intsize_before)
+      blnload_success = true;
+  }
+
+  // If the music playlist has still not been successfully loaded, then log this as a critical error..
+  if (!blnload_success) {
+    log_error("Could not create a music playlist! Music will not play correctly!");
+    strProfileName = "ERROR"; // For later when we update tblliveinfo
+  }
+
+  // Do a quick update of the liveinfo table to reflect the current profile.
+  write_liveinfo_setting(db, "Music profile", (strProfileName=="") ? "Default profile" : strProfileName);
 }
 
 void segment::list_music_bed_media(pg_connection & db) {

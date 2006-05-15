@@ -7,6 +7,7 @@
  *******************************************f********************************/
 
 #include "player.h"
+#include "player_util.h"
 #include "common/exception.h"
 #include <iostream>
 #include "common/file.h"
@@ -46,7 +47,7 @@ bool transition_event_less_than(const transition_event & e1, const transition_ev
 }
 
 // Constructor:
-player::player(){
+player::player() {
   // Throw an exception if there is already a player object instantiated:
   if (pplayer != NULL) my_throw("Only one player object is allowed!");
 
@@ -379,7 +380,6 @@ void player::load_db_config() {
     pg_result rs = db.exec("SELECT lngfc FROM tblfc WHERE lngfc = " + itostr(config.lngdefault_format_clock));
     if (rs.size() != 1) log_error("Invalid tbldefs:lngDefaultFormatClock value! Found " + itostr(rs.size()) + " matching Format Clock records!");
   }
-  else my_throw("Format Clocks are not enabled!");
 
   // Read the crossfade length:
   config.intcrossfade_length_ms = strtoi(load_tbldefs(db, "intCrossfadeLength", "8000", "int"));
@@ -560,39 +560,20 @@ void player::write_liveinfo() {
   string strTime = format_datetime(time(), "%I:%M:%S %p");
 
   // Also update the tblLiveInfo table
-  write_liveinfo_setting("Date", strDate);
-  write_liveinfo_setting("Time", strTime);
-  write_liveinfo_setting("Music vol", strMusicVol);
-  write_liveinfo_setting("Announce vol", strAnnouncementVol);
+  write_liveinfo_setting(db, "Date", strDate);
+  write_liveinfo_setting(db, "Time", strTime);
+  write_liveinfo_setting(db, "Music vol", strMusicVol);
+  write_liveinfo_setting(db, "Announce vol", strAnnouncementVol);
 
 /*
   write_liveinfo_setting("Adjustment vol", itostr(lrint(CurrentStatus.curAdjVol)));
 */
 
-  write_liveinfo_setting("Ads today", strNumAdsToday);
-  write_liveinfo_setting("Player version", VERSION);
+  write_liveinfo_setting(db, "Ads today", strNumAdsToday);
+  write_liveinfo_setting(db, "Player version", VERSION);
 /*
   write_liveinfo_setting("Music profile", strProfileName);
 */
-}
-
-void player::write_liveinfo_setting(const string & strname, const string & strvalue) {
-  // There is a tblLiveInfo table in the DB that stores the same information as
-  // the liveinfo.chk file. This procedure is used to update one of these settings
-  string strSQL;
-
-  strSQL = "SELECT lngStatus FROM tblliveInfo WHERE strstatusname = " + psql_str(strname);
-  pg_result rs = db.exec(strSQL);
-  // Generate part of the SQL string - if strValue is empty then a NULL value
-  // must be written.
-  if (!rs)
-    // A new status setting - INSERT
-    strSQL = "INSERT INTO tblliveinfo (strstatusname, strstatusvalue) VALUES (" + psql_str(strname) + ", " + psql_str(strvalue) + ")";
-  else
-    // An existing one - UPDATE
-    strSQL = "UPDATE tblliveinfo SET strstatusvalue = " + psql_str(strvalue) + " WHERE strstatusname = " + psql_str(strname);
-
-  db.exec(strSQL);
 }
 
 void player::check_received() {
@@ -1097,7 +1078,6 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   MY_SET_MIN(event_info.intnext_ms, event_info.intpromo_interrupt_ms);
   #undef MY_SET_MIN
 }
-
 
 int player::get_pe_vol(const string & strpe_vol) {
   // Fetch actual volume to use, based on item's "strvol" or "music_bed.strvol" settings.

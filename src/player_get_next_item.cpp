@@ -1,5 +1,5 @@
-// This file contains the implementation for the player classe's
-// "get_next_item" functions. Put these in a separate file to
+// This file contains the implementation for the player class's
+// "get_next_item" functions. I put these in a separate file to
 // speed up compilation.
 
 #include "player.h"
@@ -657,15 +657,22 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
   // And now get our "delayed" time, the time in the past at which we fetch format clock data
   datetime dtmdelayed = dtmnext_starts - run_data.intsegment_delay;
 
-  log_line("Fetching Format Clock and Segment scheduled for " + format_datetime(dtmdelayed, "%T"));
-
   // Reset info currently in the item:
   next_item.reset(); // Reset info currently in the item.
 
-  // Query for the Format Clock database id & segment for this time. Include the current "segment delay" factor
   long lngfc     = -1; // -1 means no Format Clock found...
   long lngfc_seg = -1; // -1 means no Format Clock segment found.
-  {
+
+  // Are format clocks enabled?
+  if (!config.blnformat_clocks_enabled) {
+    // Format clocks are not enabled. We don't query the database
+    log_line("Format Clocks are disabled. Will use a music profile instead.");
+  }
+  else {
+    // Format clocks are enabled. Query for the Format Clock database id & segment for this time.
+    // Include the current "segment delay" factor
+    log_line("Fetching Format Clock and Segment scheduled for " + format_datetime(dtmdelayed, "%T"));
+
     // Variables used for fetching format clock segments:
     string strfc_date              = format_datetime(dtmdelayed, "%F");
     string strfc_time_with_hour    = format_datetime(dtmdelayed, "%T");
@@ -709,7 +716,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       // Check if we have the setting:
       if (config.lngdefault_format_clock <= 0) {
         // Default clock is not set!
-        log_warning("Default Format Clock is not set! Reverting to default music profile...");
+        log_warning("Default Format Clock is not set! Reverting to a music profile...");
       }
       else {
         // Default clock is set (in tbldefs). See if it exists on the system.
@@ -718,7 +725,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
         // Did we find 1 record?
         if (rs.size() != 1) {
           // Nope
-          log_warning("Could not find the Default Format clock! (lngfc=" + ltostr(config.lngdefault_format_clock) +"). I will revert to the default music profile.");
+          log_warning("Could not find the Default Format clock! (lngfc=" + ltostr(config.lngdefault_format_clock) +"). I will revert to a music profile.");
         }
         else {
           // We found the Format Clock record. Now find the current Format Clock segment
@@ -729,7 +736,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
           catch(const my_exception & e) {
             // We failed to get a segment.
             log_warning(e.get_error());
-            log_warning("Will default to the default music profile");
+            log_warning("Will default to a music profile");
             lngfc = -1;
             lngfc_seg = -1;
           }
@@ -749,8 +756,8 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     // Load the new segment:
     log_message("Loading new Format Clock segment (id: " + itostr(lngfc_seg) + ")");
 
-    // A -1 lngfc_seg means load the default music profile instead
-    run_data.current_segment.load_from_db(db, lngfc_seg, config.strdefault_music_source, dtmdelayed);
+    // A -1 lngfc_seg means load the currently-scheduled music profile instead
+    run_data.current_segment.load_from_db(db, lngfc_seg, dtmdelayed, config);
 
     // Log some basic details about the new segment.
     log_line(run_data.current_segment.cat.strname + " segment is scheduled for " + format_datetime(run_data.current_segment.scheduled.dtmstart, "%T") + " to " + format_datetime(run_data.current_segment.scheduled.dtmend, "%T") + " (" + itostr(run_data.current_segment.scheduled.dtmend - run_data.current_segment.scheduled.dtmstart + 1) + "s)");
@@ -820,7 +827,7 @@ void player::get_next_item_not_recent_music(programming_element & next_item, con
 
   while (!blnok && intattempts_left > 0) {
     // Fetch the next item:
-    run_data.current_segment.get_next_item(next_item, db, config.strdefault_music_source, intstarts_ms);
+    run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config);
     // Is the item ok to use?
     blnok = next_item.cat != SCAT_MUSIC || !run_data.music_played_recently(next_item.strmedia);
     if (!blnok) log_message("Skipping song, it was played recently: " + next_item.strmedia);
