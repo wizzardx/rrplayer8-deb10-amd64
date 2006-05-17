@@ -50,7 +50,8 @@ public:
   // How long Format Clock Segments are currently "delayed" by. Segments are "delayed" (ie, they start & end later)
   // when earlier segments take too long to play. This figure will go up between non-music segments, up to the
   // limit (6 mins), and then is reduced when we hit a music segment. Music segments are reduced down to a minimum
-  // of 30 seconds to reclaim time back from this "puch back" factor.
+  // of 30 seconds to reclaim time back from this "push back" factor. This delay is reset once an hour to 0 (possibly causing
+  // segments to be lost). This figure basically causes us to query the database for segments in the past.
   int intsegment_delay;
 
   programming_element_list waiting_promos; ///< List of promos waiting to play. Populated by get_next_item_promo
@@ -58,8 +59,8 @@ public:
   /// Set to true when the player wants to log 1) the XMMS music playlist, and 2) All available music on the machine.
   bool blnlog_all_music_to_db;
 
-  /// Set to true when the player wants to reload the current segments playlist (ie, a RPLS command was found)
-  bool blnreload_segment_playlist;
+  /// Set to true when the player wants to reload the current segment (eg, a RPLS command was processed)
+  bool blnforce_segment_reload;
 
   // A list of the most recent media files played. This helps us to prevent songs
   // from playing that have been played recently.

@@ -626,7 +626,6 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       int intdiff = dtmnext_starts - dtmseg_end - 1; // Take out that extra second here.
       int intnew_segment_delay = run_data.intsegment_delay + intdiff;
       if (intnew_segment_delay > intmax_segment_push_back) {
-        testing;
         log_warning("I have to drop " + itostr(intnew_segment_delay - intmax_segment_push_back) + "s of segment playback time! I've reached my segment 'delay' limit of " + itostr(intmax_segment_push_back) + "s");
         intnew_segment_delay = intmax_segment_push_back;
       }
@@ -644,8 +643,11 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     datetime dtmnow = now();
 
     if (dtmlast_checked != datetime_error && dtmlast_checked/(60*60) != dtmnow/(60*60) && run_data.intsegment_delay > 0) {
-      log_warning("Hour has changed. Resetting segment delay (currently: " + itostr(run_data.intsegment_delay) + "s)");
-      log_warning("All segments that were scheduled to play between '" + format_datetime(dtmnext_starts - run_data.intsegment_delay, "%T") + "' and '" + format_datetime((dtmnext_starts) - 1, "%T") + "' will be missed!");
+      // Don't bother logging warnings if format clocks are disabled:
+      if (config.blnformat_clocks_enabled) {
+        log_warning("Hour has changed. Resetting segment delay (currently: " + itostr(run_data.intsegment_delay) + "s)");
+        log_warning("All segments that were scheduled to play between '" + format_datetime(dtmnext_starts - run_data.intsegment_delay, "%T") + "' and '" + format_datetime((dtmnext_starts) - 1, "%T") + "' will be missed!");
+      }
       run_data.intsegment_delay = 0;
     }
 
@@ -746,21 +748,25 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
   }
 
   // Has the current segment changed?
+  // Or, does the system want to reload the segment data?
+  // Or, has the current segment expired?
+
+  // - 'Segment expired' means that the a segment's time has run out.
+  bool blnsegment_expired = dtmnext_starts > (run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1);
+
   if (!run_data.current_segment.blnloaded ||
        lngfc_seg != run_data.current_segment.lngfc_seg ||
-       run_data.blnreload_segment_playlist) {
+       run_data.blnforce_segment_reload ||
+       blnsegment_expired) {
 
-    // Reset the "reload segment playlist" control variable:
-    run_data.blnreload_segment_playlist = false;
+    // Reset the "force segment reload" control variable:
+    run_data.blnforce_segment_reload = false;
 
     // Load the new segment:
-    log_message("Loading new Format Clock segment (id: " + itostr(lngfc_seg) + ")");
+    log_message("Loading Format Clock segment (id: " + itostr(lngfc_seg) + ")");
 
     // A -1 lngfc_seg means load the currently-scheduled music profile instead
     run_data.current_segment.load_from_db(db, lngfc_seg, dtmdelayed, config);
-
-    // Log some basic details about the new segment.
-    log_line(run_data.current_segment.cat.strname + " segment is scheduled for " + format_datetime(run_data.current_segment.scheduled.dtmstart, "%T") + " to " + format_datetime(run_data.current_segment.scheduled.dtmend, "%T") + " (" + itostr(run_data.current_segment.scheduled.dtmend - run_data.current_segment.scheduled.dtmstart + 1) + "s)");
 
     // How far into the segment did we query for?
     int intdiff = dtmdelayed - run_data.current_segment.scheduled.dtmstart;
@@ -803,8 +809,12 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       }
     }
 
-    // Now log how log what time the segment will start at, and for how long it will play.
-    log_message("New segment will run from " + format_datetime(run_data.current_segment.dtmstart, "%T") + " to " + format_datetime(run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1, "%T") + " (" + itostr(run_data.current_segment.intlength) + "s)");
+    // Now log some basic details about the new segment.
+    log_line(run_data.current_segment.cat.strname + " segment will play between "
+      + format_datetime(run_data.current_segment.dtmstart, "%T") + " and "
+      + format_datetime(run_data.current_segment.dtmstart
+      + run_data.current_segment.intlength - 1, "%T")
+      + " (" + itostr(run_data.current_segment.intlength) + "s)");
 
     // If this is a music playlist then log it to the database:
     if (run_data.current_segment.cat.cat == SCAT_MUSIC) {

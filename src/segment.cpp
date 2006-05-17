@@ -517,6 +517,9 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
   if (blnshuffle_pel) {
     shuffle_pel(pel);
   }
+
+  // Log a message listing the "Source" for this segment:
+  log_line("Segment source: " + strsource);
 }
 
 void segment::revert_down(pg_connection & db, const player_config & config) {

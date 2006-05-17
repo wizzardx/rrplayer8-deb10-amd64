@@ -48,7 +48,7 @@ void player_run_data::init() {
 
   blnlog_all_music_to_db = false; // Set to true when the player wants to log all available music (and the current XMMS playlist) to the database.
 
-  blnreload_segment_playlist = false; // Set to true when the player wants to reload the current segments playlist (ie, a RPLS command was found)
+  blnforce_segment_reload = false; // Set to true when the player wants to reload the current segment (eg, a RPLS command was found)
 
   // Clear the list of recently-played music:
   recent_music.clear();
