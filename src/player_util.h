@@ -4,8 +4,11 @@
 #ifndef PLAYER_UTIL_H
 #define PLAYER_UTIL_H
 
-#include "common/psql.h"
+#include <string>
 
-void write_liveinfo_setting(pg_connection & db, const string & strname, const string & strvalue);
+// Forward declarations:
+class pg_connection;
+
+void write_liveinfo_setting(pg_connection & db, const std::string & strname, const std::string & strvalue);
 
 #endif

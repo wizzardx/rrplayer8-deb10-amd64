@@ -1,0 +1,39 @@
+
+#ifndef MUSIC_HISTORY_DP20060525_H
+#define MUSIC_HISTORY_DP20060525_H
+
+#include <list>
+#include <string>
+
+// Forward declarations:
+class pg_connection;
+
+/// A sub-class to manage the players music history
+/// (also to prevent the same songs from playing too soon
+/// in succession)
+class music_history
+{
+ public:
+   /// Load music history from the schedule database
+   void load(pg_connection & db);
+
+   /// Called when a song has started playing. Updates the music history.
+   void song_played(pg_connection & db, const std::string & strfile, const std::string & strdescr);
+
+   /// Did this song play within the most recent X songs?
+   bool song_played_recently(const std::string & strfile, const int count);
+
+   /// Clear the in-memory music history (not the database table)
+   void clear();
+ private:
+   /// Maximum history entries to keep in memory
+   static const int max_history_length = 1000;
+
+   /// A list of the most recent music files played
+   std::list<std::string> m_history;
+
+   /// Clear out the oldest history entries
+   void tidy();
+};
+
+#endif

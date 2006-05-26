@@ -4,13 +4,12 @@
 
 #include <string>
 #include <vector>
-#include "common/logging.h"
-#include "common/my_time.h"
-#include "common/psql.h"
+
+#include "music_history.h"
 #include "player_config.h"
 #include "player_run_data.h"
-
-using namespace std;
+#include "common/my_time.h"
+#include "common/psql.h"
 
 /// Information about "events" that take place during playback of the current item.
 class playback_events_info {
@@ -27,16 +26,17 @@ public:
 /// Structure for storing events that take place during a playback transition (see player::playback_transition)
 struct transition_event {
   int intrun_ms; ///< When does the event run?
-  string strevent; ///< Lists the event.
+  std::string strevent; ///< Lists the event.
 };
-typedef vector <transition_event> transition_event_list;
+typedef std::vector <transition_event> transition_event_list;
 
 /// A function we use with the sort() algorithm:
 bool transition_event_less_than(const transition_event & e1, const transition_event & e2);
 
-/// The main Player class.
-/// It all happens here
+// Forward declarations:
+class log_info;
 
+/// The main Player class. It all happens here
 class player {
 public:
   player();  ///< Constructor.
@@ -52,11 +52,11 @@ private:
   void remove_waiting_mediaplayer_cmds(); ///< Remove waiting MediaPlayer commands (pause, stop, resume, etc)
   void write_liveinfo(); ///< Write status info to a table for the Global Reporter to read.
   void check_received(); ///< Check the Received directory for .CMD files
-  void load_cmd_into_db(const string strfull_path);
+  void load_cmd_into_db(const std::string strfull_path);
   void process_waiting_cmds();
   void correct_waiting_promos();
   void write_errors_for_missed_promos();
-  void write_errors_for_missed_promos_log_missed(const string strmissed_file, const long lngmissed_count, const datetime dtmmissed_first, const datetime dtmmissed_last);
+  void write_errors_for_missed_promos_log_missed(const std::string strmissed_file, const long lngmissed_count, const datetime dtmmissed_first, const datetime dtmmissed_last);
   void log_xmms_status_to_db();
 
   pg_connection db; ///< Connection to the schedule database. This is used to run queries and fetch records.
@@ -174,13 +174,13 @@ private:
 
   mp3_tags mp3tags; ///< A cache of mp3 tags, used for quickly retrieving mp3 details.
 
-  // Called by playback_transition:
-  void log_song_played(const string & strdescr); ///< Log the latest song to tblmusichistory
-
   // Fetch the current playback safety margin:
   //   How long before important playback events, the player should be ready and
   //   not run other logic which could cut into time needed for crossfading, etc.
   int get_next_playback_safety_margin_ms();
+
+  /// Player music history. For updating tblmusichistory & preventing song repetition.
+  music_history m_music_history;
 
   // Debugging-related:
   bool blndebug; // Set to true to output additional logging messages to cout.

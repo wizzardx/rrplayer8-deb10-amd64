@@ -1,4 +1,6 @@
+
 #include "player_util.h"
+#include "common/psql.h"
 
 void write_liveinfo_setting(pg_connection & db, const string & strname, const string & strvalue) {
   // There is a tblLiveInfo table in the DB that stores the same information as
@@ -18,3 +20,4 @@ void write_liveinfo_setting(pg_connection & db, const string & strname, const st
 
   db.exec(strSQL);
 }
+

@@ -337,6 +337,17 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   ++intnum_fetched;
 }
 
+int segment::count_items_from_catagory(const seg_category cat) {
+  int count = 0; // Count of matching items
+  programming_element_list::const_iterator i = programming_elements.begin();
+  while (i != programming_elements.end()) {
+    if (i->cat == cat)
+      count++;
+    i++;
+  }
+  return count;
+}
+
 void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db, const player_config & config) {
   // Process a directory or M3U file and generate a list of media to play during this segment.
   pel.clear(); // Clear anything already in the program element list.

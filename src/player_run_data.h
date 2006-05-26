@@ -1,9 +1,6 @@
+
 #ifndef PLAYER_RUN_DATA_H
 #define PLAYER_RUN_DATA_H
-
-/**
-@author David Purdy
-*/
 
 #include "programming_element.h"
 #include "segment.h"
@@ -61,16 +58,6 @@ public:
 
   /// Set to true when the player wants to reload the current segment (eg, a RPLS command was processed)
   bool blnforce_segment_reload;
-
-  // A list of the most recent media files played. This helps us to prevent songs
-  // from playing that have been played recently.
-private:
-  vector <string> recent_music;
-
-public:
-  // Some functions to manipulate the list:
-  void remember_recent_music(const string & strfile);
-  bool music_played_recently(const string & strfile);
 };
 
 #endif

@@ -50,9 +50,6 @@ void player_run_data::init() {
 
   blnforce_segment_reload = false; // Set to true when the player wants to reload the current segment (eg, a RPLS command was found)
 
-  // Clear the list of recently-played music:
-  recent_music.clear();
-
   // Set the PCM volume to 90% - we use software mixing not hardware!
   string strout;
   system_capture_out_throw("/usr/bin/aumix -w 90", strout);
@@ -203,29 +200,3 @@ void player_run_data::next_becomes_current() {
   next_item.reset();
 }
 
-void player_run_data::remember_recent_music(const string & strfile) {
-  // This function is called to maintain a list of recently-played music. The
-  // purpose of the list is to prevent a song from being repeated too soon after
-  // the last time it played. This can happen for example when the segment category
-  // changes from music to non-music and then back to music again.
-
-  // Append the file to the end of the list:
-  recent_music.push_back(strfile);
-
-  // If our list is long enough, we start removing items from the beginning of the list:
-  while (recent_music.size() > intno_repeat_music) {
-    recent_music.erase(recent_music.begin());
-  }
-}
-
-bool player_run_data::music_played_recently(const string & strfile) {
-  // Return true if the file is a song which played recently
-  // - We do this by searching the list of recently-played music:
-  bool blnfound = false;
-  vector <string>::const_iterator it = recent_music.begin();
-  while (it != recent_music.end() && !blnfound) {
-    blnfound = *it == strfile;
-    ++it;
-  }
-  return blnfound;
-}

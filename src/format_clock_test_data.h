@@ -9,12 +9,10 @@
 #ifndef FORMAT_CLOCK_TEST_DATA_H
 #define FORMAT_CLOCK_TEST_DATA_H
 
-#include "common/psql.h"
+#include "common/my_time.h"
 
-/**
-  *@author David Purdy
-  */
-
+// Forward declarations:
+class pg_connection;
 
 // Class that exists only to create Format Clock test data.
 class format_clock_test_data {

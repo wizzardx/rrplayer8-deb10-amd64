@@ -521,13 +521,10 @@ void player::playback_transition(playback_events_info & playback_events) {
             }
 
             // If the next item is a music item (we know it isn't LineIn, see earlier check),
-            // then log the details to the database:
+            // then update the music history:
             if (run_data.next_item.cat == SCAT_MUSIC) {
-              log_song_played(mp3tags.get_mp3_description(run_data.next_item.strmedia));
-
-              // Also maintain a list of the most recently played media.
-              // This helps to prevent repeating of songs (eg: change from music -> links -> music)
-              run_data.remember_recent_music(run_data.next_item.strmedia);
+              // Update the music history:
+              m_music_history.song_played(db, run_data.next_item.strmedia, mp3tags.get_mp3_description(run_data.next_item.strmedia));
             }
 
             // Check if there are any music bed events (for the next item) that will occur *during* the current

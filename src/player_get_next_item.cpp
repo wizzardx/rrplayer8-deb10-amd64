@@ -3,10 +3,11 @@
 // speed up compilation.
 
 #include "player.h"
-#include "common/testing.h"
+#include "common/maths.h"
 #include "common/my_string.h"
 #include "common/rr_date.h"
-#include "common/maths.h"
+
+#include "common/testing.h"
 
 void player::get_next_item(programming_element & item, const int intstarts_ms) {
   // intstarts_ms - how long from now (in ms) the item will be played.
@@ -835,20 +836,47 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
 void player::get_next_item_not_recent_music(programming_element & next_item, const int intstarts_ms) {
   // This function stops songs from playing too soon after each other.
   // eg: segment changes from music to non-music and back to music.
+  bool blnok           = false; // Set to true when we find an item which isn't a recently-played song
 
-  bool blnok      = false; // Set to true when we find an item which isn't a recently-played song
-  int intattempts_left = intno_repeat_music*2; // Try this many times to find an ok item.
+  // Count the music items in the current playlist:
+  int intnum_music_items = run_data.current_segment.count_items_from_catagory(SCAT_MUSIC);
+
+  // Determine the minimum number of music items that should elapse before
+  // a song can repeat
+  // - intprevent_song_repeat_factor represents a percentage of the current
+  //   music playlist's length.
+  int intmin_songs_before_song_repeat = (intnum_music_items * intprevent_song_repeat_factor) / 100;
+
+  // Attempt [current playlist length * 2] (or 100, whichever is higher) times to fetch
+  // an item which hasn't been played recently. Using * 2 because it is possible for the
+  // playlist to change during this process (eg, a music segment with repeating disabled,
+  // and the system reverts to a music profile instead
+  int intattempts_left = run_data.current_segment.programming_elements.size() * 2;
+  if (intattempts_left < 100) intattempts_left = 100;
 
   while (!blnok && intattempts_left > 0) {
     // Fetch the next item:
     run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config);
     // Is the item ok to use?
-    blnok = next_item.cat != SCAT_MUSIC || !run_data.music_played_recently(next_item.strmedia);
-    if (!blnok) log_message("Skipping song, it was played recently: " + next_item.strmedia);
-    // If this check failed then go to the next attempt:
-    if (!blnok) --intattempts_left;
+    blnok = next_item.cat != SCAT_MUSIC || !m_music_history.song_played_recently(next_item.strmedia, intmin_songs_before_song_repeat);
+
+    // If the item is not ok to use, then log that it was skipped:
+    if (!blnok) {
+      string strdescr = "<ERROR>";
+      try {
+        strdescr = mp3tags.get_mp3_description(next_item.strmedia);
+      } catch_exceptions;
+      log_message("Skipping song, it was played recently: \"" + next_item.strmedia + "\" - \"" + strdescr + "\"");
+      // If this check failed then go to the next attempt:
+      if (!blnok) --intattempts_left;
+    }
   }
 
   // Did we find an item which isn't a recently-played song?
-  if (!blnok) my_throw("I was unable to find a song which has not been played recently!");
+  if (!blnok) {
+    // No. Our logic has failed for some reason so reset it.
+    log_warning("Forced to clear the in-memory (not database) music history!");
+    m_music_history.clear();
+    my_throw("I was unable to find a song which has not been played recently!");
+  }
 }

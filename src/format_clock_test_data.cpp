@@ -7,11 +7,12 @@
  ***************************************************************************/
 
 #include "format_clock_test_data.h"
-#include "common/my_string.h"
-#include "common/file.h"
 #include "common/dir_list.h"
-#include "common/logging.h"
 #include "common/exception.h"
+#include "common/file.h"
+#include "common/logging.h"
+#include "common/my_string.h"
+#include "common/psql.h"
 
 void format_clock_test_data::clear_tables() {
   log_message("Deleting data from Format Clock tables...");

@@ -2,15 +2,17 @@
 #ifndef PLAYER_CONFIG_H
 #define PLAYER_CONFIG_H
 
+#include <string>
+
 /// Some settings and configuration read from the config file and from the database.
 typedef struct {
   /// Database connection details (player.conf)
   struct db {
-    string strserver; ///< Server hostname, IP address, etc
-    string strdb;  ///< The name of the database
-    string struser;  ///< The user name
-    string strpassword;  ///< The password
-    string strport;  ///< The port
+    std::string strserver;   ///< Server hostname, IP address, etc
+    std::string strdb;       ///< The name of the database
+    std::string struser;     ///< The user name
+    std::string strpassword; ///< The password
+    std::string strport;     ///< The port
   } db;
 
   // Promo frequency capping options (tbldefs)
@@ -20,17 +22,17 @@ typedef struct {
 
   /// Directories used by the player.
   struct dirs {
-    string strmp3;
-    string stradverts;
-    string strannouncements;
-    string strspecials;
-    string strreceived;
-    string strtoday;
-    string strprofiles;
+    std::string strmp3;
+    std::string stradverts;
+    std::string strannouncements;
+    std::string strspecials;
+    std::string strreceived;
+    std::string strtoday;
+    std::string strprofiles;
   } dirs;
 
   /// Added in 6.15 (build 330) The location to use for the default music profile:
-  string strdefault_music_source;
+  std::string strdefault_music_source;
 
   // Added in 6.21 (build 737) Wait for the current song to end before starting
   // promo playback? Exception: linein music & "force to play now" promos.
@@ -40,8 +42,8 @@ typedef struct {
   // Format clock settings:
   bool blnformat_clocks_enabled; ///< Are format clocks used on this system?
   long lngdefault_format_clock;  ///< Database reference to the "default" format clock (to use if
-                                  ///< there are problems with the current format clock, or no format clocks
-                                  ///< were scheduled.
+                                 ///< there are problems with the current format clock, or no format clocks
+                                 ///< were scheduled.
 
   // Crossfade settings:
   int intcrossfade_length_ms; ///< Crossfades run for 8000ms. Also music fade-ins and fade-outs.

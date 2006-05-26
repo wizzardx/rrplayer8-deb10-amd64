@@ -7,19 +7,18 @@
  *******************************************f********************************/
 
 #include "player.h"
-#include "player_util.h"
-#include "common/exception.h"
-#include <iostream>
-#include "common/file.h"
-#include "common/my_string.h"
 #include "config.h"
-#include "common/system.h"
-#include "common/rr_date.h"
+#include "player_util.h"
 #include "common/config_file.h"
-#include "common/rr_security.h"
 #include "common/dir_list.h"
+#include "common/exception.h"
+#include "common/file.h"
 #include "common/linein.h"
+#include "common/rr_date.h"
 #include "common/rr_misc.h"
+#include "common/rr_security.h"
+#include "common/system.h"
+
 #include "common/testing.h"
 
 player * pplayer = NULL; // A pointer to the player object, used by callback functions.
@@ -196,9 +195,13 @@ void player::init() {
   log_message("Checking for invalid 'waiting' promos...");
   correct_waiting_promos();
 
-  // Also write errors for missed announcements...
+  // Write errors for missed announcements...
   log_message("Checking for missed promos...");
   write_errors_for_missed_promos();
+
+  // Load music history:
+  log_message("Loading music history...");
+  m_music_history.load(db);
 
   // Write some player output to the database: Music profile mp3s, playlist, xmms status
 /*
@@ -1090,32 +1093,6 @@ void player::mark_promo_complete(const long lngtz_slot) {
                            " WHERE (lngTZ_Slot=" + itostr(lngtz_slot) + ")";
 
   db.exec(strsql);
-}
-
-// Called by playback_transition:
-void player::log_song_played(const string & strdescr) {
-  string strsql = "INSERT INTO tblMusicHistory (dtmTime, strDescription) VALUES (" + psql_now + ", " + psql_str(strdescr) + ")";
-  pg_result rs = db.exec(strsql);
-
-  // If there are more than 100 MP3s listed then erase the oldest MP3s
-  strsql = "SELECT COUNT(lngPlayedMP3) AS Counter FROM tblMusicHistory";
-  rs = db.exec(strsql);
-
-  int intCounter = 0;
-
-  if (rs)
-    intCounter = strtoi(rs.field("Counter", "0"));
-
-  if (intCounter > 100) {
-    // There are more then 100 MP3's Listed - erase the oldest
-    strsql = "SELECT lngPlayedMP3 FROM tblMusicHistory ORDER BY lngPlayedMP3 LIMIT " + itostr(intCounter - 100);
-    rs = db.exec(strsql);
-    while (rs) {
-      strsql = "DELETE FROM tblMusicHistory WHERE lngPlayedMP3 = " + rs.field("lngPlayedMP3", "-1");
-      db.exec(strsql);
-      rs++;
-    }
-  }
 }
 
 int player::get_next_playback_safety_margin_ms() {

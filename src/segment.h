@@ -2,12 +2,12 @@
 #ifndef SEGMENT_H
 #define SEGMENT_H
 
-#include "common/my_time.h"
-#include "common/psql.h"
+#include "categories.h"
 #include "player_config.h"
 #include "programming_element.h"
+#include "common/my_time.h"
 
-using namespace std;
+#include <vector>
 
 // Segment
 // Definition: A time slot in an hour broadcast. It can have varying categories. eg: in a
@@ -15,6 +15,10 @@ using namespace std;
 // advertising to be inserted. A segment is not the same as a production element. A segment can
 // contain different categories. (This is a new term we've coined, ie not in regular radio usage).
 // The sections in the pie chart earlier are all segments.
+
+// Forward declarations:
+class pg_connection;
+class programming_element;
 
 class segment {
 public:
@@ -24,8 +28,11 @@ public:
   void load_from_db(pg_connection & db, const long lngfc_seg, const datetime dtmtime, const player_config & config);
   void load_music_profile(pg_connection & db, const player_config & config);
 
-  // Advance to the next item (if necessary) and then return it.
+  /// Advance to the next item (if necessary) and then return it.
   void get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config);
+
+  /// How many items in the segment playlist are from the specified catagory?
+  int count_items_from_catagory(const seg_category cat);
 
   bool blnloaded; // Has data been loaded into this object yet?
 
@@ -86,6 +93,7 @@ public:
 
   /// List of items to play during this segment.
   programming_element_list programming_elements;
+
 private:
   // Information used to retrieve the "next" item:
   programming_element_list::iterator next_item; ///< A pointer to the next item to be returned (if valid etc) by get_next_item
@@ -117,7 +125,7 @@ private:
 
   // A recursive function used to load m3u files that contain directories, and directories which contain m3us:
   // Also applies special logic to format clock sub-category directories
-  void recursive_add_to_string_list(vector <string> & file_list, const string & strsource, const int intrecursion_level, pg_connection & db, const player_config & config);
+  void recursive_add_to_string_list(std::vector <std::string> & file_list, const string & strsource, const int intrecursion_level, pg_connection & db, const player_config & config);
 
   /// Check for an active music profile, add contents to the string vect. Defaults to default music if there is a problem
   void add_music_profile_to_string_list(vector <string> & file_list, const int intrecursion_level, pg_connection & db, const player_config & config);
