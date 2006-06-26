@@ -24,11 +24,6 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
   // Reset "next_item"
   item.reset();
 
-  // If the current promo batch queue is not empty, then fetch the next item:
-  if (!item.blnloaded && run_data.waiting_promos.size() != 0) {
-    get_next_item_promo(item, intstarts_ms);
-  }
-
   // Update the store status, check if the store is currently open or closed:
   load_store_status();
 
@@ -39,9 +34,13 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
     item.blnloaded = true;
     // Reset our "segments delayed by" factor:
     run_data.intsegment_delay=0;
+
+    // Also clear any promo batch we were busy with. We don't want to
+    // resume this batch when the store opens again.
+    run_data.waiting_promos.clear();
   }
 
-  // Return the next promo if there is one waiting in the database:
+  // Return the next promo if there is one waiting in the database (or in a recently-retrieved batch):
   if (!item.blnloaded) {
     // Inside store hours. Any promos?
     get_next_item_promo(item, intstarts_ms);
