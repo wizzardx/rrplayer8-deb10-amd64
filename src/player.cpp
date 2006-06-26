@@ -16,6 +16,7 @@
 #include "common/linein.h"
 #include "common/rr_date.h"
 #include "common/rr_misc.h"
+#include "common/rr_misc_db.h"
 #include "common/rr_security.h"
 #include "common/system.h"
 
@@ -202,12 +203,6 @@ void player::init() {
   // Load music history:
   log_message("Loading music history...");
   m_music_history.load(db);
-
-  // Write some player output to the database: Music profile mp3s, playlist, xmms status
-/*
-  log_message("Logging XMMS status...");
-  log_xmms_status_to_db();
-*/
 
   // Also init the mp3 tags:
   mp3tags.init(PLAYER_DIR + "mp3_tags.txt");
@@ -398,7 +393,7 @@ void player::load_db_config() {
   }
 }
 
-void player::load_store_status(const bool blnverbose) {
+void player::load_store_status(const bool blnverbose, const bool blnforceload) {
   // Make sure this function doesn't run too regularly...
   {
     static datetime dtmlast_run = datetime_error;
@@ -411,8 +406,8 @@ void player::load_store_status(const bool blnverbose) {
     }
 
     // Now check if it is too soon to run the logic again:
-    // (once every 30s)
-    if (dtmlast_run/30 == dtmnow/30) return;
+    // (once every 30s) (run anyway if blnforceload is set)
+    if (!blnforceload && (dtmlast_run/30 == dtmnow/30)) return;
 
     dtmlast_run = dtmnow;
   }
@@ -502,6 +497,45 @@ void player::load_store_status(const bool blnverbose) {
     LIMIT_RANGE_0_80(store_status.volumes.intannounce, "Announcement");
     LIMIT_RANGE_0_80(store_status.volumes.intlinein,   "LineIn");
     #undef LIMIT_RANGE_0_80
+  }
+}
+
+void player::update_output_volumes() {
+  // Immediately update XMMS sessions & LineIn levels according to the current store status
+  // (don't wait for the next programming element to start playing)
+
+  // Abort if the current item is not loaded:
+  if (!run_data.current_item.blnloaded) LOGIC_ERROR;
+
+  // If a "silence" item is playing, reset all volumes to 0:
+  if (run_data.current_item.cat == SCAT_SILENCE) {
+    // XMMS levels:
+    for (int intsession=0; intsession < intmax_xmms; intsession++)
+      run_data.xmms[intsession].setvol(0);
+    // Linein level:
+    linein_setvol(0);
+  }
+  // Otherwise, if LineIn is playing, then set it's volume:
+  else if (run_data.uses_linein(SU_CURRENT_FG)) {
+    linein_setvol(store_status.volumes.intlinein);
+  }
+  // Otherwise, set the XMMS volume:
+  else {
+    // An exception will be thrown if the current item does not use XMMS:
+    int intsession = run_data.get_xmms_used(SU_CURRENT_FG);
+    run_data.xmms[intsession].setvol(get_pe_vol(run_data.current_item.strvol));
+
+    // Set volume of music bed also if it is active now:
+    {
+      int intsession = -1;
+      try {
+        intsession = run_data.get_xmms_used(SU_CURRENT_BG);
+      } catch(...) {}
+      if (intsession != -1) {
+        // Still need to add logic for Music Beds
+        undefined_throw;
+      }
+    }
   }
 }
 
@@ -688,6 +722,19 @@ void player::process_waiting_cmds() {
           if (strParams != "") log_warning("This command does not take arguments!");
           load_db_config();
         }
+        else if (strCommand=="RVOL") {
+          // Reload volumes
+          log_message("Processing RVOL (Reload Volumes) command...");
+
+          // Log a warning if there are args
+          if (strParams != "") log_warning("This command does not take arguments!");
+
+          // Reload volumes from the database:
+          load_store_status(false, true); // Not verbose, force a load now (even if a load took place in the last 30 seconds).
+
+          // Update volumes of linein & xmms sessions as appropriately:
+          update_output_volumes();
+        }
         else {
           // The command is unknown, report an error
           my_throw("Unknown command " + strCommand);
@@ -854,10 +901,6 @@ void player::write_errors_for_missed_promos_log_missed(const string strmissed_fi
   else {
     log_warning("Announcement " + strmissed_file + " was missed " + itostr(lngmissed_count) + " times between " + strmissed_first + " and " + strmissed_last);
   }
-}
-
-void player::log_xmms_status_to_db() {
-  undefined_throw;
 }
 
 // FUNCTIONS AND ATTRIBUTES USED DURING RUN():
@@ -1093,6 +1136,86 @@ void player::mark_promo_complete(const long lngtz_slot) {
                            " WHERE (lngTZ_Slot=" + itostr(lngtz_slot) + ")";
 
   db.exec(strsql);
+}
+
+// Helper function for player::log_mp_status_to_db():
+void write_tblplayeroutput(pg_conn_exec & conn, const string strMessage, const string strMessageDescr) {
+  // Write an entry to tblplayeroutput.
+  try {
+    // Build the query
+    string strSQL = "INSERT INTO tblplayeroutput (strmessage, strmsgdesc, dtmtime) VALUES (" + psql_str(strMessage) + ", " + psql_str(strMessageDescr) + ", " + psql_time + ")";
+    // Run the query
+    conn.exec(strSQL);
+  } catch_exceptions;
+}
+
+void player::log_mp_status_to_db(const sound_usage sound_usage) {
+  try {
+    const string strXMMS_Status = "mp_status";
+
+    // Start a database transaction:
+    pg_transaction T(db);
+
+    // Delete all of the mp_Status records
+    string strSQL = "DELETE FROM tblplayeroutput WHERE strmsgdesc = " + psql_str(strXMMS_Status);
+    T.exec(strSQL);
+
+    // Fetch info about the current or next item?
+    programming_element * pe = NULL;
+    switch(sound_usage) {
+      case SU_CURRENT_FG:
+        pe = &run_data.current_item;
+        break;
+      case SU_NEXT_FG:
+        pe = &run_data.next_item;
+        break;
+      default: LOGIC_ERROR; // Should never run!
+    }
+
+    // Some variables we want to populate & write to tblplayeroutput:
+    string strmp_status_playing;     // A description of what is currently playing
+    string strmp_status_time;        // How long the current item has been playing.
+    int    intmp_status_volume = -1; // Current volume (percent)
+    string strmusic_source = "";     // "xmms", "linein", or "silence". Needed for the Wizard status update logic.
+
+    // Generate a descriptive string for how long the current item has been playing:
+    {
+      datetime dtmtime_descr = now() - pe->dtmstarted + make_time(0,0,0);
+      strmp_status_time = format_datetime(dtmtime_descr, "%H:%M:%S");
+    }
+
+    // Is the current item empty (ie, silence)?
+    if (pe->cat == SCAT_SILENCE) {
+      strmp_status_playing = "Nothing";
+      intmp_status_volume = 0;
+      strmusic_source = "nothing";
+    }
+    else if (run_data.uses_linein(sound_usage)) {
+      strmp_status_playing = "external music";
+      intmp_status_volume = linein_getvol();
+      strmusic_source = "linein";
+    }
+    else {
+      // Current item is played via an XMMS session
+      // - The next line will thrown an exception if this assumption is incorrect.
+      int intsession = run_data.get_xmms_used(sound_usage);
+      strmp_status_playing = get_short_filename(run_data.xmms[intsession].get_song_file_path()) + " - " + run_data.xmms[intsession].get_song_title();
+      intmp_status_volume = run_data.xmms[intsession].getvol();
+      strmusic_source = "xmms";
+    }
+
+    // Now log this data to the database:
+    write_tblplayeroutput(T, "Playing: "      + strmp_status_playing, strXMMS_Status);
+    write_tblplayeroutput(T, "Time: "         + strmp_status_time, strXMMS_Status);
+    write_tblplayeroutput(T, "Left volume: "  + itostr(intmp_status_volume), strXMMS_Status);
+    write_tblplayeroutput(T, "Right volume: " + itostr(intmp_status_volume), strXMMS_Status);
+
+    // No problems, so commit the database transaction:
+    T.commit();
+
+    // Also update tblliveinfo:
+    write_liveinfo_setting(db, "Music source", strmusic_source);
+  } catch_exceptions;
 }
 
 int player::get_next_playback_safety_margin_ms() {

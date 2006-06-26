@@ -1,10 +1,11 @@
 
 #include "segment.h"
 #include "player_util.h"
+#include "common/dir_list.h"
 #include "common/exception.h"
 #include "common/file.h"
-#include "common/dir_list.h"
 #include "common/my_string.h"
+#include "common/psql.h"
 #include "common/rr_misc.h"
 #include <fstream>
 #include <linux/cdrom.h>
@@ -649,8 +650,8 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
   if (intrecursion_level < 0) LOGIC_ERROR;
 
   // LineIn or CD-ROM?
-  if (strsource == "LineIn") {      // LineIn?
-    file_list.push_back(strsource);
+  if (lcase(strsource) == "linein") {      // LineIn?
+    file_list.push_back("LineIn");
   }
   else if (strsource == "/dev/cdrom") { // CD-ROM?
     // Fetch the tracks on the cdrom

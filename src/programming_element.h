@@ -5,6 +5,7 @@
 #include <deque>
 #include <string>
 #include "categories.h"
+#include "common/my_time.h"
 
 using namespace std;
 
@@ -26,6 +27,7 @@ public:
   string strvol;     // Vol % (of total announce volume).
                      //  - "PROMO" means use announcement vol.
                      //  - "MUSIC" means use music volume
+  datetime dtmstarted; // What date & time the item playback started
 
   bool blnmusic_bed; // Set to true if this item has a music bed (underlying music)
   struct music_bed { // Populated if blnmusic_bed is true.

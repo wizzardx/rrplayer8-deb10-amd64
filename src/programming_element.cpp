@@ -1,5 +1,6 @@
 
 #include "programming_element.h"
+#include "common/testing.h"
 
 // Constructor
 programming_element::programming_element() {
@@ -19,6 +20,7 @@ void programming_element::reset() {
   blnmusic_bed = false;
   music_bed.strmedia    = "";
   music_bed.strvol      = "";
+  dtmstarted = datetime_error;
   music_bed.intstart_ms = -1;
   music_bed.intlength_ms = -1;
   music_bed.already_handled.blnstart = false;

@@ -84,7 +84,8 @@ private:
        int intlinein;   ///< Just the value from tbldefs
      } volumes;
   } store_status;
-  void load_store_status(const bool blnverbose = false); ///< Update the current store status
+  void load_store_status(const bool blnverbose = false, const bool blnforceload = false); ///< Update the current store status
+  void update_output_volumes(); ///< Immediately update XMMS sessions & LineIn levels according to the current store status (don't wait for the next programming element to start playing)
 
   /// Promo status (used by tblSchedule_TZ_Slot.bitScheduled)
   enum advert_status_type {
@@ -171,6 +172,11 @@ private:
   // Functions called by maintenance_operational_check:
   void log_music_playlist_to_db(); ///< Log the contents of the current music playlist to the database
   void log_machine_avail_music_to_db(); ///< Scan the harddrive for available music, and log to the database.
+
+  // Log the current media playback status to the database.
+  // Call with a sound_usage of SU_NEXT_FG when you are busy transitioning to the next item
+  // and want to get status info for the next item, not the current item.
+  void log_mp_status_to_db(const sound_usage sound_usage = SU_CURRENT_FG);
 
   mp3_tags mp3tags; ///< A cache of mp3 tags, used for quickly retrieving mp3 details.
 

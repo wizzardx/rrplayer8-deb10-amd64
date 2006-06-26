@@ -27,22 +27,21 @@ void player::player_maintenance(const int intmax_time_ms) {
 }
 
 void player::maintenance_check_received(const datetime dtmcutoff) {
-  // Run this logic only if we have 60s or more remaining:
-  if (dtmcutoff >= now() + 60) {
+  // Run this logic only if we have 30s or more remaining:
+  if (dtmcutoff >= now() + 30) {
     check_received();
   }
 }
 
 void player::maintenance_check_waiting_cmds(const datetime dtmcutoff) {
-  // Run this logic only if we have 60s or more remaining:
-  if (dtmcutoff >= now() + 60) {
+  // Run this logic only if we have 10s or more remaining:
+  if (dtmcutoff >= now() + 10) {
     process_waiting_cmds();
   }
 }
 
 void player::maintenance_operational_check(const datetime dtmcutoff) {
-  // Update the live-info file every 10 minutes;
-  // - Only if more than 20 seconds remain:
+  // Update the live-info table every 10 minutes;
   if (dtmcutoff >= now() + 60) {
     static datetime dtmlast_run = datetime_error;
     if (now()/(10*60) != dtmlast_run/(10*60)) {
@@ -78,6 +77,10 @@ void player::maintenance_operational_check(const datetime dtmcutoff) {
 
   // If the cached mp3 tags have changed, write them to disk now:
   mp3tags.save_changes();
+
+  // Approximately every 30 seconds we update tblplayeroutput & tblliveinfo with the current
+  // playback status:
+  log_mp_status_to_db();
 }
 
 void player::maintenance_player_running(const datetime dtmcutoff) {

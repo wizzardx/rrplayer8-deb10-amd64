@@ -1,7 +1,9 @@
+
 #include "player.h"
 #include <sys/time.h>
 #include "common/testing.h"
 #include "common/linein.h"
+#include "common/maths.h"
 #include "common/my_string.h"
 #include "common/string_splitter.h"
 #include "common/system.h"
@@ -21,8 +23,14 @@ void player::playback_transition(playback_events_info & playback_events) {
   struct timeval tvprev_now; // Used for checking if the system time moves backwards (eg: ntpdate)
   gettimeofday(&tvprev_now, NULL);
 
-  // Main loop for this function. Check if there are any nearby events for this item, to wait for and handle:
+  // Variable used to check if any upcoming events that need to be waited for & handled.
   int intnext_playback_safety_margin_ms = get_next_playback_safety_margin_ms();
+
+  // Check for any music bed events (they are not yet supported!)
+  if ((playback_events.intmusic_bed_starts_ms < intnext_playback_safety_margin_ms) ||
+      (playback_events.intmusic_bed_ends_ms < intnext_playback_safety_margin_ms)) LOGIC_ERROR;
+
+  // Main loop for this function. Check if there are any nearby events for this item, to wait for and handle:
   while (playback_events.intnext_ms < intnext_playback_safety_margin_ms) {
     // We have 1 or more item playback events coming up in the near future. Prepare for them.
 
@@ -43,9 +51,12 @@ void player::playback_transition(playback_events_info & playback_events) {
                                          // next item becomes the current item. This is important
                                          // for being able to time music events
 
-    // Current item going to end soon?
-    if (playback_events.intitem_ends_ms < intnext_playback_safety_margin_ms) {
-      // Yes.
+    // How long until the current item ends? (either naturally or due to interruption by a promo:
+    int intitem_ends_ms = MIN(playback_events.intitem_ends_ms, playback_events.intpromo_interrupt_ms);
+
+    // Current item going to end soon? (either naturally, or due to interruption by a promo)
+    if (intitem_ends_ms < intnext_playback_safety_margin_ms) {
+      // Yes. Prepare for a transition between the current item and the next item
 
       // At this point, if the previous (current) item was a promo, we mark it as complete now:
       if (run_data.current_item.blnloaded && run_data.current_item.promo.lngtz_slot != -1) {
@@ -64,7 +75,7 @@ void player::playback_transition(playback_events_info & playback_events) {
         // or if the current music item is being interrupted for a promo.
         if (!run_data.next_item.blnloaded) {
           // Next item is not already known. Switch over:
-          get_next_item(run_data.next_item, playback_events.intitem_ends_ms);
+          get_next_item(run_data.next_item, intitem_ends_ms);
         }
         blnsegment_change = lngfc_seg_before != run_data.current_segment.lngfc_seg;
       }
@@ -144,149 +155,102 @@ void player::playback_transition(playback_events_info & playback_events) {
                  (blnitem_categories_match_segment || blnmusic_non_music_transition)
             )
           );
+        // Log whether we are going to crossfade:
+        if (blncrossfade)
+          log_line("Will crossfade between this item and the next.");
+        else
+          log_line("Will not crossfade between this and the next item.");
       }
 
-      // So, do we crossfade between this item and the next?
-      if (blncrossfade) {
-        log_line("Will crossfade between this item and the next.");
-        // Yes:
-        // - This means that for a period of time, two items will be playing together.
-        // - When we crossfade music & non-music, only the music volume is shifted. The
-        //   non-music item's volume remains constant.
-
-        // Is the current item music?
-        if (run_data.current_item.cat == SCAT_MUSIC) {
-          // Queue:
-          //  1) A volume slide from 100% to 0
-          queue_volslide(events, "current", 100, 0, playback_events.intitem_ends_ms - config.intcrossfade_length_ms, config.intcrossfade_length_ms);
-        }
-
-        // And transition in the next item:
-
-        // Queue:
-        // 1) "setup_next"
-        queue_event(events, "setup_next", playback_events.intitem_ends_ms - config.intcrossfade_length_ms + 1);
-        // 2) A fade-in (if music)
-        if (run_data.next_item.cat == SCAT_MUSIC) {
-          queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms - config.intcrossfade_length_ms + 2, config.intcrossfade_length_ms);
-        }
-        // 3) "next_play" (ony if XMMS)
-        if (run_data.next_item.strmedia != "LineIn") {
-          queue_event(events, "next_play", playback_events.intitem_ends_ms - config.intcrossfade_length_ms + 3);
-        }
-        // 4) "next_becomes_current"
-        queue_event(events, "next_becomes_current", playback_events.intitem_ends_ms + 3);
-        intnext_becomes_current_ms = playback_events.intitem_ends_ms+3;
-      }
-      else {
-        // No: Current item will end without a volume fade.
-        // If we don't have a current item, (or we do have a current item, and it is not music)
-        // and the next item is music, then we fade in the music:
-        log_line("Will not crossfade between this item and the next item.");
-        if ((!run_data.current_item.blnloaded || run_data.current_item.cat != SCAT_MUSIC) && run_data.next_item.cat == SCAT_MUSIC) {
-          // We fade in the next item
-          log_line("The next item will fade in after this item ends.");
-
-          // Queue commands that will fade in either XMMS or LineIn music when the current item ends:
-
-          //  1) "setup_next" (ie, prepare LineIn or an available XMMS session for playback):
-          queue_event(events, "setup_next", playback_events.intitem_ends_ms + 1);
-
-          // The fade-in method we use differs for LineIn and XMMS.
-          if (run_data.next_item.strmedia != "LineIn") {
-            // Next item plays through XMMS:
-            // - Queue: Set volume to 0, start playback, and then fade:
-
-            //  2) "setvol_next 0" (Only if XMMS)
-            queue_event(events, "setvol_next 0", playback_events.intitem_ends_ms + 2);
-            //  3) "next_play" (ony if XMMS)
-            if (run_data.next_item.strmedia != "LineIn") {
-              queue_event(events, "next_play", playback_events.intitem_ends_ms + 3);
-            }
-            // 4) A volume slide from current vol (if LineIn, or 0 if XMMS) to full music
-            queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms + 4, config.intcrossfade_length_ms);
-          }
-          else {
-            // Next item plays through Linein. Queue appropriate commands:
-
-            // If the current linein volume is 0, then simply queue a fade-in.
-            // But if the current linein volume is not 0, we immediately set the linein volume to full.
-            if (linein_getvol() == 0) {
-              // If linein is 0, we slide it up to full
-              queue_volslide(events, "next", 0, 100, playback_events.intitem_ends_ms + 4, config.intcrossfade_length_ms);
-            }
-            else {
-              // If linein is not 0, we set it to full immediately.
-              queue_event(events, "setvol_next 100", playback_events.intitem_ends_ms + 4);
-            }
-          }
-
-          //  4) "next_becomes_current" (transition is over)
-          queue_event(events, "next_becomes_current", playback_events.intitem_ends_ms + 5 + config.intcrossfade_length_ms);
-          intnext_becomes_current_ms = playback_events.intitem_ends_ms + 5 + config.intcrossfade_length_ms;
+      // Script the transition:
+      {
+        // Determine [next_item_start]
+        int intnext_item_start_ms = -1;
+        // Is the current item available?
+        if (run_data.current_item.blnloaded) {
+          // Yes. Are we going to crossfade?
+          if (blncrossfade)
+            // Yes. Next item starts just after [current item end] - [crossfade length]
+            intnext_item_start_ms = intitem_ends_ms - config.intcrossfade_length_ms + 1;
+          else
+            // No. Next item starts just after the current item ends
+            intnext_item_start_ms = intitem_ends_ms + 1;
         }
         else {
-          // Just queue the next item to play when this one ends.
-          // Queue:
-          log_line("No fading will take place");
-          //  1) "setup_next" (Only if XMMS).
-          queue_event(events, "setup_next", playback_events.intitem_ends_ms);
-          //  2) "setvol_next 100" (100% of the volume it is listed to play at)
-          queue_event(events, "setvol_next 100", playback_events.intitem_ends_ms+1);
-          //  3) "next_play" (Only if XMMS)
-          if (run_data.next_item.strmedia != "LineIn") {
-            queue_event(events, "next_play", playback_events.intitem_ends_ms+2);
-          }
-          //  4) "next_becomes_current" (transition is over)
-          queue_event(events, "next_becomes_current", playback_events.intitem_ends_ms+3);
-          intnext_becomes_current_ms = playback_events.intitem_ends_ms+3;
+          // Current item is not available. Next item starts immediately.
+          intnext_item_start_ms = intitem_ends_ms + 1;
         }
-      }
 
-//      // Queue a "stop" for the current item's music bed if it has one
-//      if (run_data.current_item.blnloaded && run_data.current_item.blnmusic_bed) {
-//        testing;
-//        queue_event(events, "current_music_bed_stop", intnext_becomes_current_ms-1);
+        // Keep track of whether we fade or not (for logging purposes)
+        bool blnfade = false;
+
+        // Queue a volume fade out for the current item (if applicable)
+        //  - Only if we have the current item
+        //  - Only if the current item is music
+        //  - Not if the next item is music but crossfading is disabled
+        if (run_data.current_item.blnloaded &&
+            run_data.current_item.cat == SCAT_MUSIC &&
+            !(run_data.next_item.cat == SCAT_MUSIC &&
+              !blncrossfade)) {
+          // Setup the current item fade-out:
+          // This starts at ([current item end] - [crossfade length]), and continues for [crossfade length]
+          queue_volslide(events, "current", 100, 0, intitem_ends_ms - config.intcrossfade_length_ms, config.intcrossfade_length_ms);
+          if (!blncrossfade) log_message("The current item will fade out");
+          blnfade = true; // This transition includes a fade
+        }
+
+        // Queue a "setup_next_item" event for the next item (eg, claim an xmms session):
+        // -> This runs at [next_item_start]
+        queue_event(events, "setup_next", intnext_item_start_ms);
+
+        // Queue a volume fade in for the second item (if applicable)
+        // - Only if the next item is music
+        // - If the current item is not available, or if the current item is not music
+        // - Otherwise, if the current item is music, then only if crossfading is enabled
+        if (run_data.next_item.cat == SCAT_MUSIC &&
+           (blncrossfade || run_data.current_item.cat != SCAT_MUSIC)) {
+           // -> This runs at [next_item_start] + 1 ms
+
+           // If the next item plays through linein and the current linein volume is not 0, then set the volume
+           // immediately, with no fade-in:
+           if (run_data.next_item.strmedia == "LineIn" && linein_getvol() != 0) {
+             queue_event(events, "setvol_next 100", intnext_item_start_ms + 1);
+             log_warning("LineIn volume was not 0! Will set it to full instead of fading it in");
+           }
+           else {
+             // Otherwise, queue a volume slide (whether for linein or for XMMS):
+             queue_volslide(events, "next", 0, 100, intnext_item_start_ms + 1, config.intcrossfade_length_ms);
+             if (!blncrossfade) log_message("The next item will fade in");
+             blnfade = true; // This transition includes a fade
+           }
+        }
+
+        // Queue a playback start for the next item (if applicable) (should be just after the fade-in starts, if there is one)
+        // - Only if the item is xmms-based. LineIn-based music works by raising & lowering the linein volume.
+        if (run_data.next_item.strmedia != "LineIn") {
+          // - This runs at [next_item_start] + 2 ms
+          queue_event(events, "next_play", intnext_item_start_ms + 2);
+        }
+
+        // Queue a "log playback started" event for the 2nd item
+        //- This runs at [next_item_start] + 3 ms
+        queue_event(events, "log_next_started", intnext_item_start_ms + 3);
+
+        // Log a message if no fade will take place during this transition:
+        if (!blncrossfade && !blnfade) log_message("No fades during this transition");
+      }
     }
 
-    // Current item music bed going to start soon?
-    if (playback_events.intmusic_bed_starts_ms < intnext_playback_safety_margin_ms) {
-      // Yes. Queue a background music bed "start"
-      // - But only if it wasn't previously queued!
-      if (!run_data.current_item.music_bed.already_handled.blnstart) {
-        queue_event(events, "current_music_bed_start", playback_events.intmusic_bed_starts_ms);
-      }
-    }
-
-    // Current item music bed going to end soon?
-    if (playback_events.intmusic_bed_ends_ms < intnext_playback_safety_margin_ms) {
-      // Yes. Queue a background music bed "end"
-      // - But only if it wasn't previously queued!
-      if (!run_data.current_item.music_bed.already_handled.blnstop) {
-        queue_event(events, "current_music_bed_stop", playback_events.intmusic_bed_ends_ms);
-      }
-    }
-
-    // Current item going to be interrupted by a promo sometime soon?
-    // Don't do this if the next item is already loaded!
-    if (playback_events.intpromo_interrupt_ms < intnext_playback_safety_margin_ms) {
-      // Yes. Queue a music -> promo transition.
-
-      // Queue a fade-out for the current item:
-      queue_volslide(events, "current", 100, 0, playback_events.intpromo_interrupt_ms, config.intcrossfade_length_ms);
-      // Queue: setup an xmms for the next item.
-      queue_event(events, "setup_next", playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 1);
-      // Queue: next item play (Only if XMMS)
-      if (run_data.next_item.strmedia != "LineIn") {
-        queue_event(events, "next_play", playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 2);
-      }
-      // Queue: next item -> current item.
-      queue_event(events, "next_becomes_current", playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 3);
-      intnext_becomes_current_ms = playback_events.intpromo_interrupt_ms + config.intcrossfade_length_ms + 3;
-    }
-
-    // Now sort the queue.
+    // Sort the queue.
     sort (events.begin(), events.end(), transition_event_less_than);
+
+    // Add a "next becomes current" event which takes place, after all the other events:
+    // - This releases the resources of the "current" item, and switches the "next" item over to
+    //   the "current" item
+    {
+      transition_event last_event = events.back();
+      queue_event(events, "next_becomes_current", last_event.intrun_ms + 1);
+    }
 
     // These are used to track the volumes set by "setvol_next" and "setvol_current". Needed so we know what
     // volume to set when we process "current_music_bed_start" and "next_music_bed_start" commands.
@@ -310,7 +274,7 @@ void player::playback_transition(playback_events_info & playback_events) {
         tvdiff.tv_sec  -= tvnow.tv_sec;
         tvdiff.tv_usec -= tvnow.tv_usec;
         normalise_timeval(tvdiff);
-        log_warning("Detected: System clock moved back " + itostr(tvdiff.tv_sec) +" seconds and " + itostr(tvdiff.tv_usec) + " usecs. Optimistically adjusting playback timing back by this amount.");
+        log_warning("Detected: System clock moved back " + itostr(tvdiff.tv_sec) + " seconds and " + itostr(tvdiff.tv_usec) + " usecs. Optimistically adjusting playback timing back by this amount.");
         tvqueue_start.tv_sec  -= tvdiff.tv_sec;
         tvqueue_start.tv_usec -= tvdiff.tv_usec;
       }
@@ -495,18 +459,6 @@ void player::playback_transition(playback_events_info & playback_events) {
             // Start it playing now.
             run_data.xmms[intsession].play();
 
-            // Log that we're playing it:
-            {
-              // Fetch the song length:
-              // - First sleep for 1/10th of a second. XMMS's get_song_length() gives a
-              // confused output if you call it too soon after play().
-              sleep_ms(100);
-              int intlength = run_data.xmms[intsession].get_song_length();
-              char chlength[10];
-              sprintf(chlength, "%d:%02d", intlength/60, intlength%60);
-              log_message("Playing (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(run_data.next_item.strvol)) + "%): \"" + run_data.xmms[intsession].get_song_file_path() + "\" - \"" + run_data.xmms[intsession].get_song_title() + "\" (" + (string)chlength + ". Ends: " + format_datetime(now() + intlength, "%T") + ")");
-            }
-
             // Create a text file listing the new xmms session number. This is used by
             // the rrxmms-status tool.
             {
@@ -518,13 +470,6 @@ void player::playback_transition(playback_events_info & playback_events) {
               else {
                 output_file << itostr(intsession) << endl;
               }
-            }
-
-            // If the next item is a music item (we know it isn't LineIn, see earlier check),
-            // then update the music history:
-            if (run_data.next_item.cat == SCAT_MUSIC) {
-              // Update the music history:
-              m_music_history.song_played(db, run_data.next_item.strmedia, mp3tags.get_mp3_description(run_data.next_item.strmedia));
             }
 
             // Check if there are any music bed events (for the next item) that will occur *during* the current
@@ -558,6 +503,38 @@ void player::playback_transition(playback_events_info & playback_events) {
               testing_throw; // Check if we are at the same position in the queue as before!
             }
           }
+        }
+        else if (strcmd == "log_next_started") {
+          // Log that the next item has just started:
+          run_data.next_item.dtmstarted = now();
+
+          // Find out the XMMS session the next item uses (if any)
+          int intxmms_session = -1; // -1 means the next item does not use XMMS
+          try {
+            // run_data.get_xmms_used() will throw an exception if the next item is not using
+            // an XMMS session.
+            intxmms_session = run_data.get_xmms_used(SU_NEXT_FG);
+          } catch(...) {} // A
+
+          // If the next item uses an XMMS session, then log some XMMS-related info about the next item:
+          if (intxmms_session != -1) {
+            // Fetch the song length:
+            // - First sleep for 1/10th of a second. XMMS's get_song_length() gives a
+            // confused output if you call it too soon after play().
+            sleep_ms(100);
+            int intlength = run_data.xmms[intxmms_session].get_song_length();
+            char chlength[10];
+            sprintf(chlength, "%d:%02d", intlength/60, intlength%60);
+            log_message("Playing (xmms " + itostr(intxmms_session) + ": " + itostr(get_pe_vol(run_data.next_item.strvol)) + "%): \"" + run_data.xmms[intxmms_session].get_song_file_path() + "\" - \"" + run_data.xmms[intxmms_session].get_song_title() + "\" (" + (string)chlength + ". Ends: " + format_datetime(now() + intlength, "%T") + ")");
+
+            // Also update the music history if the next item is a music item:
+            if (run_data.next_item.cat == SCAT_MUSIC) {
+              m_music_history.song_played(db, run_data.next_item.strmedia, mp3tags.get_mp3_description(run_data.next_item.strmedia));
+            }
+          }
+
+          // Also, log the current playback status to tblplayeroutput & tblliveinfo:
+          log_mp_status_to_db(SU_NEXT_FG);
         }
         else if (strcmd == "next_becomes_current") {
           // Current item has just ended. It is no longer interesting in terms of player timing. So
@@ -667,31 +644,6 @@ void player::playback_transition(playback_events_info & playback_events) {
     // - Remember that we could already be part-way into the next item by the time we do this (eg: crossfade transition).
     // - If we already started or stopped a music bed then don't add them again (ie, if they are too far in the past, ignore?
   }
-
-
-/*
-
-
-** When starting a new item, calculate how far it will overshoot the end of the current segment by.
-** Apply a lot of things here.. see current_data.
-* Remember to add on current_item.overshoot value to segment lag. and then afterwards do
-* reclaim if this is a music segment...
-
-      // If this is a music segment, and we're behind, then shorten the length of the music segment
-    // to reclaim lost time
-    testing_throw;
-    if (run_data.current_segment.cat.cat == SCAT_MUSIC && inttotal_segment_push_back > 0) {
-      testing_throw;
-      // Reduce music segments down to a minimum of 60 seconds:
-      if (run_data.current_segment.intlength > 60) {
-        int intreclaim =
-
-      }
-    }
-
-
-*/
-
 }
 
 // Used by playback_transition():

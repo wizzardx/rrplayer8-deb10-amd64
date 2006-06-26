@@ -3,7 +3,7 @@
   <general>
     <author>David Purdy</author>
     <email>david@radioretail.co.za</email>
-    <version>7.12</version>
+    <version>7.13</version>
     <projectmanagement>KDevAutoProject</projectmanagement>
     <primarylanguage>C++</primarylanguage>
     <keywords>
@@ -43,7 +43,7 @@
         <envvars/>
         <configargs/>
         <topsourcedir/>
-        <cppflags> -I/usr/include/postgresql/ -I/usr/include/glib-1.2/ -I/usr/lib/glib/include/ -DRR_MISC_DB</cppflags>
+        <cppflags> -I/usr/include/postgresql/ -I/usr/include/glib-1.2/ -I/usr/lib/glib/include/</cppflags>
         <ldflags/>
         <ccompilerbinary/>
         <cxxcompilerbinary/>
@@ -60,7 +60,7 @@
         <cxxflags>-O0 -g3</cxxflags>
         <envvars/>
         <topsourcedir/>
-        <cppflags> -I/usr/include/postgresql/ -I/usr/include/glib-1.2/ -I/usr/lib/glib/include/  -DRR_MISC_DB</cppflags>
+        <cppflags> -I/usr/include/postgresql/ -I/usr/include/glib-1.2/ -I/usr/lib/glib/include/</cppflags>
         <ldflags/>
         <ccompilerbinary/>
         <cxxcompilerbinary/>
@@ -179,7 +179,7 @@
     <AUTHOR>David Purdy</AUTHOR>
     <EMAIL>david@radioretail.co.za</EMAIL>
     <LICENSE>Custom</LICENSE>
-    <VERSION>7.12</VERSION>
+    <VERSION>7.13</VERSION>
     <YEAR>2005</YEAR>
     <dest>/home/radman/david_stuff/development/player</dest>
   </substmap>
