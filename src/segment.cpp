@@ -7,6 +7,8 @@
 #include "common/my_string.h"
 #include "common/psql.h"
 #include "common/rr_misc.h"
+#include "common/string_hash_set.h"
+#include "common/string_splitter.h"
 #include <fstream>
 #include <linux/cdrom.h>
 #include <fcntl.h>
@@ -366,20 +368,36 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
 
   // Remove the duplicate entries:
   {
-    vector <string>::iterator i=file_list.begin();
-    string strlast = "";
-    while (i != file_list.end()) {
-      // Is this entry the same as the previous entry?
-      if ((*i)== strlast) {
-        // Yes - erase it.
-        i = file_list.erase(i);
-      }
-      else {
-        // No: It is our new "last" line:
-        strlast = *i;
-        ++i;
-      }
+    vector <string>::iterator new_end = unique(file_list.begin(), file_list.end());
+    file_list.erase(new_end, file_list.end());
+  }
+
+  // Remove "disabled" mp3s from the playlist, ie mp3s that the user has disabled through the wizard:
+  {
+    string strsql = "SELECT strmessage FROM tblplayeroutput WHERE strmsgdesc = " + psql_str("disabled");
+    pg_result rs = db.exec(strsql);
+    // Now load all the "disabled" mp3s into memory, use this list for a more efficient "playlist culling"
+    // process
+    string_hash_set disabled_mp3s;
+
+    while (rs) {
+      try {
+        vector <string> substrings;
+        string_splitter split(rs.field("strmessage", ""), "||");
+        string strdisabled_mp3 = split;
+        if (strdisabled_mp3 != "")
+          disabled_mp3s.insert(strdisabled_mp3); // Inserting the same key twice has no effect, don't check...
+      } catch_exceptions;
+      rs++;
     }
+
+    // We've loaded all the "disabled" mp3 paths. Now remove them from the playlist.
+    vector<string>::iterator file = file_list.begin();
+    while(file != file_list.end())
+      if (key_in_string_hash_set(disabled_mp3s, *file))
+        file = file_list.erase(file);
+      else
+        ++file;
   }
 
   // Check for LineIn. Can't be mixed with MP3s, etc
