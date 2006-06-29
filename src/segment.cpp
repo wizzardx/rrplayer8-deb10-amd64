@@ -400,6 +400,24 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
         ++file;
   }
 
+  // Filter out files which have the same name (ie, without path). This is for cases where
+  // the same MP3s are loaded into different directories & then both directories are added
+  // to the playlist.
+  {
+    vector<string>::iterator i = file_list.begin();
+    while (i != file_list.end()) {
+      string strfile = lcase(get_short_filename(*i));
+      vector <string>::iterator j = i + 1;
+      while (j != file_list.end()) {
+        if (lcase(get_short_filename(*j)) == strfile)
+          j == file_list.erase(j);
+        else
+          j++;
+      }
+      i++;
+    }
+  }
+
   // Check for LineIn. Can't be mixed with MP3s, etc
   bool blnlinein = false; // Set to true below if the playlist specifies LineIn
   {
