@@ -766,7 +766,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     log_message("Loading Format Clock segment (id: " + itostr(lngfc_seg) + ")");
 
     // A -1 lngfc_seg means load the currently-scheduled music profile instead
-    run_data.current_segment.load_from_db(db, lngfc_seg, dtmdelayed, config);
+    run_data.current_segment.load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags);
 
     // How far into the segment did we query for?
     int intdiff = dtmdelayed - run_data.current_segment.scheduled.dtmstart;
@@ -855,7 +855,7 @@ void player::get_next_item_not_recent_music(programming_element & next_item, con
 
   while (!blnok && intattempts_left > 0) {
     // Fetch the next item:
-    run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config);
+    run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config, mp3tags);
     // Is the item ok to use?
     blnok = next_item.cat != SCAT_MUSIC || !m_music_history.song_played_recently(next_item.strmedia, intmin_songs_before_song_repeat);
 

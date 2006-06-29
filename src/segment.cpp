@@ -90,7 +90,7 @@ void segment::reset() {
   intnum_fetched = 0;
 }
 
-void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const datetime dtmtime, const player_config & config) {
+void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const datetime dtmtime, const player_config & config, mp3_tags & mp3tags) {
   // Read details for a segment [lngfc_seg_arg], from the database(db), into this object
   // Is a -1 lngfc_seg_arg specified? (ie, attempt to load current music profile)
 
@@ -102,7 +102,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
   try {
     if (lngfc_seg == -1) {
       log_message("Setting up music profile...");
-      load_music_profile(db, config);
+      load_music_profile(db, config, mp3tags);
       playback_state = PBS_MUSIC_PROFILE;
       blnloaded = true;
 
@@ -215,13 +215,13 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
     {
       bool blnsuccess = false; // Set to true if we successfully load the list:
       try {
-        load_pe_list(programming_elements, cat, sub_cat, db, config);
+        load_pe_list(programming_elements, cat, sub_cat, db, config, mp3tags);
         next_item = programming_elements.begin();
         blnsuccess = true; // The above succeeded.
       } catch_exceptions;
       // If this fails, we revert to a lower level:
       if (!blnsuccess) {
-        revert_down(db, config);
+        revert_down(db, config, mp3tags);
       }
     }
 
@@ -261,7 +261,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
     log_error((string)"The following error occured while loading the segment details: " + e.what());
     log_message("Reverting to a music profile.");
 
-    load_from_db(db, -1, dtmtime, config);
+    load_from_db(db, -1, dtmtime, config, mp3tags);
     lngfc_seg = lngfc_seg_arg; // And restore the value. We are playing default music, but our segment remains unchanged.
   }
 
@@ -269,7 +269,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
   // This is used to help ensure that the segment does in fact play it's full length.
 }
 
-void segment::load_music_profile(pg_connection & db, const player_config & config) {
+void segment::load_music_profile(pg_connection & db, const player_config & config, mp3_tags & mp3tags) {
   // Segment-specific info
   cat.cat     = SCAT_MUSIC;
   cat.strname = "Music";
@@ -281,7 +281,7 @@ void segment::load_music_profile(pg_connection & db, const player_config & confi
   blnmusic_bed   = false; // Music profiles don't have underlying music.
 
   // Load the current music profile into the list of programming elements:
-  generate_playlist(programming_elements, "MusicProfile", SCAT_MUSIC, db, config); // Also shuffles the list
+  generate_playlist(programming_elements, "MusicProfile", SCAT_MUSIC, db, config, mp3tags); // Also shuffles the list
 
   // Shuffle it:
   shuffle_pel(programming_elements);
@@ -293,12 +293,12 @@ void segment::load_music_profile(pg_connection & db, const player_config & confi
   blnloaded = true; // Our segment is now loaded.
 }
 
-void segment::get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config) {
+void segment::get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags) {
   // Have we already fetched the maximum allowed number of items for this segment?
   if (intnum_fetched >= intmax_items) {
     // We've feched the maximum number of allowed items. Tell the user & revert down.
     log_message("Have already played the maximum allowed number of items for this segment (" + itostr(intmax_items) + ")");
-    revert_down(db, config); // This will also setup "next_item"
+    revert_down(db, config, mp3tags); // This will also setup "next_item"
   }
   else {
     // Has the first item already been retrieved?
@@ -322,7 +322,7 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
           // Repeating not allowed. Revert to the alternate category.
           // "imaging filler", or we revert to the alternate category.
           log_line("Ran out of media for this segment (repeat=false)");
-          revert_down(db, config); // This will also setup "next_item"
+          revert_down(db, config, mp3tags); // This will also setup "next_item"
         }
       }
     }
@@ -351,7 +351,7 @@ int segment::count_items_from_catagory(const seg_category cat) {
   return count;
 }
 
-void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db, const player_config & config) {
+void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags) {
   // Process a directory or M3U file and generate a list of media to play during this segment.
   pel.clear(); // Clear anything already in the program element list.
 
@@ -366,14 +366,38 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   // Sort the entries:
   sort (file_list.begin(), file_list.end());
 
+  // Declare a class for monitoring & logging changes to the file list due to filtering:
+  class filter_monitor
+  {
+   public:
+     filter_monitor(vector <string> & file_list, const string & descr)
+       : m_file_list(file_list), m_descr(descr)
+     {
+       m_size_before = file_list.size();
+     }
+     ~filter_monitor()
+     {
+       int size_after = m_file_list.size();
+       if (size_after != m_size_before) {
+         log_message("Pruned " + itostr(m_size_before - size_after) + " " + m_descr + " playlist entries");
+       }
+     }
+   private:
+    const vector <string> & m_file_list;
+    int m_size_before;
+    string m_descr;
+  };
+
   // Remove the duplicate entries:
   {
+    filter_monitor fm(file_list, "duplicate (path)");
     vector <string>::iterator new_end = unique(file_list.begin(), file_list.end());
     file_list.erase(new_end, file_list.end());
   }
 
   // Remove "disabled" mp3s from the playlist, ie mp3s that the user has disabled through the wizard:
   {
+    filter_monitor fm(file_list, "disabled");
     string strsql = "SELECT strmessage FROM tblplayeroutput WHERE strmsgdesc = " + psql_str("disabled");
     pg_result rs = db.exec(strsql);
     // Now load all the "disabled" mp3s into memory, use this list for a more efficient "playlist culling"
@@ -400,16 +424,32 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
         ++file;
   }
 
-  // Filter out files which have the same name (ie, without path). This is for cases where
-  // the same MP3s are loaded into different directories & then both directories are added
-  // to the playlist.
+  // Filter out files which have different directories but the same filename.
   {
+    filter_monitor fm(file_list, "duplicate (file)");
     vector<string>::iterator i = file_list.begin();
     while (i != file_list.end()) {
       string strfile = lcase(get_short_filename(*i));
       vector <string>::iterator j = i + 1;
       while (j != file_list.end()) {
         if (lcase(get_short_filename(*j)) == strfile)
+          j == file_list.erase(j);
+        else
+          j++;
+      }
+      i++;
+    }
+  }
+
+  // Filter out the files which have different filenames, but the same description:
+  {
+    filter_monitor fm(file_list, "duplicate (description)");
+    vector<string>::iterator i = file_list.begin();
+    while (i != file_list.end()) {
+      string strdescr = trim(lcase(mp3tags.get_mp3_description(*i)));
+      vector <string>::iterator j = i + 1;
+      while (j != file_list.end()) {
+        if (trim(lcase(mp3tags.get_mp3_description(*j))) == strdescr)
           j == file_list.erase(j);
         else
           j++;
@@ -498,7 +538,7 @@ void segment::shuffle_pel(programming_element_list & pel) {
 }
 
 // Function called by load_from_db: Prepare a list of programming elements to use, based on the segment parameters.
-void segment::load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_connection & db, const player_config & config) {
+void segment::load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags) {
   // Clear out the current program element list:
   pel.clear();
   bool blnshuffle_pel = false; // Set to true if we are shuffle pel at the end of the function
@@ -556,7 +596,7 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
   }
 
   // Build up our list of items to play:
-  generate_playlist(pel, strsource, cat.cat, db, config);
+  generate_playlist(pel, strsource, cat.cat, db, config, mp3tags);
 
   // Did we get any files? (maybe they're all missing):
   if (pel.size() == 0) my_throw("I couldn't find anything to play!");
@@ -570,7 +610,7 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
   log_line("Segment source: " + strsource);
 }
 
-void segment::revert_down(pg_connection & db, const player_config & config) {
+void segment::revert_down(pg_connection & db, const player_config & config, mp3_tags & mp3tags) {
   // If there is a problem with playing category items, we revert to alternate category. If there is also a problem
   // with the alternate category, we attempt to revert to a music profile. If there are still problems
   // we throw an exception. This function is called to revert from the current playback status to the next lower.
@@ -600,7 +640,7 @@ void segment::revert_down(pg_connection & db, const player_config & config) {
           }
           else {
             // Now load the new playlist & setup the iterator:
-            load_pe_list(programming_elements, alt_cat, alt_sub_cat, db, config);
+            load_pe_list(programming_elements, alt_cat, alt_sub_cat, db, config, mp3tags);
             next_item = programming_elements.begin();
             blndone = true;
           }
@@ -610,7 +650,7 @@ void segment::revert_down(pg_connection & db, const player_config & config) {
         log_message("Reverting to a Music Profile");
         playback_state = PBS_MUSIC_PROFILE;
         try {
-          load_music_profile(db, config); // Automatically reverts to default music if no profile can be found
+          load_music_profile(db, config, mp3tags); // Automatically reverts to default music if no profile can be found
           next_item = programming_elements.begin();
           blndone = true;
         } catch_exceptions;
