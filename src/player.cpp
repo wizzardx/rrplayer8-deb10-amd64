@@ -1186,15 +1186,17 @@ void player::log_mp_status_to_db(const sound_usage sound_usage) {
 
     // Is the current item empty (ie, silence)?
     if (pe->cat == SCAT_SILENCE) {
-      strmp_status_playing = "Nothing";
+      strmp_status_playing = "N/A - N/A";
       intmp_status_volume = 0;
-      strmusic_source = "nothing";
+      strmusic_source = "N/A";
     }
+    // LineIn?
     else if (run_data.uses_linein(sound_usage)) {
-      strmp_status_playing = "external music";
+      strmp_status_playing = "LineIn - external music";
       intmp_status_volume = linein_getvol();
       strmusic_source = "linein";
     }
+    // Otherwise XMMS:
     else {
       // Current item is played via an XMMS session
       // - The next line will thrown an exception if this assumption is incorrect.
