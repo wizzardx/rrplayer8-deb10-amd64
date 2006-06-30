@@ -54,18 +54,12 @@ void player::maintenance_operational_check(const datetime dtmcutoff) {
 
   // If the music playlist changed, then the global variable [run_data.blnlog_all_music_to_db] is set. Here is where
   // we actually log all the available music on the machine.
-  if (run_data.blnlog_all_music_to_db && run_data.current_segment.cat.cat == SCAT_MUSIC && dtmcutoff >= now() + 120) {
+  if (run_data.blnlog_all_music_to_db && run_data.current_segment.cat.cat == SCAT_MUSIC && dtmcutoff >= now() + 60) {
     // Log an informative message.
     log_message("Music playlist was updated, writing to database...");
     // Log the playlist to the DB
     try {
       log_music_playlist_to_db();
-    } catch_exceptions;
-
-    // Also do a quick scan of all the music on the machine, and log this to the database
-    log_message("Scanning system, logging available music to database...");
-    try {
-      log_machine_avail_music_to_db();
     } catch_exceptions;
 
     // Done now:
@@ -147,58 +141,18 @@ void player::log_music_playlist_to_db() {
     try {
       string strfile = pe->strmedia;
       string strtitle = mp3tags.get_mp3_description(strfile);
-      string strmessage = pe->strmedia + "||" + strtitle; ///< Goes into tblplayeroutput.strmessage
+
+      string strlength = "N/A";
+      try {
+        strlength = itostr(mp3tags.get_mp3_length(strfile));
+      } catch(...) {}
+
+      string strmessage = strfile + "||" + strtitle + "||" + strlength; ///< Goes into tblplayeroutput.strmessage
       string strsql = "INSERT INTO tblplayeroutput (strmessage, strmsgdesc, dtmtime) VALUES (" + psql_str(strmessage) + ", " + psql_str(strPlaylistDescr) + ", now())";
       transaction.exec(strsql);
     } catch_exceptions;
     pe++;
   }
-
-  // No problems, so commit the database transaction:
-  transaction.commit();
-}
-
-void player::log_machine_avail_music_to_db() {
-  // Scan the harddrive for available music, and log to the database.
-
-  // Create a postgresql transaction. We're going to be doing a lot of updates:
-  pg_transaction transaction(db);
-
-  const string strAvailMP3sDescr = "avail_mus";
-
-  // Remove all avail_mus records
-  string strSQL = "DELETE FROM tblplayeroutput WHERE strmsgdesc = " + psql_str(strAvailMP3sDescr);
-  transaction.exec(strSQL);
-
-  // A temporary directory to list our available mp3s into:
-  temp_dir avail_music_dir("avail_music");
-  string stravail_list_file = (string) avail_music_dir + "avail_music.txt";
-
-  // Build up a linux command to list all of the machine's music MP3s into a text-file
-  // - The textfule is "avail_music.txt"
-  string strCommand = "ls " + config.dirs.strmp3 +  "*.[Mm][Pp]3 > " + stravail_list_file +
-                     "; find " + config.dirs.strprofiles + " | grep \"\\.[Mm][Pp]3\" >> " + stravail_list_file;
-  system(strCommand.c_str());
-
-  // Open playlist.m3u and read all the lines. Extract the mp3 filename out of the paths
-  ifstream AvailMusicFile(stravail_list_file.c_str());
-  if (AvailMusicFile) {
-    string strLine;
-    while (getline(AvailMusicFile, strLine)) {
-      strLine = trim(strLine);
-      if (strLine != "" && file_exists(strLine)) {
-        // Now that we have the line, attempt to get the MP3 title
-        string strTitle = mp3tags.get_mp3_description(strLine);
-
-        // Fetch the final line:
-        strLine += "||" + strTitle;
-
-        strSQL = "INSERT INTO tblplayeroutput (strmessage, strmsgdesc, dtmtime) VALUES (" + psql_str(strLine) + ", " + psql_str(strAvailMP3sDescr) + ", now())";
-        transaction.exec(strSQL);
-      }
-    }
-    AvailMusicFile.close();
-  } else log_error("Could not open: " + stravail_list_file);
 
   // No problems, so commit the database transaction:
   transaction.commit();
