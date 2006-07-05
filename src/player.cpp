@@ -39,6 +39,7 @@ void playback_events_info::reset() {
   intmusic_bed_starts_ms = INT_MAX;
   intmusic_bed_ends_ms   = INT_MAX;
   intpromo_interrupt_ms  = INT_MAX;
+  intrpls_interrupt_ms   = INT_MAX;
 }
 
 // A function we use with the sort() algorithm:
@@ -1056,6 +1057,39 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
     }
   }
 
+  // Did the user send an RPLS? If so (and the currently playing music) then reload the playlist ASAP,
+  // and possibly interrupt the current song:
+  if (run_data.current_item.cat == SCAT_MUSIC &&
+      !run_data.next_item.blnloaded &&
+      run_data.blnforce_segment_reload) {
+    // Get the next format clock item:
+    get_next_item_format_clock(run_data.next_item, intinterrupt_promo_delay);
+
+    // Is the current item inside the current playlist?
+    bool blnfound = false;
+    programming_element_list::iterator i = run_data.current_segment.programming_elements.begin();
+    string strcurrent_item_media = run_data.current_item.strmedia;
+    while (i != run_data.current_segment.programming_elements.end()) {
+      if (strcurrent_item_media == i->strmedia) {
+        blnfound = true;
+        break;
+      }
+      i++;
+    }
+    if (blnfound) {
+      // Current item is within the new playlist. ie, no need to transition immediately to the
+      // next item. If the next item is a music item then discard it now, so that any further
+      // RPLS commands can be processed before the current item ends:
+      if (run_data.next_item.cat == SCAT_MUSIC)
+        run_data.next_item.reset();
+    }
+    else {
+      // Next item is not within the new playlist. ie, we need to transition immediately to the
+      // next item:
+      event_info.intrpls_interrupt_ms = intinterrupt_promo_delay;
+    }
+  }
+
   // If we're playing linein or silence, then check for the next item:
   if (run_data.current_item.blnloaded &&
       run_data.current_item.strmedia == "LineIn" || run_data.current_item.cat == SCAT_SILENCE) {
@@ -1103,6 +1137,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   MY_SET_MIN(event_info.intnext_ms, event_info.intmusic_bed_starts_ms);
   MY_SET_MIN(event_info.intnext_ms, event_info.intmusic_bed_ends_ms);
   MY_SET_MIN(event_info.intnext_ms, event_info.intpromo_interrupt_ms);
+  MY_SET_MIN(event_info.intnext_ms, event_info.intrpls_interrupt_ms);
   #undef MY_SET_MIN
 }
 

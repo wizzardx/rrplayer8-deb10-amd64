@@ -21,6 +21,8 @@ public:
   int intmusic_bed_starts_ms; ///< ms until the music bed starts playing
   int intmusic_bed_ends_ms;   ///< ms until the music bed stops playing.
   int intpromo_interrupt_ms;  ///< ms until the item (ie, music) will be interrupted to play a promo.
+  int intrpls_interrupt_ms;   ///< ms until the item (ie, music) will be interrupted to go to the next
+                              ///< song (when the user has run an RPLS and the current item is not in the new playlist)
 };
 
 /// Structure for storing events that take place during a playback transition (see player::playback_transition)

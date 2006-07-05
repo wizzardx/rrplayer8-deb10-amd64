@@ -51,9 +51,12 @@ void player::playback_transition(playback_events_info & playback_events) {
                                          // next item becomes the current item. This is important
                                          // for being able to time music events
 
-    // How long until the current item ends? (either naturally or due to interruption by a promo:
-    int intitem_ends_ms = MIN(playback_events.intitem_ends_ms, playback_events.intpromo_interrupt_ms);
-
+    // How long until the current item ends? (either naturally or due to interruption by a promo,
+    // or perhaps due to the user sending an RPLS (reload playlist) command and the current item
+    // is not in the playlist:
+    int intitem_ends_ms = playback_events.intitem_ends_ms;
+    intitem_ends_ms = MIN(intitem_ends_ms, playback_events.intpromo_interrupt_ms);
+    intitem_ends_ms = MIN(intitem_ends_ms, playback_events.intrpls_interrupt_ms);
     // Current item going to end soon? (either naturally, or due to interruption by a promo)
     if (intitem_ends_ms < intnext_playback_safety_margin_ms) {
       // Yes. Prepare for a transition between the current item and the next item
