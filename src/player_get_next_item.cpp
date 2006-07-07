@@ -854,8 +854,27 @@ void player::get_next_item_not_recent_music(programming_element & next_item, con
   if (intattempts_left < 100) intattempts_left = 100;
 
   while (!blnok && intattempts_left > 0) {
+    // When was the current playlist previously updated?
+    datetime dtmprev_playlist_update = run_data.current_segment.dtmpel_updated;
+
     // Fetch the next item:
     run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config, mp3tags);
+
+    // If the segment playlist was just updated, then re-calculate the mimum
+    // allowed number of songs before a song can repeat.
+    // - eg: The segment was News, runs out of items to play, and reverts to
+    //       default music. At the beginning of the function the minimum number
+    //       of songs allowed before song repetition was 0 (ie, after the
+    //       reverting, the next song could be a repetition of a very recent
+    //       song (from just before the news segment). This is why we need to
+    //       re-calculate the min # songs.
+    if (run_data.current_segment.dtmpel_updated != dtmprev_playlist_update) {
+      log_message("Playlist was updated during song repetition-prevention logic. Recallibrating.");
+      // Reload the # music items & recalculate the min # songs before a song is allowed to repeat:
+      intnum_music_items = run_data.current_segment.count_items_from_catagory(SCAT_MUSIC);
+      intmin_songs_before_song_repeat = (intnum_music_items * intprevent_song_repeat_factor) / 100;
+    }
+
     // Is the item ok to use?
     blnok = next_item.cat != SCAT_MUSIC || !m_music_history.song_played_recently(next_item.strmedia, intmin_songs_before_song_repeat);
 

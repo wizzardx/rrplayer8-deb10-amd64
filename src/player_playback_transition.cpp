@@ -101,8 +101,6 @@ void player::playback_transition(playback_events_info & playback_events) {
       // 7.2)   When transitioning from a non-music item to a music item, or the other way.
       //        (but not from music -> music. The segment needs to allow it in this case).
 
-      bool blncrossfade = false;
-
       // Break up the logic:
       {
         // Is this or the next item a promo?

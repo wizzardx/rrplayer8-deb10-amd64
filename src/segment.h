@@ -94,6 +94,7 @@ public:
 
   /// List of items to play during this segment.
   programming_element_list programming_elements;
+  datetime dtmpel_updated; // When was the programming elements list last modified?
 
 private:
   // Information used to retrieve the "next" item:
