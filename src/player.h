@@ -173,6 +173,7 @@ private:
 
   // Functions called by maintenance_operational_check:
   void log_music_playlist_to_db(); ///< Log the contents of the current music playlist to the database
+  void log_machine_avail_music_to_db(); ///< Scan the harddrive for available music, and log to the database.
 
   // Log the current media playback status to the database.
   // Call with a sound_usage of SU_NEXT_FG when you are busy transitioning to the next item

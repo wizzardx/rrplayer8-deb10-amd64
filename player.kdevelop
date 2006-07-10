@@ -19,7 +19,7 @@
   <kdevautoproject>
     <general>
       <activetarget>src/player</activetarget>
-      <useconfiguration>default</useconfiguration>
+      <useconfiguration>optimized</useconfiguration>
     </general>
     <run>
       <mainprogram>src/player</mainprogram>
