@@ -19,9 +19,6 @@ public:
   // The current Format Clock segment:
   segment current_segment;
 
-  /// XMMS control:
-  xmms_controller xmms[intmax_xmms]; ///< XMMS controller instances.
-
   sound_usage xmms_usage[intmax_xmms]; /// What the xmms sessions are being used for
   sound_usage linein_usage; /// What LineIn is being used for.
 

@@ -94,13 +94,13 @@ void player::maintenance_player_running(const datetime dtmcutoff) {
   }
   else {
     int intsession = run_data.get_xmms_used(SU_CURRENT_FG);
-    strline += "xmms " + itostr(intsession) + ": " + itostr(run_data.xmms[intsession].getvol()) + "%";
+    strline += "xmms " + itostr(intsession) + ": " + itostr(xmms[intsession].getvol()) + "%";
 
     // Fetch the volume of the music bed, if one is being used:
     try {
       intsession = run_data.get_xmms_used(SU_CURRENT_BG); // Try to fetch the session
       // No exception thrown, so we have an xmms session for the music bed.
-      strline += ". Music bed: xmms " + itostr(intsession) +": " + itostr(run_data.xmms[intsession].getvol()) + "%";
+      strline += ". Music bed: xmms " + itostr(intsession) +": " + itostr(xmms[intsession].getvol()) + "%";
     } catch(...) {}
   }
 
@@ -120,7 +120,7 @@ void player::maintenance_player_running(const datetime dtmcutoff) {
 void player::maintenance_hide_xmms_windows(const datetime dtmcutoff) {
   // Hide all visible XMMS windows.
   for (int intsession=0; intsession < intmax_xmms; intsession++) {
-    run_data.xmms[intsession].hide_windows();
+    xmms[intsession].hide_windows();
   }
 }
 
