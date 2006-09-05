@@ -5,6 +5,8 @@
 #include "common/testing.h"
 #include "common/system.h"
 
+namespace xmmsc = xmms_controller;
+
 void player_run_data::init() {
   // Run this function to reset/reinitialize playback status.
   log_message("Resetting playback.");
@@ -19,14 +21,14 @@ void player_run_data::init() {
   // Now setup xmms sessions and tracking info:
   for (int intsession = 0; intsession < intmax_xmms; intsession++) {
     // Setup a controller for the session:
-    xmms[intsession].set_session(intsession);
+    xmmsc::xmms[intsession].set_session(intsession);
 
     // Check if the session is running. If it is, then do some further init.
     try {
-      xmms[intsession].running(); // Throws an exception if xmms is not running.
-      xmms[intsession].stop(); // Stop the XMMS session.
-      xmms[intsession].setrepeat(false); // Turn off repeat
-      xmms[intsession].hide_windows(); // Hide all visible XMMS windows
+      xmmsc::xmms[intsession].running(); // Throws an exception if xmms is not running.
+      xmmsc::xmms[intsession].stop(); // Stop the XMMS session.
+      xmmsc::xmms[intsession].setrepeat(false); // Turn off repeat
+      xmmsc::xmms[intsession].hide_windows(); // Hide all visible XMMS windows
     }
     catch(...) {
       // We don't throw this as an exception. Init will still succeed. Later the
@@ -153,7 +155,7 @@ void player_run_data::next_becomes_current() {
       else {
         // Current item used XMMS. So Stop it's XMMS (it probably already is, but do it anyway).
         int intsession = get_xmms_used(SU_CURRENT_FG);
-        xmms[intsession].stop();
+        xmmsc::xmms[intsession].stop();
         // Free it also:
         set_xmms_usage(intsession, SU_UNUSED);
       }

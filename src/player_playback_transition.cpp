@@ -10,6 +10,8 @@
 #include "common/rr_misc.h"
 #include <fstream>
 
+namespace xmmsc = xmms_controller;
+
 void player::playback_transition(playback_events_info & playback_events) {
   // Go into an intensive timing section (5 checks every second) until we're done with the playback event. Logic for
   // transitioning between items, and introducing or cutting off underlying music, etc.
@@ -350,14 +352,14 @@ void player::playback_transition(playback_events_info & playback_events) {
               // - Reserve the session for next item/foreground:
               run_data.set_xmms_usage(intsession, SU_NEXT_FG);
               // - Populate the XMMS session:
-              xmms[intsession].playlist_clear();
-              xmms[intsession].playlist_add_url(run_data.next_item.strmedia);
+              xmmsc::xmms[intsession].playlist_clear();
+              xmmsc::xmms[intsession].playlist_add_url(run_data.next_item.strmedia);
 
               // - Set XMMS volume to the next item's volume:
-              xmms[intsession].setvol(get_pe_vol(run_data.next_item.strvol));
+              xmmsc::xmms[intsession].setvol(get_pe_vol(run_data.next_item.strvol));
 
               // - Make sure that repeat is turned off.
-              xmms[intsession].setrepeat(false);
+              xmmsc::xmms[intsession].setrepeat(false);
             }
           }
         }
@@ -417,7 +419,7 @@ void player::playback_transition(playback_events_info & playback_events) {
               // Fetch session used for the foreground. Will throw an exception if it isn't allocated.
               int intsession = run_data.get_xmms_used(SU_FG);
               // Set volume appropriately:
-              xmms[intsession].setvol((get_pe_vol(item->strvol) * intpercent)/100);
+              xmmsc::xmms[intsession].setvol((get_pe_vol(item->strvol) * intpercent)/100);
 
               // Set volume of music bed also if it is active now:
               {
@@ -432,7 +434,7 @@ void player::playback_transition(playback_events_info & playback_events) {
                   // We have an XMMS session for the music bed.
                   // Extra check: Does the item actually have a music bed?
                   if (!item->blnmusic_bed) LOGIC_ERROR;
-                  xmms[intsession].setvol((get_pe_vol(item->music_bed.strvol) * intpercent)/100);
+                  xmmsc::xmms[intsession].setvol((get_pe_vol(item->music_bed.strvol) * intpercent)/100);
                 }
               }
             }
@@ -455,10 +457,10 @@ void player::playback_transition(playback_events_info & playback_events) {
             int intsession = run_data.get_xmms_used(SU_NEXT_FG);
 
             // Is XMMS already playing?
-            if (xmms[intsession].playing()) my_throw("Don't use next_play when XMMS is already running!");
+            if (xmmsc::xmms[intsession].playing()) my_throw("Don't use next_play when XMMS is already running!");
 
             // Start it playing now.
-            xmms[intsession].play();
+            xmmsc::xmms[intsession].play();
 
             // Create a text file listing the new xmms session number. This is used by
             // the rrxmms-status tool.
@@ -523,10 +525,10 @@ void player::playback_transition(playback_events_info & playback_events) {
             // - First sleep for 1/10th of a second. XMMS's get_song_length() gives a
             // confused output if you call it too soon after play().
             sleep_ms(100);
-            int intlength = xmms[intxmms_session].get_song_length();
+            int intlength = xmmsc::xmms[intxmms_session].get_song_length();
             char chlength[10];
             sprintf(chlength, "%d:%02d", intlength/60, intlength%60);
-            log_message("Playing (xmms " + itostr(intxmms_session) + ": " + itostr(get_pe_vol(run_data.next_item.strvol)) + "%): \"" + xmms[intxmms_session].get_song_file_path() + "\" - \"" + xmms[intxmms_session].get_song_title() + "\" (" + (string)chlength + ". Ends: " + format_datetime(now() + intlength, "%T") + ")");
+            log_message("Playing (xmms " + itostr(intxmms_session) + ": " + itostr(get_pe_vol(run_data.next_item.strvol)) + "%): \"" + xmmsc::xmms[intxmms_session].get_song_file_path() + "\" - \"" + xmmsc::xmms[intxmms_session].get_song_title() + "\" (" + (string)chlength + ". Ends: " + format_datetime(now() + intlength, "%T") + ")");
 
             // Also update the music history if the next item is a music item:
             if (run_data.next_item.cat == SCAT_MUSIC) {
@@ -583,19 +585,19 @@ void player::playback_transition(playback_events_info & playback_events) {
           run_data.set_xmms_usage(intsession, SU_BG);
 
           // Setup the session
-          xmms[intsession].playlist_clear();
-          xmms[intsession].playlist_add_url(pe->music_bed.strmedia);
-          xmms[intsession].setvol((get_pe_vol(pe->music_bed.strvol)*intvol)/100);
-          xmms[intsession].setrepeat(false);
+          xmmsc::xmms[intsession].playlist_clear();
+          xmmsc::xmms[intsession].playlist_add_url(pe->music_bed.strmedia);
+          xmmsc::xmms[intsession].setvol((get_pe_vol(pe->music_bed.strvol)*intvol)/100);
+          xmmsc::xmms[intsession].setrepeat(false);
 
           // Start the session
-          xmms[intsession].play();
+          xmmsc::xmms[intsession].play();
           // Log that we're playing underlying music:
-          log_message("Music Bed (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(pe->music_bed.strvol)) + "%): \"" + xmms[intsession].get_song_file_path() + "\" - \"" + xmms[intsession].get_song_title() + "\"");
+          log_message("Music Bed (xmms " + itostr(intsession) + ": " + itostr(get_pe_vol(pe->music_bed.strvol)) + "%): \"" + xmmsc::xmms[intsession].get_song_file_path() + "\" - \"" + xmmsc::xmms[intsession].get_song_title() + "\"");
 
           // Fetch the length of the music bed according to XMMS:
           {
-            int intmusic_bed_length_ms_xmms = xmms[intsession].get_song_length_ms();
+            int intmusic_bed_length_ms_xmms = xmmsc::xmms[intsession].get_song_length_ms();
 
             // If the music bed's length is unknown (or was listed as too long in the db), update it here:
             if (pe->music_bed.intlength_ms > intmusic_bed_length_ms_xmms) {
@@ -628,7 +630,7 @@ void player::playback_transition(playback_events_info & playback_events) {
           int intsession = run_data.get_xmms_used(SU_BG);
 
           // Stop XMMS & free the session:
-          xmms[intsession].stop();
+          xmmsc::xmms[intsession].stop();
           run_data.set_xmms_usage(intsession, SU_UNUSED);
 
           // Record that this event has been handled:

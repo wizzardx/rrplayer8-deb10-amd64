@@ -22,6 +22,8 @@
 
 #include "common/testing.h"
 
+namespace xmmsc = xmms_controller;
+
 player * pplayer = NULL; // A pointer to the player object, used by callback functions.
 
 // Information about "events" that take place during playback of the current item.
@@ -209,7 +211,7 @@ void player::init() {
   mp3tags.init(PLAYER_DIR + "mp3_tags.txt");
 
   // Setup the XMMS module:
-  set_num_xmms_sessions(intmax_xmms); // 2 XMMS sessions
+  xmmsc::set_num_xmms_sessions(intmax_xmms); // 2 XMMS sessions
 
   // Show that the init succeeded.
   log_message("Player startup complete.");
@@ -515,7 +517,7 @@ void player::update_output_volumes() {
   if (run_data.current_item.cat == SCAT_SILENCE) {
     // XMMS levels:
     for (int intsession=0; intsession < intmax_xmms; intsession++)
-      xmms[intsession].setvol(0);
+      xmmsc::xmms[intsession].setvol(0);
     // Linein level:
     linein_setvol(0);
   }
@@ -527,7 +529,7 @@ void player::update_output_volumes() {
   else {
     // An exception will be thrown if the current item does not use XMMS:
     int intsession = run_data.get_xmms_used(SU_CURRENT_FG);
-    xmms[intsession].setvol(get_pe_vol(run_data.current_item.strvol));
+    xmmsc::xmms[intsession].setvol(get_pe_vol(run_data.current_item.strvol));
 
     // Set volume of music bed also if it is active now:
     {
@@ -913,7 +915,7 @@ void player::check_playback_status() {
   // Check playback status of XMMS, LineIn, etc. Throw errors here if there is something wrong.
 
   // Starup/stop XMMS sessions:
-  ensure_correct_num_xmms_sessions_running();
+  xmmsc::ensure_correct_num_xmms_sessions_running();
   
   for (int intsession=0; intsession < intmax_xmms; intsession++) {
     // Find out what the session should be playing now, if anything:
@@ -944,20 +946,20 @@ void player::check_playback_status() {
     if (run_data.xmms_usage[intsession] == SU_UNUSED) {
       // XMMS session is not used
       // XMMS must be stopped
-      if (!xmms[intsession].stopped()) my_throw("XMMS session " + itostr(intsession) + " is meant to be in a 'stopped' state!");
+      if (!xmmsc::xmms[intsession].stopped()) my_throw("XMMS session " + itostr(intsession) + " is meant to be in a 'stopped' state!");
     }
     else {
       // XMMS session is used. Check that it's still playing
-      if (!xmms[intsession].playing()) my_throw("XMMS session " + itostr(intsession) + " is meant to be playing!");
+      if (!xmmsc::xmms[intsession].playing()) my_throw("XMMS session " + itostr(intsession) + " is meant to be playing!");
       // Check that it's playing the correct media
-      if (xmms[intsession].get_song_file_path() != strplaying) my_throw("XMMS session " + itostr(intsession) + " is playing incorrect media!");
+      if (xmmsc::xmms[intsession].get_song_file_path() != strplaying) my_throw("XMMS session " + itostr(intsession) + " is playing incorrect media!");
       // Check that the volume is correct
       {
-        int intxmms_vol = xmms[intsession].getvol();
+        int intxmms_vol = xmmsc::xmms[intsession].getvol();
         if (intxmms_vol != intvol) my_throw("XMMS session " + itostr(intsession) + " has an incorrect volume! (" + itostr(intxmms_vol) + "% instead of " + itostr(intvol) + "%)");
       }
       // Check that repeat is off.
-      if (xmms[intsession].getrepeat()) my_throw("XMMS session " + itostr(intsession) + " repeat is turned on!");
+      if (xmmsc::xmms[intsession].getrepeat()) my_throw("XMMS session " + itostr(intsession) + " repeat is turned on!");
     }
   }
 
@@ -1021,8 +1023,8 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   if (!blnlinein_used && run_data.current_item.cat != SCAT_SILENCE) {
     // XMMS is being used to play this item.
     int intxmms_session    = run_data.get_xmms_used(SU_CURRENT_FG);
-    intxmms_song_pos_ms    = xmms[intxmms_session].get_song_pos_ms();
-    intxmms_song_length_ms = xmms[intxmms_session].get_song_length_ms();
+    intxmms_song_pos_ms    = xmmsc::xmms[intxmms_session].get_song_pos_ms();
+    intxmms_song_length_ms = xmmsc::xmms[intxmms_session].get_song_length_ms();
 
     event_info.intitem_ends_ms = intxmms_song_length_ms - intxmms_song_pos_ms;
     // Does this item have a music bed?
@@ -1238,8 +1240,8 @@ void player::log_mp_status_to_db(const sound_usage sound_usage) {
       // Current item is played via an XMMS session
       // - The next line will thrown an exception if this assumption is incorrect.
       int intsession = run_data.get_xmms_used(sound_usage);
-      strmp_status_playing = get_short_filename(xmms[intsession].get_song_file_path()) + " - " + xmms[intsession].get_song_title();
-      intmp_status_volume = xmms[intsession].getvol();
+      strmp_status_playing = get_short_filename(xmmsc::xmms[intsession].get_song_file_path()) + " - " + xmmsc::xmms[intsession].get_song_title();
+      intmp_status_volume = xmmsc::xmms[intsession].getvol();
       strmusic_source = "xmms";
     }
 

@@ -11,6 +11,8 @@
 #include <fstream>
 #include "common/rr_misc.h"
 
+namespace xmmsc = xmms_controller;
+
 void player::player_maintenance(const int intmax_time_ms) {
   // Do background maintenance (separate function). Events have frequencies, (sometimes desired "second" to take place at), and are prioritiesed.
   //  - Also includes resetting info about the next playback item (highest priority, every 30 seconds..., seconds: 00, 30)
@@ -94,13 +96,13 @@ void player::maintenance_player_running(const datetime dtmcutoff) {
   }
   else {
     int intsession = run_data.get_xmms_used(SU_CURRENT_FG);
-    strline += "xmms " + itostr(intsession) + ": " + itostr(xmms[intsession].getvol()) + "%";
+    strline += "xmms " + itostr(intsession) + ": " + itostr(xmmsc::xmms[intsession].getvol()) + "%";
 
     // Fetch the volume of the music bed, if one is being used:
     try {
       intsession = run_data.get_xmms_used(SU_CURRENT_BG); // Try to fetch the session
       // No exception thrown, so we have an xmms session for the music bed.
-      strline += ". Music bed: xmms " + itostr(intsession) +": " + itostr(xmms[intsession].getvol()) + "%";
+      strline += ". Music bed: xmms " + itostr(intsession) +": " + itostr(xmmsc::xmms[intsession].getvol()) + "%";
     } catch(...) {}
   }
 
@@ -120,7 +122,7 @@ void player::maintenance_player_running(const datetime dtmcutoff) {
 void player::maintenance_hide_xmms_windows(const datetime dtmcutoff) {
   // Hide all visible XMMS windows.
   for (int intsession=0; intsession < intmax_xmms; intsession++) {
-    xmms[intsession].hide_windows();
+    xmmsc::xmms[intsession].hide_windows();
   }
 }
 
