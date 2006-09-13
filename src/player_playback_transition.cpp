@@ -71,7 +71,6 @@ void player::playback_transition(playback_events_info & playback_events) {
       // Queue a transition over to the next item:
 
       // Fetch the next item now.
-      bool blnsegment_change = false; // We also check if the segment changes
       {
         long lngfc_seg_before = run_data.current_segment.lngfc_seg;
 
@@ -82,7 +81,6 @@ void player::playback_transition(playback_events_info & playback_events) {
           // Next item is not already known. Switch over:
           get_next_item(run_data.next_item, intitem_ends_ms);
         }
-        blnsegment_change = lngfc_seg_before != run_data.current_segment.lngfc_seg;
       }
 
       // Are crossfades allowed now?
@@ -96,12 +94,9 @@ void player::playback_transition(playback_events_info & playback_events) {
       //
       //    OTHERWISE:
       //
-      // 5) Always when the segment changes, OR
-      // 6) The current segment allows crossfades AND
-      // 7.1)   The 2 items have the same category as the segment (ie: Not for promos that happen to
-      //        play during a music segment), OR
-      // 7.2)   When transitioning from a non-music item to a music item, or the other way.
-      //        (but not from music -> music. The segment needs to allow it in this case).
+      // 5) The current segment allows crossfades AND
+      // 6) The 2 items have the same category as the segment (ie: Not for promos that happen to
+      //    play during a music segment)
 
       // Break up the logic:
       {
@@ -114,7 +109,6 @@ void player::playback_transition(playback_events_info & playback_events) {
                run_data.current_item.cat == run_data.current_segment.cat.cat &&
                run_data.next_item.cat    == run_data.current_segment.cat.cat;
 
-
         // Transitioning between LineIn and LineIn?
         bool blnlinein_to_linein_transition =
                run_data.current_item.strmedia == "LineIn" &&
@@ -124,13 +118,6 @@ void player::playback_transition(playback_events_info & playback_events) {
         bool blncdtrack_to_cdtrack_transition =
                file_is_cd_track(run_data.current_item.strmedia) &&
                file_is_cd_track(run_data.next_item.strmedia);
-
-        // Transitioning between non-music and music, or the reverse?
-        bool blnmusic_non_music_transition = (run_data.current_item.cat == SCAT_MUSIC ||
-                                              run_data.next_item.cat == SCAT_MUSIC)
-                                             &&
-                                             (run_data.current_item.cat != SCAT_MUSIC ||
-                                              run_data.next_item.cat != SCAT_MUSIC);
 
         // Now put it all together:
         blncrossfade =
@@ -147,17 +134,12 @@ void player::playback_transition(playback_events_info & playback_events) {
           !blncdtrack_to_cdtrack_transition &&
 
           // OTHERWISE:
-          (
-            // 5) Always when the segment changes, OR
-            blnsegment_change ||
-            (
-               // 6) The current segment allows crossfades AND
-               // 7.1)   The 2 items have the same category as the segment, OR
-               // 7.2)   When transitioning between non-music and music (or the reverse)
-               run_data.current_segment.blncrossfading &&
-                 (blnitem_categories_match_segment || blnmusic_non_music_transition)
-            )
-          );
+          // 5) The current segment allows crossfades AND
+          run_data.current_segment.blncrossfading &&
+
+          // 6)  The 2 items have the same category segment
+          blnitem_categories_match_segment;
+
         // Log whether we are going to crossfade:
         if (blncrossfade)
           log_line("Will crossfade between this item and the next.");
