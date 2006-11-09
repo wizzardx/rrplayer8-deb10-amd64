@@ -140,6 +140,13 @@ void player::playback_transition(playback_events_info & playback_events) {
           // 6)  The 2 items have the same category segment
           blnitem_categories_match_segment;
 
+        // TEMPORARY HACK: Always crossfade if one of the items is music:
+        if (run_data.current_item.cat == SCAT_MUSIC ||
+            run_data.next_item.cat == SCAT_MUSIC) {
+            log_line("HACK: One of the items is music, so crossfading");
+            blncrossfade = true;
+        }
+
         // Log whether we are going to crossfade:
         if (blncrossfade)
           log_line("Will crossfade between this item and the next.");
@@ -179,9 +186,11 @@ void player::playback_transition(playback_events_info & playback_events) {
               !blncrossfade)) {
           // Setup the current item fade-out:
           // This starts at ([current item end] - [crossfade length]), and continues for [crossfade length]
-          queue_volslide(events, "current", 100, 0, intitem_ends_ms - config.intcrossfade_length_ms, config.intcrossfade_length_ms);
-          if (!blncrossfade) log_message("The current item will fade out");
-          blnfade = true; // This transition includes a fade
+          // HACK: No fade-outs:
+          log_line("HACK: No fading out allowed.");
+//          queue_volslide(events, "current", 100, 0, intitem_ends_ms - config.intcrossfade_length_ms, config.intcrossfade_length_ms);
+//          if (!blncrossfade) log_message("The current item will fade out");
+//          blnfade = true; // This transition includes a fade
         }
 
         // Queue a "setup_next_item" event for the next item (eg, claim an xmms session):
@@ -204,9 +213,13 @@ void player::playback_transition(playback_events_info & playback_events) {
            }
            else {
              // Otherwise, queue a volume slide (whether for linein or for XMMS):
-             queue_volslide(events, "next", 0, 100, intnext_item_start_ms + 1, config.intcrossfade_length_ms);
-             if (!blncrossfade) log_message("The next item will fade in");
-             blnfade = true; // This transition includes a fade
+             // HACK: Set the next item to full volume, don't fade it in
+             log_line("HACK: Next item starts at full volume");
+             queue_event(events, "setvol_next 100", intnext_item_start_ms + 1);
+
+             //queue_volslide(events, "next", 0, 100, intnext_item_start_ms + 1, config.intcrossfade_length_ms);
+             //if (!blncrossfade) log_message("The next item will fade in");
+             //blnfade = true; // This transition includes a fade
            }
         }
 
