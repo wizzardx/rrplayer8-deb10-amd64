@@ -32,6 +32,9 @@ public:
   /// Advance to the next item (if necessary) and then return it.
   void get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags);
 
+  /// Check if fetching the next item will cause playback to revert
+  bool get_next_item_will_revert(string & strreason);
+
   /// How many items in the segment playlist are from the specified catagory?
   int count_items_from_catagory(const seg_category cat);
 

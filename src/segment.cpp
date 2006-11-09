@@ -303,6 +303,8 @@ void segment::load_music_profile(pg_connection & db, const player_config & confi
 
 void segment::get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags) {
   // Check if the segment is loaded:
+  // NB: Changes to this function must be mirrored in get_next_item_will_revert()
+
   if (!blnloaded) LOGIC_ERROR;
 
   // Have we already fetched the maximum allowed number of items for this segment?
@@ -349,6 +351,45 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   // already:
   blnfirst_fetched = true; // Next time we will advance to the next item.
   ++intnum_fetched;
+}
+
+bool segment::get_next_item_will_revert(string & strreason) {
+  // Return true if fetching the next item will cause the playback to revert, eg
+  // start playing music instead of the current category.
+  // NB: Changes to get_next_item() should be mirrored here.
+
+  // Check if the segment is loaded:
+  if (!blnloaded) LOGIC_ERROR;
+
+  // Have we already fetched the maximum allowed number of items for this segment?
+  if (intnum_fetched >= intmax_items) {
+    // We've feched the maximum number of allowed items. This will cause a revert
+    strreason = "only " + itostr(intmax_items) + " items are allowed in this segment";
+    return true;
+  }
+  else {
+    // Has the first item already been retrieved?
+    if (blnfirst_fetched) {
+      // First item has already been fetched. Go to the next item
+      // (ie, we don't progress to the next item until the 2nd item is being retrieved).
+
+      // Are we at the end of the current list?
+      if (next_item == programming_elements.end()) LOGIC_ERROR; // Should never be at end before advancing!
+
+      // Check if the next item is at the end of the list:
+      programming_element_list::iterator test_next_item = next_item;
+      test_next_item++;
+
+      // We will revert if at the end of the list and repetition is not enabled:
+      if (test_next_item == programming_elements.end() && !blnrepeat) {
+        strreason = "run out of items and repeating is not allowed";
+        return true;
+      }
+    }
+  }
+  
+  // Not going to revert
+  return false;
 }
 
 int segment::count_items_from_catagory(const seg_category cat) {

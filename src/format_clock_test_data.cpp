@@ -48,7 +48,7 @@ void format_clock_test_data::generate_test_data() {
   // tblfc_seg
   {
     // Populate all the format clock segments.
-    // Get a recorset ready for general abuse (ignore music bed category and regular music and silence.. regular music is hacked in later...)
+    // Get a recordset ready for general abuse (ignore music bed category and regular music and silence.. regular music is hacked in later...)
     pg_result rs = db.exec("SELECT lngfc_sub_cat, lngfc_cat FROM tlkfc_sub_cat WHERE lngfc_cat != 8 AND lngfc_cat != 2 AND lngfc_cat != 9");
     for (long lngfc=1; lngfc < 6; ++lngfc) {
       // Break the hour up into 5-minute segments, of random category & sub-category:

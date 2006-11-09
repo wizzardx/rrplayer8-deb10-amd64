@@ -621,9 +621,12 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     // the next item starts. Based on that assumption, does the current item end after
     // the current segment ends? If so, by how many seconds?
     datetime dtmseg_end = run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1;
-    if (dtmnext_starts > dtmseg_end + 1) {
+
+    // Calculate the difference between the current item end, and the next segment start:
+    int intdiff = dtmnext_starts - dtmseg_end - 1; // Take out that extra second here.
+
+    if (intdiff > 0) {
       // Yes: Increase the segment delay factor
-      int intdiff = dtmnext_starts - dtmseg_end - 1; // Take out that extra second here.
       int intnew_segment_delay = run_data.intsegment_delay + intdiff;
       if (intnew_segment_delay > intmax_segment_push_back) {
         log_warning("I have to drop " + itostr(intnew_segment_delay - intmax_segment_push_back) + "s of segment playback time! I've reached my segment 'delay' limit of " + itostr(intmax_segment_push_back) + "s");
@@ -631,6 +634,18 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       }
       log_line("Current item is going to end " + itostr(intdiff) + "s after the current segment end. Increasing segment delay factor to " + itostr(intnew_segment_delay) + "s (+" + itostr(intnew_segment_delay - run_data.intsegment_delay) + "s)");
       run_data.intsegment_delay = intnew_segment_delay;
+    }
+    // Otherwise, is the item going to end 10 or less seconds before the next segment starts? 
+    else if (intdiff >= -10) {
+      // Predict if fetching the next item from the current segment will cause the
+      // playback to revert (ie, start playing music instead of links etc)
+      string strreason;
+      if (run_data.current_segment.get_next_item_will_revert(strreason)) {
+        // Warn about this. We don't currently support skipping ahead to
+        // the next segment.
+        log_warning("Going to revert, but there are only " + itostr(-intdiff) + "s remaining in this second.");
+        log_line("TODO: Something else for the next " + itostr(-intdiff) + "s?");
+      }
     }
   }
 
@@ -642,7 +657,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     // Has the hour changed?
     datetime dtmnow = now();
 
-    if (dtmlast_checked != datetime_error && dtmlast_checked/(60*60) != dtmnow/(60*60) && run_data.intsegment_delay > 0) {
+    if (dtmlast_checked != datetime_error && dtmlast_checked/(60*60) != dtmnow/(60*60) && run_data.intsegment_delay != 0) {
       // Don't bother logging warnings if format clocks are disabled:
       if (config.blnformat_clocks_enabled) {
         log_warning("Hour has changed. Resetting segment delay (currently: " + itostr(run_data.intsegment_delay) + "s)");
@@ -658,6 +673,20 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
 
   // And now get our "delayed" time, the time in the past at which we fetch format clock data
   datetime dtmdelayed = dtmnext_starts - run_data.intsegment_delay;
+
+  // Clamp "delayed" time to the current hour (ie, don't allow it drift into the
+  // next hour, or somehow go into the previous hour):
+  datetime dtmhour_start = (now() / (60*60)) * (60*60);
+  datetime dtmhour_end   = dtmhour_start + (60*60) - 1;
+
+  if (dtmdelayed > dtmhour_end) {
+    log_warning("Segment delay has drifted past the end of the current hour. Clamping to the end of this hour.");
+    dtmdelayed = dtmhour_end;
+  }
+  else if (dtmdelayed < dtmhour_start) {
+    log_warning("Segment delay has somehow ended up before the start of the current hour (this shouldn't be possible). Clamping to the start of this hour.");
+    dtmdelayed = dtmhour_start;
+  }
 
   // Reset info currently in the item:
   next_item.reset(); // Reset info currently in the item.
@@ -824,7 +853,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
   }
   else {
     // Segment has not changed. Just log the current segment and end time.
-    log_message("No segment change. " + run_data.current_segment.cat.strname + " segment (id: " + itostr(run_data.current_segment.lngfc_seg) + ") is scheduled to play until " + format_datetime(run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1, "%T"));
+    log_message("No segment change. " + run_data.current_segment.cat.strname + " segment (id: " + itostr(run_data.current_segment.lngfc_seg) + ") will end at " + format_datetime(run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1, "%T"));
   }
 
   // Now fetch the next item to play, from the segment. Make sure it isn't a
