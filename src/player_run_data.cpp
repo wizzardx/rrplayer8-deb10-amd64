@@ -181,7 +181,7 @@ void player_run_data::next_becomes_current() {
       case SU_CURRENT_BG: LOGIC_ERROR; break; //An error. This should have been set to UNUSED earlier!
       case SU_NEXT_FG: xmms_usage[intsession] = SU_CURRENT_FG; break; // Next FG becomes current FG.
       case SU_NEXT_BG: xmms_usage[intsession] = SU_CURRENT_BG; break; // Next BG becomes current FG.
-      default: my_throw("Logic error!"); // Unknown XMMS usage for the session!
+      default: LOGIC_ERROR; // Unknown XMMS usage for the session!
     }
   }
 

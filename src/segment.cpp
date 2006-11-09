@@ -302,6 +302,9 @@ void segment::load_music_profile(pg_connection & db, const player_config & confi
 }
 
 void segment::get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags) {
+  // Check if the segment is loaded:
+  if (!blnloaded) LOGIC_ERROR;
+
   // Have we already fetched the maximum allowed number of items for this segment?
   if (intnum_fetched >= intmax_items) {
     // We've feched the maximum number of allowed items. Tell the user & revert down.

@@ -1,7 +1,6 @@
 
 #include "player.h"
 #include <sys/time.h>
-#include "common/testing.h"
 #include "common/linein.h"
 #include "common/maths.h"
 #include "common/my_string.h"
@@ -9,6 +8,8 @@
 #include "common/system.h"
 #include "common/rr_misc.h"
 #include <fstream>
+
+#include "common/testing.h"
 
 namespace xmmsc = xmms_controller;
 
@@ -70,17 +71,10 @@ void player::playback_transition(playback_events_info & playback_events) {
 
       // Queue a transition over to the next item:
 
-      // Fetch the next item now.
-      {
-        long lngfc_seg_before = run_data.current_segment.lngfc_seg;
-
-        // Only get the next item if it wasn't previously loaded.
-        // This can happen when we're busy playing linein or silence,
-        // or if the current music item is being interrupted for a promo.
-        if (!run_data.next_item.blnloaded) {
-          // Next item is not already known. Switch over:
-          get_next_item(run_data.next_item, intitem_ends_ms);
-        }
+      // Fetch the next item now if it isn't already loaded:
+      if (!run_data.next_item.blnloaded) {
+        // Next item is not already known. Switch over:
+        get_next_item(run_data.next_item, intitem_ends_ms);
       }
 
       // Are crossfades allowed now?
@@ -237,6 +231,12 @@ void player::playback_transition(playback_events_info & playback_events) {
         // Log a message if no fade will take place during this transition:
         if (!blncrossfade && !blnfade) log_message("No fades during this transition");
       }
+    }
+
+    // Add an event to check that the current item has finished playing. More important, now
+    // that we are phasing out crossfading (the current item always ended after a crossfade)
+    if (intitem_ends_ms > 0) {
+      queue_event(events, "check_current_item_finished", intitem_ends_ms + 1);
     }
 
     // Sort the queue.
@@ -533,6 +533,20 @@ void player::playback_transition(playback_events_info & playback_events) {
 
           // Also, log the current playback status to tblplayeroutput & tblliveinfo:
           log_mp_status_to_db(SU_NEXT_FG);
+        }
+        else if (strcmd == "check_current_item_finished") {
+          // This only really applies to XMMS
+          if (!run_data.current_item.blnloaded) LOGIC_ERROR;
+          if (run_data.current_item.strmedia != "LineIn") {
+            // If not playing linein then playing XMMS.
+            int intsession = run_data.get_xmms_used(SU_CURRENT_FG);
+            if (xmmsc::xmms[intsession].playing()) {
+              log_warning("XMMS session " + itostr(intsession) + " is still playing the current item, it should be stopped by now!");
+            }
+            else {
+              log_line("XMMS session " + itostr(intsession) + " finished playing the current item");
+            }
+          }
         }
         else if (strcmd == "next_becomes_current") {
           // Current item has just ended. It is no longer interesting in terms of player timing. So

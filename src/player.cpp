@@ -164,7 +164,7 @@ void player::init() {
   db.open(strconn);
 
   // If the player is in debugging mode then say so:
-  if (blndebug) log_warning("Player was compiled in debugging mode");
+  if (blndebug) log_warning("Running in debug mode");
 
   // Reload all config settings from the database:
   load_db_config();
