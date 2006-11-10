@@ -10,7 +10,7 @@ INCLUDES= $(all_includes)
 player_LDFLAGS = $(all_libraries) 
 
 SUBDIRS = common
-player_LDADD = $(top_builddir)/src/common/libcommon.a /usr/lib/libglib.so \
-	/usr/lib/libpqxx.so
+player_LDADD = $(top_builddir)/src/common/libcommon.a /usr/lib/libxmms.so \
+	/usr/lib/libglib.so /usr/lib/libpqxx.so
 noinst_HEADERS = player_run_data.h player_constants.h player_config.h \
 	player_util.h
