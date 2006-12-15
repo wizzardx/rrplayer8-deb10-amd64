@@ -20,11 +20,19 @@ class music_history
    /// Called when a song has started playing. Updates the music history.
    void song_played(pg_connection & db, const std::string & strfile, const std::string & strdescr);
 
+   /// Same as song_played(), but does not update the database
+   void song_played_no_db(const std::string & strfile, const std::string & strdescr);
+
    /// Did this song play within the most recent X songs?
    bool song_played_recently(const std::string & strfile, const int count);
 
    /// Clear the in-memory music history (not the database table)
    void clear();
+
+   /// Fetch a read-only copy of the music history list
+   /// (newer entries are at the front of the queue)
+   const std::list<std::string> get_history() const;
+
  private:
    /// Maximum history entries to keep in memory
    static const int max_history_length = 1000;

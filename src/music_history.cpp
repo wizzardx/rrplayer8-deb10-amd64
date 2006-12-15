@@ -21,14 +21,19 @@ void music_history::song_played(pg_connection & db, const string & strfile, cons
   // Called when a song has started playing. Updates the music history.
   // Does not delete old music history entries. The database maintenance
   // script now does that.
-
-  // Add the song to the history:
-  m_history.push_front(strfile);
-  tidy(); // Delete old entries
+  song_played_no_db(strfile, strdescr);
 
   // Store the song in tblmusichistory:
   db.exec("INSERT INTO tblmusichistory (dtmtime, strdescription, strfile) VALUES ("
           + psql_now + ", " + psql_str(strdescr) + ", " + psql_str(strfile) + ")");
+}
+
+void music_history::song_played_no_db(const string & strfile, const string & strdescr)
+{
+  // This function is used when building a playlist, to "simulate" the "don't repeat recent
+  // music" effect
+  m_history.push_front(strfile);
+  tidy(); // Delete old entries
 }
 
 bool music_history::song_played_recently(const string & strfile, const int count)
@@ -49,6 +54,12 @@ bool music_history::song_played_recently(const string & strfile, const int count
 void music_history::clear() {
   // Clear the in-memory history (not the database table)
   m_history.clear();
+}
+
+const std::list<std::string> music_history::get_history() const {
+  // Fetch a read-only copy of the music history list
+  // (newer entries are at the front of the queue)
+  return m_history;
 }
 
 void music_history::tidy()

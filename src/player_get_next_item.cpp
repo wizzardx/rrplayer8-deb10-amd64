@@ -795,7 +795,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     log_message("Loading Format Clock segment (id: " + itostr(lngfc_seg) + ")");
 
     // A -1 lngfc_seg means load the currently-scheduled music profile instead
-    run_data.current_segment.load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags);
+    run_data.current_segment.load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags, m_music_history);
 
     // How far into the segment did we query for?
     int intdiff = dtmdelayed - run_data.current_segment.scheduled.dtmstart;
@@ -887,7 +887,7 @@ void player::get_next_item_not_recent_music(programming_element & next_item, con
     datetime dtmprev_playlist_update = run_data.current_segment.dtmpel_updated;
 
     // Fetch the next item:
-    run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config, mp3tags);
+    run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config, mp3tags, m_music_history);
 
     // If the segment playlist was just updated, then re-calculate the mimum
     // allowed number of songs before a song can repeat.

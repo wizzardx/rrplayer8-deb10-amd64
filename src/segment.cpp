@@ -1,5 +1,7 @@
 
 #include "segment.h"
+#include "music_history.h"
+#include "player_constants.h"
 #include "player_util.h"
 #include "common/dir_list.h"
 #include "common/exception.h"
@@ -93,7 +95,7 @@ void segment::reset() {
   dtmpel_updated = now();
 }
 
-void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const datetime dtmtime, const player_config & config, mp3_tags & mp3tags) {
+void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const datetime dtmtime, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory) {
   // Read details for a segment [lngfc_seg_arg], from the database(db), into this object
   // Is a -1 lngfc_seg_arg specified? (ie, attempt to load current music profile)
 
@@ -106,7 +108,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
     // If the specified segment is -1, then setup a regular music profile (don't load format clocks):
     if (lngfc_seg == -1) {
       log_message("Setting up music profile...");
-      load_music_profile(db, config, mp3tags);
+      load_music_profile(db, config, mp3tags, musichistory);
       playback_state = PBS_MUSIC_PROFILE;
 
       // Populate scheduled from & to fields.
@@ -216,13 +218,13 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
       {
         bool blnsuccess = false; // Set to true if we successfully load the list:
         try {
-          load_pe_list(programming_elements, cat, sub_cat, db, config, mp3tags);
+          load_pe_list(programming_elements, cat, sub_cat, db, config, mp3tags, musichistory);
           next_item = programming_elements.begin();
           blnsuccess = true; // The above succeeded.
         } catch_exceptions;
         // If this fails, we revert to a lower level:
         if (!blnsuccess) {
-          revert_down(db, config, mp3tags);
+          revert_down(db, config, mp3tags, musichistory);
         }
       }
 
@@ -260,7 +262,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
     log_error((string)"The following error occured while loading the segment details: " + e.what());
     log_message("Reverting to a music profile.");
 
-    load_from_db(db, -1, dtmtime, config, mp3tags);
+    load_from_db(db, -1, dtmtime, config, mp3tags, musichistory);
     lngfc_seg = lngfc_seg_arg; // And restore the value. We are playing default music, but our segment remains unchanged.
   }
 
@@ -274,7 +276,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
   // This is used to help ensure that the segment does in fact play it's full length.
 }
 
-void segment::load_music_profile(pg_connection & db, const player_config & config, mp3_tags & mp3tags) {
+void segment::load_music_profile(pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory) {
   // Segment-specific info
   cat.cat     = SCAT_MUSIC;
   cat.strname = "Music";
@@ -286,10 +288,7 @@ void segment::load_music_profile(pg_connection & db, const player_config & confi
   blnmusic_bed   = false; // Music profiles don't have underlying music.
 
   // Load the current music profile into the list of programming elements:
-  generate_playlist(programming_elements, "MusicProfile", SCAT_MUSIC, db, config, mp3tags); // Also shuffles the list
-
-  // Shuffle it:
-  shuffle_pel(programming_elements);
+  generate_playlist(programming_elements, "MusicProfile", SCAT_MUSIC, db, config, mp3tags, musichistory, true); // Also shuffles the list
 
   // And setup the variables used to track which is the next item to be returned...
   next_item = programming_elements.begin(); // The next item to be returned when requested...
@@ -301,7 +300,7 @@ void segment::load_music_profile(pg_connection & db, const player_config & confi
   dtmpel_updated = now();
 }
 
-void segment::get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags) {
+void segment::get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory) {
   // Check if the segment is loaded:
   // NB: Changes to this function must be mirrored in get_next_item_will_revert()
 
@@ -311,7 +310,7 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   if (intnum_fetched >= intmax_items) {
     // We've feched the maximum number of allowed items. Tell the user & revert down.
     log_message("Have already played the maximum allowed number of items for this segment (" + itostr(intmax_items) + ")");
-    revert_down(db, config, mp3tags); // This will also setup "next_item"
+    revert_down(db, config, mp3tags, musichistory); // This will also setup "next_item"
   }
   else {
     // Has the first item already been retrieved?
@@ -335,7 +334,7 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
           // Repeating not allowed. Revert to the alternate category.
           // "imaging filler", or we revert to the alternate category.
           log_line("Ran out of media for this segment (repeat=false)");
-          revert_down(db, config, mp3tags); // This will also setup "next_item"
+          revert_down(db, config, mp3tags, musichistory); // This will also setup "next_item"
         }
       }
     }
@@ -403,7 +402,149 @@ int segment::count_items_from_catagory(const seg_category cat) {
   return count;
 }
 
-void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags) {
+int myrand(const int & i) {
+  // Function passed to random_shuffle...
+  return rand()%i;
+}
+
+void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags, const music_history & musichistory) {
+  // A utility function for segment::generate_playlist.
+  // - Alternate the MP3s in file_list by artist.
+  // - Also try to ensure that songs in the alternated playlist won't be skipped
+  //   because they were played recently (this can cause songs by the same
+  //   artist to play sooner than expected)
+
+  // Make a copy of the music history object for this function to abuse:
+  music_history history(musichistory);
+  
+  typedef vector<string> artist_mp3s; // Listing songs by a single artist;
+  map <string, artist_mp3s> mp3s; // MP3s, sorted by artist
+
+  // Also keep a list of the artists, in the order we encountered them.
+  // This is because "map" objects always sort their data by key, but we want
+  // to access the data by the order we originally encountered the artists in
+  list <string> artists; // Using a list so we can delete & insert elements without invalidating iterators
+
+  // How long until a song is allowed to repeat?
+  int intmin_songs_before_song_repeat = (file_list.size() * intprevent_song_repeat_factor) / 100;
+
+  // Go through all the media, sort by artist:
+  vector<string>::const_iterator mp3_iter = file_list.begin();
+  while (mp3_iter != file_list.end()) {
+    // If the song is an MP3 then get the artist. Otherwise assume no artist.
+    string artist = "";
+    if (right(lcase(*mp3_iter), 4) == ".mp3") {
+      // An MP3. Get the artist:
+      artist = lcase(trim(mp3tags.get_mp3_artist(*mp3_iter)));
+    }
+
+    // Add the mp3 to the list of MP3s for this artist:
+    mp3s[artist].push_back(*mp3_iter);
+    // And add new artists to the list of artists (ie, in the order we found them):
+    if (find(artists.begin(), artists.end(), artist) == artists.end()) {
+      artists.push_back(artist);
+    }
+    mp3_iter++;
+  }
+
+  // Adjust the artist order according to recent history (eg, if an artist's song played just before calling
+  // this function, then ensure that songs by the same artist don't play until later)
+  {
+    // Get a list of artists from the music history (most recent artists first)
+    vector <string> recent_artists;
+    {
+      typedef typeof(musichistory.get_history()) history_list_type;
+      history_list_type history_list(musichistory.get_history()); // Most recent files are at the start of the list
+
+      // Proceed through recently-played music:
+      history_list_type::const_iterator mp3_iter = history_list.begin(); // Start at the most recently-played file
+      while (mp3_iter != history_list.end()) {
+        if (!file_exists(*mp3_iter)) {
+          log_warning("Recently-played file not found, can't check the artist: " + *mp3_iter);
+        }
+        else {
+          string strartist = lcase(trim(mp3tags.get_mp3_artist(*mp3_iter)));
+          // Add the artist to the list of recent artists if it isn't already there:
+          if (find(recent_artists.begin(), recent_artists.end(), strartist) == recent_artists.end()) {
+            recent_artists.push_back(strartist);
+          }
+        }
+        mp3_iter++; // Check the next MP3 (ie, less-recently-played)
+      }
+    }
+
+    // Now adjust our list of artists so that recently-played artists play later rather than sooner:
+    {
+      vector <string>::const_iterator recent_artist_iter = recent_artists.begin();
+      list <string>::iterator artists_back_iter = artists.end(); // Recent artists go to the back of the list of artists,
+                                                                 // but before artists that have already been moved to the back
+
+      // Proceed through our list of recent artists:
+      while (recent_artist_iter != recent_artists.end()) {
+        // Does our list of artists (for the new playlist) contain a artist for a recently-played MP3?
+        string recent_artist = *recent_artist_iter;
+        list <string>::iterator artist_iter = find(artists.begin(), artists.end(), recent_artist);
+        if (artist_iter != artists.end()) {
+          // Yes, found it. Move it to the back of the list of artists;
+          artists.insert(artists_back_iter, recent_artist);
+          artists.erase(artist_iter);
+          artists_back_iter--; // Less recent artists get pushed to the end, but before the one we just pushed.
+        }
+        recent_artist_iter++; // Now check the next recent artist
+      }
+    }
+  }
+
+  // Now produce an artist-alternating output:
+  file_list.clear();
+  list<string>::iterator artist_iter = artists.begin();
+  while (!artists.empty()) {
+    // Find a song by the artist which hasn't played recently:
+    vector<string>::iterator mp3_iter = mp3s[*artist_iter].begin(); // *** THIS BECOMES AN INVALID READ
+    while (mp3_iter != mp3s[*artist_iter].end()) {
+      if (history.song_played_recently(*mp3_iter, intmin_songs_before_song_repeat)) {
+        // Song played recently, try the next song:
+        mp3_iter++;
+      }
+      else {
+        // Song did not play recently, so use it:
+        break; // Stop searching mp3s for the artist
+      }
+    }
+
+    // Did we find a song by this artist?
+    if (mp3_iter == mp3s[*artist_iter].end()) {
+      log_warning("Problem alternating playlist artists: Can't find a song by " + *artist_iter + " that won't have played recently by slot " + itostr(file_list.size() + 1) + " in the new playlist");
+      // But we push a song by the artist into the playlist anyway, so that the
+      // logic of this function doesn't get undermined (eg, what happens in
+      // weird cases when our logic thinks that all the remaining songs have been played
+      // recently?
+      mp3_iter = mp3s[*artist_iter].begin();
+    }
+
+    // Add the song to the playlist:
+    file_list.push_back(*mp3_iter);
+    history.song_played_no_db(*mp3_iter, mp3tags.get_mp3_description(*mp3_iter));
+    mp3s[*artist_iter].erase(mp3_iter);
+
+    // Delete the artist entry if empty
+    if (mp3s[*artist_iter].empty()) {
+      artist_iter = artists.erase(artist_iter); // *** THIS IS WHAT MAKES THE READ INVALID
+    }
+    else {
+      artist_iter++;
+    }
+
+    // Jump to the next artist's songs:
+
+    // Go back to the first artist if we've reached the last artist:
+    if (artist_iter == artists.end()) {
+      artist_iter = artists.begin();
+    }
+  }
+}
+
+void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnshuffle) {
   // Process a directory or M3U file and generate a list of media to play during this segment.
   pel.clear(); // Clear anything already in the program element list.
 
@@ -543,6 +684,15 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
     }
   }
 
+  // Shuffle the file list if requested:
+  if (blnshuffle) {
+    srand(now());
+    random_shuffle(file_list.begin(), file_list.end(), myrand);
+    // If shuffling is enabled, then also alternate the songs based on artist:
+    // - This should achieve the desired "artist separation"
+    alternate_file_list_artists(file_list, mp3tags, musichistory);
+  }
+
   // Now populate the programming element list, and add a music bed if appropriate:
   {
     vector <string>::iterator i=file_list.begin();
@@ -579,18 +729,8 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   }
 }
 
-// Function passed to random_shuffle...
-inline int myrand(const int & i) {
-  return rand()%i;
-}
-
-void segment::shuffle_pel(programming_element_list & pel) {
-  srand(now());
-  random_shuffle(pel.begin(), pel.end(), myrand);
-}
-
 // Function called by load_from_db: Prepare a list of programming elements to use, based on the segment parameters.
-void segment::load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags) {
+void segment::load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory) {
   // Clear out the current program element list:
   pel.clear();
   bool blnshuffle_pel = false; // Set to true if we are shuffle pel at the end of the function
@@ -652,22 +792,17 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
     }
 
     // Build up our list of items to play:
-    generate_playlist(pel, strsource, cat.cat, db, config, mp3tags);
+    generate_playlist(pel, strsource, cat.cat, db, config, mp3tags, musichistory, blnshuffle_pel);
 
     // Did we get any files? (maybe they're all missing):
     if (pel.size() == 0) my_throw("I couldn't find anything to play!");
-
-    // Shuffle the list if appropriate:
-    if (blnshuffle_pel) {
-      shuffle_pel(pel);
-    }
 
     // Log a message listing the "Source" for this segment:
     log_line("Segment source: " + strsource);
   }
 }
 
-void segment::revert_down(pg_connection & db, const player_config & config, mp3_tags & mp3tags) {
+void segment::revert_down(pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory) {
   // If there is a problem with playing category items, we revert to alternate category. If there is also a problem
   // with the alternate category, we attempt to revert to a music profile. If there are still problems
   // we throw an exception. This function is called to revert from the current playback status to the next lower.
@@ -697,7 +832,7 @@ void segment::revert_down(pg_connection & db, const player_config & config, mp3_
           }
           else {
             // Now load the new playlist & setup the iterator:
-            load_pe_list(programming_elements, alt_cat, alt_sub_cat, db, config, mp3tags);
+            load_pe_list(programming_elements, alt_cat, alt_sub_cat, db, config, mp3tags, musichistory);
             next_item = programming_elements.begin();
             blndone = true;
           }
@@ -707,7 +842,7 @@ void segment::revert_down(pg_connection & db, const player_config & config, mp3_
         log_message("Reverting to a Music Profile");
         playback_state = PBS_MUSIC_PROFILE;
         try {
-          load_music_profile(db, config, mp3tags); // Automatically reverts to default music if no profile can be found
+          load_music_profile(db, config, mp3tags, musichistory); // Automatically reverts to default music if no profile can be found
           next_item = programming_elements.begin();
           blndone = true;
         } catch_exceptions;
