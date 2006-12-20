@@ -776,6 +776,13 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     }
   }
 
+  // If we are about to revert to a music profile, but have the previous user-scheduled music segment, then
+  // revert to the previous user-scheduled music segment instead:
+  if (lngfc_seg == -1 && run_data.lngprev_music_seg != -1) {
+    log_message("Going to play music from the most recent music segment");
+    lngfc_seg = run_data.lngprev_music_seg;
+  }
+
   // Has the current segment changed?
   // Or, does the system want to reload the segment data?
   // Or, has the current segment expired?
@@ -795,7 +802,17 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     log_message("Loading Format Clock segment (id: " + itostr(lngfc_seg) + ")");
 
     // A -1 lngfc_seg means load the currently-scheduled music profile instead
-    run_data.current_segment.load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags, m_music_history);
+
+    // Check if we need to get the next item ASAP (ie, use cached playlists if available), otherwise
+    // scan directories etc:
+    const bool blnasap = (intstarts_ms - now() <= 5); // Starts 5 or less seconds from now..
+    run_data.current_segment.load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags, m_music_history, blnasap);
+
+    // If this is a user-scheduled music segment, then remember the programming
+    // elements (used later for reverting  when we run out of items)
+    if (lngfc_seg != -1 && run_data.current_segment.cat.cat == SCAT_MUSIC) {
+      run_data.lngprev_music_seg = lngfc_seg;
+    }
 
     // How far into the segment did we query for?
     int intdiff = dtmdelayed - run_data.current_segment.scheduled.dtmstart;
@@ -886,8 +903,12 @@ void player::get_next_item_not_recent_music(programming_element & next_item, con
     // When was the current playlist previously updated?
     datetime dtmprev_playlist_update = run_data.current_segment.dtmpel_updated;
 
+    // Check if we need to get the next item ASAP (ie, use cached playlists if available), otherwise
+    // scan directories etc:
+    const bool blnasap = (intstarts_ms - now() <= 5); // Starts 5 or less seconds from now..
+
     // Fetch the next item:
-    run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config, mp3tags, m_music_history);
+    run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config, mp3tags, m_music_history, blnasap);
 
     // If the segment playlist was just updated, then re-calculate the mimum
     // allowed number of songs before a song can repeat.

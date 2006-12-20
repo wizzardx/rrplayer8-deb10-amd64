@@ -52,6 +52,8 @@ void player_run_data::init() {
 
   blnforce_segment_reload = false; // Set to true when the player wants to reload the current segment (eg, a RPLS command was found)
 
+  lngprev_music_seg = -1; // Most recently-played user-scheduled music segment;
+
   // Set the PCM volume to 90% - we use software mixing not hardware!
   string strout;
   system_capture_out_throw("/usr/bin/aumix -w 90", strout);
