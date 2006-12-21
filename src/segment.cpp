@@ -555,11 +555,8 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   // If we are running low on time, then use a recently-cached playlist for this source (if available):
   if (blnasap) {
     if (pel_cache.get(strsource, pel)) {
-      log_warning("Need a playlist ASAP, using a cached playlist for '" + strsource + "'");
+      log_message("In a hurry so using a cached playlist for '" + strsource + "'");
       return;
-    }
-    else {
-      log_warning("Need a playlist ASAP, but no cached playlist is available for '" + strsource + "'!");
     }
   }
 

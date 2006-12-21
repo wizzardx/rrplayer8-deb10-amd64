@@ -814,6 +814,13 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       run_data.lngprev_music_seg = lngfc_seg;
     }
 
+    // Did we go to a new format clock?
+    static long lngprev_fc = -1;
+    if (lngprev_fc != run_data.current_segment.fc.lngfc) {
+      log_message("Changed to a new Format Clock (id: " + itostr(run_data.current_segment.fc.lngfc) + "): \"" + run_data.current_segment.fc.strname + "\"");
+      lngprev_fc = run_data.current_segment.fc.lngfc;
+    }
+
     // How far into the segment did we query for?
     int intdiff = dtmdelayed - run_data.current_segment.scheduled.dtmstart;
 

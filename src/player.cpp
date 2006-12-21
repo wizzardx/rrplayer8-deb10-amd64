@@ -73,6 +73,29 @@ void player::run() {
   FCTD.clear_tables();
   FCTD.generate_test_data();
 */
+
+  // Wait for any items currently playing in XMMS to finish:
+  try {
+    log_message("Waiting for any currently-playing XMMS sessions to finish...");
+    datetime dtmlast_logged=datetime_error; // We check every second, but only long once a minute.
+    bool done = false; // Set to false while we're still waiting...
+    while (!done) {
+      done = true; // Set to false if we detect an XMMS session still running
+      for (int i=0; i < intmax_xmms; i++) {
+        if (xmmsc::xmms[i].playing()) {
+          string strfile = xmmsc::xmms[i].get_song_file_path();
+          if (dtmlast_logged/60 != now()/60)
+            log_message(" - XMMS session " + itostr(i) + " is busy playing \"" + strfile + "\" - \"" + mp3tags.get_mp3_description(strfile) + "\" (" + itostr(xmmsc::xmms[i].get_song_pos()) + "/" + itostr(xmmsc::xmms[i].get_song_length()) + "s)...");
+          done = false;
+        }
+      }
+      if (!done) {
+        dtmlast_logged = now(); // Put here so we will log info for all XMMS sessions still playing, not just the first one
+        sleep(1);
+      }
+    } while (!done);
+  } catch_exceptions;
+
   // Reset data used during this loop:
   run_data.init();
 
