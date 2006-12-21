@@ -643,7 +643,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       if (run_data.current_segment.get_next_item_will_revert(strreason)) {
         // Warn about this. We don't currently support skipping ahead to
         // the next segment.
-        log_warning("Going to revert, but there are only " + itostr(-intdiff) + "s remaining in this second.");
+        log_warning("Going to revert, but there are only " + itostr(-intdiff) + "s remaining in this segment.");
         log_line("TODO: Something else for the next " + itostr(-intdiff) + "s?");
       }
     }
