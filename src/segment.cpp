@@ -544,54 +544,6 @@ void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags,
   }
 }
 
-// A class used by generate_playlist to remember recent programming element lists.
-class recent_music_pel_cache {
- public:
-   void set(const string & source, const programming_element_list & pel) {
-     pel_info pi;
-     pi.pel = pel;
-     pi.cached_time = now();
-     cache[source] = pi;
-   }
-   bool get(const string & source, programming_element_list & pel) {
-     // Tidy up old records (older than 30 minutes):
-     {
-       cache_type::iterator i = cache.begin();
-       while (i != cache.end()) {
-         // Store the current iterator value and go to the next
-         // (iterators are invalidated when the current record is deleted)
-         cache_type::iterator i_old = i++;
-         // Old record?
-         if (i_old->second.cached_time < now() - (30*60)) {
-           // Yes. Delete it:
-           cache.erase(i_old);
-         }
-       }
-     }
-
-     // Check if there is a cached record for the source:
-     {
-       cache_type::const_iterator i = cache.find(source);
-       if (i == cache.end()) {
-         // Could not find it.
-         return false;
-       }
-       else {
-         // Found it:
-         pel = i->second.pel;
-         return true;
-       }
-     }
-   }
- private:
-   struct pel_info {
-     programming_element_list pel;
-     datetime cached_time;
-   };
-   typedef map <string, pel_info> cache_type;
-   cache_type cache;
-} recent_music_pel_cache;
-
 void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnshuffle, const bool blnasap) {
   // Process a directory or M3U file and generate a list of media to play during this segment.
   // blnasap is set to TRUE if we need a playlist ASAP (ie, use a previously-cached playlist).
@@ -602,7 +554,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
 
   // If we are running low on time, then use a recently-cached playlist for this source (if available):
   if (blnasap) {
-    if (recent_music_pel_cache.get(strsource, pel)) {
+    if (pel_cache.get(strsource, pel)) {
       log_warning("Need a playlist ASAP, using a cached playlist for '" + strsource + "'");
       return;
     }
@@ -792,7 +744,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   }
 
   // Now cache the programming elements for this source:
-  recent_music_pel_cache.set(strsource, pel);
+  pel_cache.set(strsource, pel);
 }
 
 // Function called by load_from_db: Prepare a list of programming elements to use, based on the segment parameters.

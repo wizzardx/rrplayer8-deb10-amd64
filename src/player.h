@@ -170,6 +170,7 @@ private:
   void maintenance_operational_check(const datetime dtmcutoff);
   void maintenance_player_running(const datetime dtmcutoff);
   void maintenance_hide_xmms_windows(const datetime dtmcutoff); ///< Hide all visible XMMS windows.
+  void maintenance_cache_pels(const datetime dtmcutoff); ///< Pre-generate playlists
 
   // Functions called by maintenance_operational_check:
   void log_music_playlist_to_db(); ///< Log the contents of the current music playlist to the database

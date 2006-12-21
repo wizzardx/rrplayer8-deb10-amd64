@@ -25,6 +25,7 @@ void player::player_maintenance(const int intmax_time_ms) {
   RUN_TIMED_CUTOFF(maintenance_operational_check(dtmcutoff),  30,   dtmcutoff);
   RUN_TIMED_CUTOFF(maintenance_player_running(dtmcutoff),     60,   dtmcutoff);
   RUN_TIMED_CUTOFF(maintenance_hide_xmms_windows(dtmcutoff),  5*60, dtmcutoff); // Hide all XMMS windows
+  RUN_TIMED_CUTOFF(maintenance_cache_pels(dtmcutoff), 60*5, dtmcutoff);
 }
 
 void player::maintenance_check_received(const datetime dtmcutoff) {
@@ -116,6 +117,25 @@ void player::maintenance_hide_xmms_windows(const datetime dtmcutoff) {
   // Hide all visible XMMS windows.
   for (int intsession=0; intsession < intmax_xmms; intsession++) {
     xmmsc::xmms[intsession].hide_windows();
+  }
+}
+
+void player::maintenance_cache_pels(const datetime dtmcutoff) {
+  // Pre-populate certain playlists in the prgogramming element cache
+  // - This is because some playlists take a long time to load and can
+  //   cause silences, especially when the previous item was very short.
+  // - So we try to cache certain playlists in advance
+
+  // Only run if there are 60 or more seconds left:
+  if (dtmcutoff - now() < 60) return;
+
+  // Currently, we just re-populate the currently-scheduled music profile (if any)
+  // once an hour, or immediately if it isn't already populated:
+  const datetime dtmlast_populate = datetime_error;
+  if (!pel_cache.has("MusicProfile") || ((dtmlast_populate / (60*60)) != (now() / (60*60)))) {
+    log_message("Pre-caching music profile playlist...");
+    // Loading the music profile into a segment will also cache it:    
+    segment seg; seg.load_music_profile(db, config, mp3tags, m_music_history, false);
   }
 }
 

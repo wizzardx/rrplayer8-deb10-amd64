@@ -690,6 +690,9 @@ void player::process_waiting_cmds() {
           // 2) Tell the player to re-load the current segment
           //    - This also reloads the current Music Profile (if music profiles are playing)
           run_data.blnforce_segment_reload = true;
+
+          // 3) Clear any cached playlists:
+          pel_cache.clear();
         }
         // Some commands added in version 6.11 - allow the user to pause, stop and resume the media playback.
         //
