@@ -814,13 +814,6 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       run_data.lngprev_music_seg = lngfc_seg;
     }
 
-    // Did we go to a new format clock?
-    static long lngprev_fc = -1;
-    if (lngprev_fc != run_data.current_segment.fc.lngfc) {
-      log_message("Changed to a new Format Clock (id: " + itostr(run_data.current_segment.fc.lngfc) + "): \"" + run_data.current_segment.fc.strname + "\"");
-      lngprev_fc = run_data.current_segment.fc.lngfc;
-    }
-
     // How far into the segment did we query for?
     int intdiff = dtmdelayed - run_data.current_segment.scheduled.dtmstart;
 
@@ -878,6 +871,20 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
   else {
     // Segment has not changed. Just log the current segment and end time.
     log_message("No segment change. " + run_data.current_segment.cat.strname + " segment (id: " + itostr(run_data.current_segment.lngfc_seg) + ") will end at " + format_datetime(run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1, "%T"));
+  }
+
+  // Also log the current Format Clock (and whether it changed):
+  {
+    static long lngprev_fc = -1;
+    string strmsg = "Format Clock (id: " + itostr(run_data.current_segment.fc.lngfc) + "): \"" + run_data.current_segment.fc.strname + "\"";
+    
+    if (lngprev_fc != run_data.current_segment.fc.lngfc) {
+      log_message("Changed to a new " + strmsg);
+      lngprev_fc = run_data.current_segment.fc.lngfc;
+    }
+    else {
+      log_message("Still playing " + strmsg);
+    }
   }
 
   // Now fetch the next item to play, from the segment. Make sure it isn't a
