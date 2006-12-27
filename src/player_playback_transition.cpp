@@ -533,6 +533,13 @@ void player::playback_transition(playback_events_info & playback_events) {
 
           // Also, log the current playback status to tblplayeroutput & tblliveinfo:
           log_mp_status_to_db(SU_NEXT_FG);
+
+          // Let the next segment know that one of it's items was played
+          // (eg, if we're skipping through items because they were recently played,
+          // then don't count them towards # items played (eg, music segment only
+          // allows 3 items to play, and MP3s in the playlist have already
+          // played recently)
+          run_data.current_segment.item_played();
         }
         else if (strcmd == "check_current_item_finished") {
           // This only really applies to XMMS

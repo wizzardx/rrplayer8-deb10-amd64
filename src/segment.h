@@ -39,6 +39,10 @@ public:
   /// How many items in the segment playlist are from the specified catagory?
   int count_items_from_catagory(const seg_category cat);
 
+  /// Let the class know that one of it's items was played (as opposed to just fetched)
+  /// - eg, items can be fetched but not played (maybe they were already played recently,
+  void item_played();
+
   bool blnloaded; // Has data been loaded into this object yet?
 
   // Information about the format clock:
@@ -86,6 +90,7 @@ public:
   enum playback_state {
     PBS_CATEGORY,          // Revert from one to the next, etc.
     PBS_ALTERNATE,
+    PBS_PREV_MUSIC_SEGMENT,
     PBS_MUSIC_PROFILE
   } playback_state;
 
@@ -98,7 +103,7 @@ public:
   int intlength; // Length (seconds) that this segment is meant to play for. Calculated after "load_from_db" is called
   datetime dtmstart; // Time when this segment actually starts playing back (we try to keep our segment length constant, regardless of actual start time).
 
-  /// List of items to play during this segment.
+  /// List of items to play during this segment. 
   programming_element_list programming_elements;
   datetime dtmpel_updated; // When was the programming elements list last modified?
 
@@ -109,7 +114,7 @@ private:
   bool blnfirst_fetched; ///< Set to true when the first item is fetched. Helps
                          ///< logic for navigating the segment items.
 
-  int intnum_fetched;   ///< Number of items fetched so far. Used with intmax_items
+  int intnum_played;    ///< Number of items played so far. Used with intmax_items
                         ///< to limit the number of items played in a segment.
 
   // Functions which are used to operate on the above:

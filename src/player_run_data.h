@@ -55,9 +55,6 @@ public:
 
   /// Set to true when the player wants to reload the current segment (eg, a RPLS command was processed)
   bool blnforce_segment_reload;
-
-  /// The most recent music segment. Used when reverting down (instead of playing a music profile/default music)
-  long lngprev_music_seg;
 };
 
 #endif

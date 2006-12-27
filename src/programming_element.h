@@ -53,8 +53,11 @@ public:
   } promo;
 };
 
-// A list of programming elements (eg: an announcement batch):
+/// A list of programming elements (eg: an announcement batch)
 typedef deque <programming_element> programming_element_list;
+
+/// A global variable containing the previous music segment's programming element list
+extern programming_element_list prev_music_seg_pel;
 
 // A cache of programming element lists, used when we are in a hurry to get a playlist:
 // A class used by generate_playlist to remember recent programming element lists.

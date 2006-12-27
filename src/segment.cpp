@@ -3,6 +3,7 @@
 #include "music_history.h"
 #include "player_constants.h"
 #include "player_util.h"
+#include "programming_element.h"
 #include "common/dir_list.h"
 #include "common/exception.h"
 #include "common/file.h"
@@ -91,7 +92,7 @@ void segment::reset() {
   programming_elements.clear();
   next_item = programming_elements.begin();
   blnfirst_fetched = false;
-  intnum_fetched = 0;
+  intnum_played = 0;
 
   // Programming element list was updated in this function
   dtmpel_updated = now();
@@ -325,7 +326,7 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   if (!blnloaded) LOGIC_ERROR;
 
   // Have we already fetched the maximum allowed number of items for this segment?
-  if (intnum_fetched >= intmax_items) {
+  if (intnum_played >= intmax_items) {
     // We've feched the maximum number of allowed items. Tell the user & revert down.
     log_message("Have already played the maximum allowed number of items for this segment (" + itostr(intmax_items) + ")");
     revert_down(db, config, mp3tags, musichistory, blnasap); // This will also setup "next_item"
@@ -367,7 +368,6 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   // And now we've definitely returned the "first" item from the list if we hadn't
   // already:
   blnfirst_fetched = true; // Next time we will advance to the next item.
-  ++intnum_fetched;
 }
 
 bool segment::get_next_item_will_revert(string & strreason) {
@@ -379,7 +379,7 @@ bool segment::get_next_item_will_revert(string & strreason) {
   if (!blnloaded) LOGIC_ERROR;
 
   // Have we already fetched the maximum allowed number of items for this segment?
-  if (intnum_fetched >= intmax_items) {
+  if (intnum_played >= intmax_items) {
     // We've feched the maximum number of allowed items. This will cause a revert
     strreason = "only " + itostr(intmax_items) + " items are allowed in this segment";
     return true;
@@ -418,6 +418,12 @@ int segment::count_items_from_catagory(const seg_category cat) {
     i++;
   }
   return count;
+}
+
+void segment::item_played() {
+  // Let the class know that one of it's items was played (as opposed to just fetched)
+  // - eg, items can be fetched but not played (maybe they were already played recently,
+  ++intnum_played;
 }
 
 int myrand(const int & i) {
@@ -872,6 +878,20 @@ void segment::revert_down(pg_connection & db, const player_config & config, mp3_
         } catch_exceptions;
       } break;
       case PBS_ALTERNATE: {
+        playback_state = PBS_PREV_MUSIC_SEGMENT;
+        log_message("Reverting to the previous music segment's playlist");
+        if (prev_music_seg_pel.empty()) {
+          log_warning("Don't have the previous music segment's playlist, reverting to a music profile instead");
+        }
+        else {
+          try {
+            programming_elements = prev_music_seg_pel;
+            next_item = programming_elements.begin();
+            blndone = true;
+          } catch_exceptions
+        }
+      } break;
+      case PBS_PREV_MUSIC_SEGMENT: {
         log_message("Reverting to a Music Profile");
         playback_state = PBS_MUSIC_PROFILE;
         try {

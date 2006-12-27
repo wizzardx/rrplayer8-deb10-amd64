@@ -776,13 +776,6 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     }
   }
 
-  // If we are about to revert to a music profile, but have the previous user-scheduled music segment, then
-  // revert to the previous user-scheduled music segment instead:
-  if (lngfc_seg == -1 && run_data.lngprev_music_seg != -1) {
-    log_message("Going to play music from the most recent music segment");
-    lngfc_seg = run_data.lngprev_music_seg;
-  }
-
   // Has the current segment changed?
   // Or, does the system want to reload the segment data?
   // Or, has the current segment expired?
@@ -814,13 +807,14 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       " (" + format_datetime(run_data.current_segment.scheduled.dtmstart, "%T") +
       " - " + format_datetime(run_data.current_segment.scheduled.dtmend, "%T") +
       ", " + itostr(run_data.current_segment.scheduled.dtmend - run_data.current_segment.scheduled.dtmstart + 1) +
-      "s) of Format Clock  \"" + run_data.current_segment.fc.strname + "\" (id: " +
+      "s, " + run_data.current_segment.cat.strname + ") of Format Clock \"" +
+      run_data.current_segment.fc.strname + "\" (id: " +
       ltostr(run_data.current_segment.fc.lngfc) + ")");
 
     // If this is a user-scheduled music segment, then remember the programming
     // elements (used later for reverting  when we run out of items)
     if (lngfc_seg != -1 && run_data.current_segment.cat.cat == SCAT_MUSIC) {
-      run_data.lngprev_music_seg = lngfc_seg;
+      prev_music_seg_pel = run_data.current_segment.programming_elements;
     }
 
     // How far into the segment did we query for?

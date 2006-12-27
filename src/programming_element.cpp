@@ -28,6 +28,9 @@ void programming_element::reset() {
   promo.lngtz_slot = -1;
 }
 
+// A global variable containing the previous music segment's programming element list
+programming_element_list prev_music_seg_pel;
+
 // A cache of programming element lists, used when we are in a hurry to get a playlist:
 // A class used by generate_playlist to remember recent programming element lists.
 cpel_cache pel_cache; // Global variable for player storage of recent programming element lists
