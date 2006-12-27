@@ -45,6 +45,7 @@ public:
   struct fc {
     long lngfc;     // Database reference
     string strname; // Format Clock name.
+    int segments;   // How many segments are in the Format Clock;
   } fc;
 
   //  Information about the category & alternative category:
@@ -63,6 +64,7 @@ public:
 
   // Segment-specific info:
   long lngfc_seg; // Database id (reference to a tlkfc_seg record)
+  int intseg_no; // Segment number relative to the other segments. From 1 -> # segs in format clock
   enum seg_sequence {
     SSEQ_UNKNOWN,
     SSEQ_RANDOM,

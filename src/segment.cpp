@@ -34,6 +34,7 @@ void segment::reset() {
   // Information about the format clock:
   fc.lngfc   = -1;
   fc.strname = "";
+  fc.segments = -1;
 
   // Category
   cat.cat     = SCAT_UNKNOWN;
@@ -57,6 +58,7 @@ void segment::reset() {
 
   // Segment-specific info
   lngfc_seg           = -1;             // Reference to a tlkfc_seg record;
+  intseg_no           = -1;             // Which segment # in the format clock
   sequence            = SSEQ_UNKNOWN;   // Order to play items in.
   string strspecific_media = "";        // Media to play if the user chose Specific
   blnpromos           = false;          // Promos allowed in this segment?
@@ -250,6 +252,22 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
           tmall.tm_sec = tmmmss.tm_sec;
           scheduled.dtmend = mktime(&tmall);
         }
+      }
+
+      // Work out which segment this is out of all the segments (eg #5 of 10):
+      {
+        pg_result rs = db.exec("SELECT lngfc_seg FROM tblfc_seg WHERE lngfc = " + ltostr(fc.lngfc) + " ORDER BY dtmstart");
+        fc.segments = rs.size();
+        intseg_no = -1;
+        int i=1;
+        while (rs && intseg_no == -1) {
+          if (strtol(rs.field("lngfc_seg")) == lngfc_seg) {
+            intseg_no = i;
+          }
+          rs++;
+          i++;
+        }
+        if (intseg_no == -1) log_warning("Unable to check which segment number this is!");
       }
     }
   }
