@@ -809,7 +809,13 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     run_data.current_segment.load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags, m_music_history, blnasap);
 
     // Log more info about the segment we just loaded:
-    log_message("Loaded segment " + itostr(run_data.current_segment.intseg_no) + "/" + itostr(run_data.current_segment.fc.segments) + " (" + format_datetime(run_data.current_segment.scheduled.dtmstart, "%T") + " - " + format_datetime(run_data.current_segment.scheduled.dtmend, "%T") + ") of Format Clock  \"" + run_data.current_segment.fc.strname + "\" (id: " + ltostr(run_data.current_segment.fc.lngfc) + ")");
+    log_message("Loaded segment " + itostr(run_data.current_segment.intseg_no) +
+      "/" + itostr(run_data.current_segment.fc.segments) +
+      " (" + format_datetime(run_data.current_segment.scheduled.dtmstart, "%T") +
+      " - " + format_datetime(run_data.current_segment.scheduled.dtmend, "%T") +
+      ", " + itostr(run_data.current_segment.scheduled.dtmend - run_data.current_segment.scheduled.dtmstart + 1) +
+      "s) of Format Clock  \"" + run_data.current_segment.fc.strname + "\" (id: " +
+      ltostr(run_data.current_segment.fc.lngfc) + ")");
 
     // If this is a user-scheduled music segment, then remember the programming
     // elements (used later for reverting  when we run out of items)
