@@ -23,6 +23,7 @@ public:
   int intpromo_interrupt_ms;  ///< ms until the item (ie, music) will be interrupted to play a promo.
   int intrpls_interrupt_ms;   ///< ms until the item (ie, music) will be interrupted to go to the next
                               ///< song (when the user has run an RPLS and the current item is not in the new playlist)
+  int inthour_change_interrupt_ms; ///< ms until the item (ie, music) will be interrupted because the hour changed.
 };
 
 /// Structure for storing events that take place during a playback transition (see player::playback_transition)

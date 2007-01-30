@@ -60,6 +60,11 @@ void player::playback_transition(playback_events_info & playback_events) {
     int intitem_ends_ms = playback_events.intitem_ends_ms;
     intitem_ends_ms = MIN(intitem_ends_ms, playback_events.intpromo_interrupt_ms);
     intitem_ends_ms = MIN(intitem_ends_ms, playback_events.intrpls_interrupt_ms);
+    intitem_ends_ms = MIN(intitem_ends_ms, playback_events.inthour_change_interrupt_ms);
+
+    // And set a flag if our current item is ging to be interrupted:
+    bool blninterrupt = intitem_ends_ms != playback_events.intitem_ends_ms;
+
     // Current item going to end soon? (either naturally, or due to interruption by a promo)
     if (intitem_ends_ms < intnext_playback_safety_margin_ms) {
       // Yes. Prepare for a transition between the current item and the next item
@@ -85,11 +90,12 @@ void player::playback_transition(playback_events_info & playback_events) {
       // 2) Never when the current or next item is a promo
       // 3) Never when going between Linin and Linein
       // 4) Never when going between 2 CD tracks
+      // 5) Never when the current item is being interrupted to play something else
       //
       //    OTHERWISE:
       //
-      // 5) The current segment allows crossfades AND
-      // 6) The 2 items have the same category as the segment (ie: Not for promos that happen to
+      // 6) The current segment allows crossfades AND
+      // 7) The 2 items have the same category as the segment (ie: Not for promos that happen to
       //    play during a music segment)
 
       // Break up the logic:
@@ -127,16 +133,20 @@ void player::playback_transition(playback_events_info & playback_events) {
           // 4) Never when going between 2 CD tracks:
           !blncdtrack_to_cdtrack_transition &&
 
+          // 5) Never when the current item is being interrupted to play something else
+          !blninterrupt &&
+
           // OTHERWISE:
-          // 5) The current segment allows crossfades AND
+          // 6) The current segment allows crossfades AND
           run_data.current_segment.blncrossfading &&
 
-          // 6)  The 2 items have the same category segment
+          // 7)  The 2 items have the same category segment
           blnitem_categories_match_segment;
 
-        // TEMPORARY HACK: Always crossfade if one of the items is music:
-        if (run_data.current_item.cat == SCAT_MUSIC ||
-            run_data.next_item.cat == SCAT_MUSIC) {
+        // TEMPORARY HACK: Always crossfade if one of the items is music **AND** we're not interrupting the current item
+        // (Ugly, Ugly hack!):
+        if ((run_data.current_item.cat == SCAT_MUSIC ||
+            run_data.next_item.cat == SCAT_MUSIC) && !blninterrupt) {
             log_line("HACK: One of the items is music, so crossfading");
             blncrossfade = true;
         }
@@ -174,14 +184,26 @@ void player::playback_transition(playback_events_info & playback_events) {
         //  - Only if we have the current item
         //  - Only if the current item is music
         //  - Not if the next item is music but crossfading is disabled
+        //  *evil hack*: Always when interrupting an item (even if the item is not music)
         if (run_data.current_item.blnloaded &&
-            run_data.current_item.cat == SCAT_MUSIC &&
-            !(run_data.next_item.cat == SCAT_MUSIC &&
-              !blncrossfade)) {
+            blninterrupt || 
+             (run_data.current_item.cat == SCAT_MUSIC &&
+             !(run_data.next_item.cat == SCAT_MUSIC && !blncrossfade))) {
           // Setup the current item fade-out:
           // This starts at ([current item end] - [crossfade length]), and continues for [crossfade length]
           // HACK: No fade-outs:
           log_line("HACK: No fading out allowed.");
+
+          // HACK the HACK:
+          // Except when we're interrupting the current item
+          // (argh: Seriously need to work on the crossfade logic. This is *really* messy)
+          if (blninterrupt) {
+            log_line("HACK: Nevermind, we're interrupting the current item, so fading it out");
+            queue_volslide(events, "current", 100, 0, intitem_ends_ms - config.intcrossfade_length_ms, config.intcrossfade_length_ms);
+            if (!blncrossfade) log_message("The current item will fade out");
+            blnfade = true; // This transition includes a fade
+          }
+           
 //          queue_volslide(events, "current", 100, 0, intitem_ends_ms - config.intcrossfade_length_ms, config.intcrossfade_length_ms);
 //          if (!blncrossfade) log_message("The current item will fade out");
 //          blnfade = true; // This transition includes a fade
