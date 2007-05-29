@@ -1,0 +1,5 @@
+cpp_common library, version 1.0.2
+
+C++ libraries developed by David Purdy.
+
+Originally apps symlinked to these files, but now with separate per-project git checkouts, apps can each get their own copy of this set of libraries and not waste space in a central repository.

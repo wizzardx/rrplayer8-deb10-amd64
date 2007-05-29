@@ -3,7 +3,7 @@
   <general>
     <author>David Purdy</author>
     <email>david@radioretail.co.za</email>
-    <version>7.27</version>
+    <version>7.28</version>
     <projectmanagement>KDevAutoProject</projectmanagement>
     <primarylanguage>C++</primarylanguage>
     <keywords>
@@ -15,6 +15,7 @@
     <projectdirectory>.</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
     <description/>
+    <projectname>player</projectname>
   </general>
   <kdevautoproject>
     <general>
@@ -179,7 +180,7 @@
     <AUTHOR>David Purdy</AUTHOR>
     <EMAIL>david@radioretail.co.za</EMAIL>
     <LICENSE>Custom</LICENSE>
-    <VERSION>7.27</VERSION>
+    <VERSION>7.28</VERSION>
     <YEAR>2005</YEAR>
     <dest>/home/radman/david_stuff/development/player</dest>
   </substmap>
@@ -201,6 +202,21 @@
       <codeCompletionDelay>250</codeCompletionDelay>
       <argumentsHintDelay>400</argumentsHintDelay>
       <headerCompletionDelay>250</headerCompletionDelay>
+      <showOnlyAccessibleItems>false</showOnlyAccessibleItems>
+      <completionBoxItemOrder>0</completionBoxItemOrder>
+      <howEvaluationContextMenu>true</howEvaluationContextMenu>
+      <showCommentWithArgumentHint>true</showCommentWithArgumentHint>
+      <statusBarTypeEvaluation>false</statusBarTypeEvaluation>
+      <namespaceAliases>std=_GLIBCXX_STD;__gnu_cxx=std</namespaceAliases>
+      <processPrimaryTypes>true</processPrimaryTypes>
+      <processFunctionArguments>false</processFunctionArguments>
+      <preProcessAllHeaders>false</preProcessAllHeaders>
+      <parseMissingHeaders>false</parseMissingHeaders>
+      <resolveIncludePaths>true</resolveIncludePaths>
+      <alwaysParseInBackground>true</alwaysParseInBackground>
+      <usePermanentCaching>true</usePermanentCaching>
+      <alwaysIncludeNamespaces>false</alwaysIncludeNamespaces>
+      <includePaths>.;</includePaths>
     </codecompletion>
     <creategettersetter>
       <prefixGet/>
@@ -214,7 +230,12 @@
     <qt>
       <used>false</used>
       <version>3</version>
-      <root/>
+      <root></root>
+      <includestyle>3</includestyle>
+      <designerintegration>EmbeddedKDevDesigner</designerintegration>
+      <qmake></qmake>
+      <designer></designer>
+      <designerpluginpaths/>
     </qt>
   </kdevcppsupport>
   <kdevdebugger>
