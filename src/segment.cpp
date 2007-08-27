@@ -1118,6 +1118,19 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       string source_dir, source_file;
       break_down_file_path(strsource, source_dir, source_file);
 
+      // Also remove doubled slashes (the Wizard puts these in sometimes, and
+      // this messes with our query. Also, canonicalize_file_name() is
+      // inappropriate because we don't want to resolve symbolic links):
+      {
+        unsigned int dblslash_pos = 1;
+        do {
+          dblslash_pos = source_dir.find("//", 0);
+          if (dblslash_pos != source_dir.npos) {
+            source_dir = replace(source_dir, "//", "/");
+          }
+        } while (dblslash_pos != source_dir.npos);
+      }
+
       // Directory is under the format clock dir?
       if (left(source_dir, FORMAT_CLOCK_DIR.length()) == FORMAT_CLOCK_DIR) {
         // Yes. Require that the MP3 is listed in format clock media table,
