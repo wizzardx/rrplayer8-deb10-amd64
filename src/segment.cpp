@@ -976,6 +976,26 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
   // Bomb out if our recursion level is too low (ie, this function was called incorrectly)
   if (intrecursion_level < 0) LOGIC_ERROR;
 
+  // Prepare a query to fetch relevant files from tblfc_media.
+  // - This query is used in different places below
+  // - You still need to add appropriate WHERE (eg strfile and/or lngsub_cat)
+  //   and any required ORDER BY
+  string strrelevant_fc_media_sql = "";
+  {
+    string strsql_date = "'" + format_datetime(date(), "%F") + "'"; // Current date, in psql form.
+    string strsql = "SELECT strfile FROM tblfc_media WHERE "
+      "COALESCE(dtmrelevant_until, '9999-12-25') >= " + strsql_date;
+      // Now modify the query, using the Max Age and Premature segment settings.
+      if (!blnpremature) { // blnpremature means ignore relevant from
+        strsql += " AND COALESCE(dtmrelevant_from, '0000-01-01') <= " + strsql_date;
+      }
+
+      if (blnmax_age) { // Max age means maximum # of days after dtmrelevant_from that the media will be played.
+        strsql += " AND COALESCE(dtmrelevant_from, '9999-12-25') + " + itostr(intmax_age - 1) + " >= " + strsql_date;
+      }
+      strrelevant_fc_media_sql = strsql;
+  }
+
   // LineIn or CD-ROM?
   if (lcase(strsource) == "linein") {      // LineIn?
     file_list.push_back("LineIn");
@@ -1016,21 +1036,8 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       long lngfc_sub_cat = strtol(rs.field("lngfc_sub_cat"));
 
       // A format clock sub-category directory. Fetch relevant MP3s from the database:
-      string strsql_date = "'" + format_datetime(date(), "%F") + "'"; // Current date, in psql form.
-      string strsql = "SELECT strfile FROM tblfc_media WHERE "
-                      "lngsub_cat = " + ltostr(lngfc_sub_cat) + " AND "
-                      "COALESCE(dtmrelevant_until, '9999-12-25') >= " + strsql_date;
-      // Now modify the query, using the Max Age and Premature segment settings.
-      if (!blnpremature) { // blnpremature means ignore relevant from
-        strsql += " AND COALESCE(dtmrelevant_from, '0000-01-01') <= " + strsql_date;
-      }
-
-      if (blnmax_age) { // Max age means maximum # of days after dtmrelevant_from that the media will be played.
-        strsql += " AND COALESCE(dtmrelevant_from, '9999-12-25') + " + itostr(intmax_age - 1) + " >= " + strsql_date;
-      }
-
-      // Order the media by filename:
-      strsql += " ORDER BY strfile";
+      strsql = strrelevant_fc_media_sql;
+      strsql += " AND lngsub_cat = " + ltostr(lngfc_sub_cat) + " ORDER BY strfile";
       pg_result rs = db.exec(strsql);
 
       // Did we get anything?
@@ -1101,8 +1108,63 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
     // What is the file extension?
     string strext=lcase(right(strsource, 4));
     if (strext==".mp3") {
-      // An MP3 file. Add it to the list:
-      file_list.push_back(strsource);
+      // An MP3 file. Check if we can use it (not for Format Clock
+      // media which is not relevant at the moment, or which isn't listed
+      // in the format clock media table):
+      bool blnusemp3 = true; // Set to false if the MP3 cannot be used
+      const string FORMAT_CLOCK_DIR = "/data/radio_retail/stores_software/data/fc/";
+
+      // Break source into dir and filename:
+      string source_dir, source_file;
+      break_down_file_path(strsource, source_dir, source_file);
+
+      // Directory is under the format clock dir?
+      if (left(source_dir, FORMAT_CLOCK_DIR.length()) == FORMAT_CLOCK_DIR) {
+        // Yes. Require that the MP3 is listed in format clock media table,
+        // and that it is relevant
+
+        // Grab the tblf_sub_cat record for this MP3:
+        string strsql = "SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE strdir = " + psql_str(source_dir);
+        pg_result rs = db.exec(strsql);
+        if (!rs) {
+          log_warning("Skipping Format Clock media \"" + strsource + "\". Reason: Could not find directory \"" + source_dir + "\" in table tlkfc_sub_cat");
+          blnusemp3 = false;
+        }
+        else {
+          // Got the sub-category primary key, now fetch a record for the format clock
+          // item (but only if it is valid):
+          long lngfc_sub_cat = strtoi(rs.field("lngfc_sub_cat"));
+          string strsql = strrelevant_fc_media_sql;
+          strsql += " AND lngsub_cat = " + ltostr(lngfc_sub_cat);
+          strsql += " AND strfile = " + psql_str(source_file);
+          pg_result rs = db.exec(strsql);
+          if (!rs) {
+            // Record not found in the db.
+            // - So we don't include it in the playlist:
+            blnusemp3 = false;
+            // - Determine the exact reason for the file not being included
+            //   in the playlist (either not listed, or not relevant):
+            string strreason = "";
+            string strsql = "SELECT strfile FROM tblfc_media WHERE lngsub_cat = " + itostr(lngfc_sub_cat) + " AND strfile = " + psql_str(source_file);
+            pg_result rs = db.exec(strsql);
+            if (rs) {
+              // Record exists. ie the reason for skipping is because it is not relevant at the moment
+              strreason = "Media is not relevant at this time";
+            }
+            else {
+              // Record does not exist.
+              strreason = "Media is not listed in the database (in tblfc_media)";
+            }
+            log_warning("Skipping Format Clock media \"" + strsource + "\". Reason: " + strreason);
+          }
+        }
+      }
+
+      // Add the MP3 to the list if there wasn't a problem with it
+      // (ie: format clock media either not listed in the db, or not relevant)
+      if (blnusemp3) {
+        file_list.push_back(strsource);
+      }
     }
     else if (strext==".m3u") {
       // A M3U file. Are we at our recursion level?

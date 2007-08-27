@@ -3,6 +3,8 @@ aclocal.m4
 autom4te.cache
 config.h.in
 configure
+debug
 optimized
 player.kdevelop.pcs
 player.kdevses
+rrdebian/data/data/radio_retail/progs/player/player
