@@ -437,6 +437,8 @@ void player::playback_transition(playback_events_info & playback_events) {
               int intsession = run_data.get_xmms_used(SU_FG);
               // Set volume appropriately:
               xmmsc::xmms[intsession].setvol((get_pe_vol(item->strvol) * intpercent)/100);
+              // Also set the XMMS pre-amp:
+              xmmsc::xmms[intsession].set_eq_preamp(store_status.volumes.dblxmmseqpreamp);
 
               // Set volume of music bed also if it is active now:
               {

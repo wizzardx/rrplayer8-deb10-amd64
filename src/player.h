@@ -85,6 +85,7 @@ private:
        int intmusic;    ///< Has hourly adjustment vol added
        int intannounce; ///< Has music volume (adjusted) added.
        int intlinein;   ///< Just the value from tbldefs
+       double dblxmmseqpreamp; ///< XMMS equalizer pre-amp (some stores need a lot of signal amp)
      } volumes;
   } store_status;
   void load_store_status(const bool blnverbose = false, const bool blnforceload = false); ///< Update the current store status

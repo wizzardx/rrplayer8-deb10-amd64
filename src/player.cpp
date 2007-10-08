@@ -285,6 +285,7 @@ void player::reset() {
   store_status.volumes.intmusic    = -1;
   store_status.volumes.intannounce = -1;
   store_status.volumes.intlinein   = -1;
+  store_status.volumes.dblxmmseqpreamp = -1;
 
   // Debugging output:
   blndebug = false;
@@ -477,6 +478,7 @@ void player::load_store_status(const bool blnverbose, const bool blnforceload) {
     store_status.volumes.intmusic    = 0;
     store_status.volumes.intannounce = 0;
     store_status.volumes.intlinein   = 0;
+    store_status.volumes.dblxmmseqpreamp = 0;
   }
   else {
     // Store is open now. Fetch the current store volumes.
@@ -504,6 +506,9 @@ void player::load_store_status(const bool blnverbose, const bool blnforceload) {
 
     // Fetch the linein volume:
     store_status.volumes.intlinein   = strtoi(load_tbldefs(db, "intLineInVol", "255", "int"));
+
+    // Fetch the XMMS equalizer pre-amp (some stores need a lot of signal amp)
+    store_status.volumes.dblxmmseqpreamp = strtod(load_tbldefs(db, "fltXMMSEqPreAmp", "0.0", "flt", "XMMS Equalizer Pre-amp (db)"));
 
     // Convert all volumes to a %
     #define CONVERT_255_100(X) X=((X*100)/255)
@@ -554,6 +559,9 @@ void player::update_output_volumes() {
     // An exception will be thrown if the current item does not use XMMS:
     int intsession = run_data.get_xmms_used(SU_CURRENT_FG);
     xmmsc::xmms[intsession].setvol(get_pe_vol(run_data.current_item.strvol));
+
+    // Also set the XMMS pre-gain appropriately:
+    xmmsc::xmms[intsession].set_eq_preamp(store_status.volumes.dblxmmseqpreamp);
 
     // Set volume of music bed also if it is active now:
     {
