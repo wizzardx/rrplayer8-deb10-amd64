@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# Player postrm - Stop the Player:
-
-set -e              # Quit immediately if there are errors
-(killall -q -9 -w player) # Kill the Player. Brackets to ignore errors
-
-exit 0

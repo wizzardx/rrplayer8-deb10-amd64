@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# This script gets run by build-rr-deb before the .deb file is created.
-set -e
-
-# Copy the Player binary & strip debugging info:
-cp ../optimized/src/player ./data/data/radio_retail/progs/player/
-strip --strip-unneeded ./data/data/radio_retail/progs/player/player

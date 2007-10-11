@@ -16,6 +16,7 @@ set -e
 
 case "$1" in
     install|upgrade)
+    	killall -q -9 -w player || true # Kill the Player.
     ;;
 
     abort-upgrade)

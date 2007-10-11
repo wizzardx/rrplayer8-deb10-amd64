@@ -4,7 +4,11 @@ autom4te.cache
 config.h.in
 configure
 debug
+html
+latex
 optimized
 player.kdevelop.pcs
 player.kdevses
-rrdebian/data/data/radio_retail/progs/player/player
+player.tag
+tags
+xml
