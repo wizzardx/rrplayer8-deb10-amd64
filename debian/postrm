@@ -21,7 +21,14 @@ set -e
 
 case "$1" in
     purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-    	killall -q -9 -w player || true
+        # Don't kill the player if invoke-rc.d has been disabled:
+	# (we're checking rc.local because there isn't an init.d script for the player)
+	(invoke-rc.d --query rc.local stop); RET=$?
+	if [ $RET -eq 101 ]; then
+	    echo "WARNING: Not killing the player because invoke-rc.d stop has been disabled."
+	else
+	    killall -q -9 -w player || true
+	fi
     ;;
 
     *)
