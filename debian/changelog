@@ -1,3 +1,9 @@
+rrplayer-fc (7.31.1) unstable; urgency=low
+
+  * Maintainer scripts now run invoke-rc.d checks on makedev, not rc.local
+
+ -- David Purdy <david@radioretail.co.za>  Wed, 17 Oct 2007 11:51:37 +0200
+
 rrplayer-fc (7.31) unstable; urgency=low
 
   * Initial Release.

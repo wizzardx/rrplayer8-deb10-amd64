@@ -36,8 +36,8 @@ case "$1" in
         rm -f /data/radio_retail/progs/player/mp3_tags.txt
 
         # Don't startup the player if invoke-rc.d has been disabled (eg: piuparts is running):
-	# (we're checking rc.local because there isn't an init.d script for the player)
-	(invoke-rc.d --query rc.local restart); RET=$?
+	# (we're checking makedev because there isn't an init.d script for the player)
+	(invoke-rc.d --query makedev restart); RET=$?
 	if [ $RET -eq 104 ]; then
 	    killall -9 -q -w player || true
 	    su radman -c "/data/radio_retail/progs/player/player &> /dev/null < /dev/null &" # Start the player as radman
