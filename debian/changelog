@@ -1,3 +1,10 @@
+rrplayer-fc (7.32) unstable; urgency=low
+
+  * Optimized playlist-pruning logic
+  * Now using hash_set<string> instead of my old "string_hash_set" class
+
+ -- David Purdy <david@radioretail.co.za>  Thu, 25 Oct 2007 13:38:09 +0200
+
 rrplayer-fc (7.31.1) unstable; urgency=low
 
   * Maintainer scripts now run invoke-rc.d checks on makedev, not rc.local
