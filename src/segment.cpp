@@ -657,16 +657,18 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   {
     filter_monitor fm(file_list, "duplicate (file)");
     vector<string>::iterator i = file_list.begin();
+    hash_set<string> unique_fnames;
     while (i != file_list.end()) {
       string strfile = lcase(get_short_filename(*i));
-      vector <string>::iterator j = i + 1;
-      while (j != file_list.end()) {
-        if (lcase(get_short_filename(*j)) == strfile)
-          j == file_list.erase(j);
-        else
-          j++;
+      // Fname already seen?
+      if (unique_fnames.find(strfile) == unique_fnames.end()) {
+        // Not seen yet
+        unique_fnames.insert(strfile);
+        i++;
+      } else {
+        // Already seen:
+        i = file_list.erase(i);
       }
-      i++;
     }
   }
 
@@ -674,16 +676,18 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   {
     filter_monitor fm(file_list, "duplicate (description)");
     vector<string>::iterator i = file_list.begin();
+    hash_set<string> unique_descrs;
     while (i != file_list.end()) {
       string strdescr = trim(lcase(mp3tags.get_mp3_description(*i)));
-      vector <string>::iterator j = i + 1;
-      while (j != file_list.end()) {
-        if (trim(lcase(mp3tags.get_mp3_description(*j))) == strdescr)
-          j == file_list.erase(j);
-        else
-          j++;
+      // Description already seen?
+      if (unique_descrs.find(strdescr) == unique_descrs.end()) {
+        // Not seen yet
+        unique_descrs.insert(strdescr);
+        i++;
+      } else {
+        // Already seen:
+        i = file_list.erase(i);
       }
-      i++;
     }
   }
 
