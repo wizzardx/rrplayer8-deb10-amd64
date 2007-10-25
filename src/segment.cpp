@@ -10,12 +10,12 @@
 #include "common/my_string.h"
 #include "common/psql.h"
 #include "common/rr_misc.h"
-#include "common/string_hash_set.h"
 #include "common/string_splitter.h"
 #include <fstream>
 #include <linux/cdrom.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <ext/hash_set>
 
 using namespace std;
 
@@ -631,7 +631,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
     pg_result rs = db.exec(strsql);
     // Now load all the "disabled" mp3s into memory, use this list for a more efficient "playlist culling"
     // process
-    string_hash_set disabled_mp3s;
+    hash_set<string> disabled_mp3s;
 
     while (rs) {
       try {
@@ -647,7 +647,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
     // We've loaded all the "disabled" mp3 paths. Now remove them from the playlist.
     vector<string>::iterator file = file_list.begin();
     while(file != file_list.end())
-      if (key_in_string_hash_set(disabled_mp3s, *file))
+      if (disabled_mp3s.find(*file) != disabled_mp3s.end())
         file = file_list.erase(file);
       else
         ++file;

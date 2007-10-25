@@ -3,7 +3,6 @@
 #include "player.h"
 #include "common/exception.h"
 #include "common/file.h"
-#include "common/string_hash_set.h"
 #include "common/string_splitter.h"
 #include "common/my_string.h"
 #include "common/temp_dir.h"

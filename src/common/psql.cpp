@@ -6,8 +6,8 @@
 #include "my_string.h"
 #include "logging.h"
 
-#include <pqxx/transaction.h>
-#include <pqxx/nontransaction.h>
+#include <pqxx/transaction>
+#include <pqxx/nontransaction>
 
 /********************************************************************************************
           A Connection wrapper
@@ -134,7 +134,7 @@ pg_result pg_connection::exec(const string & strsql) { // An exception is thrown
 
   // Attempt to execute the query
   try {
-    pg_result RS(ptransaction->Exec(strsql));
+    pg_result RS(ptransaction->exec(strsql));
     RS.strsql=strsql; // Also store the SQL that generated the recordset...
     return RS;
   } catch (const exception & e) {
@@ -187,17 +187,17 @@ void pg_connection::establish_connection() {
     try {
       // If the connection object pointer is not set, then attempt to create a new connection...
       if (pconn == NULL) {
-        pconn = new Connection(strconn);
+        pconn = new pqxx::connection(strconn);
       }
       // If the transaction object pointer is not set, then attempt to create a new transaction...
       if (ptransaction == NULL) {
         if (blnauto_commit) {
           // Queries will be written directly to the backend
-          ptransaction = new NonTransaction(*pconn);
+          ptransaction = new pqxx::nontransaction(*pconn);
         }
         else {
           // You have to run a "commit" to send changes to the backend.
-          ptransaction = new Transaction(*pconn);
+          ptransaction = new pqxx::work(*pconn);
         }
       }
 
@@ -289,11 +289,11 @@ void pg_connection::set_auto_commit_mode(const bool autocommit) {
 
       if (blnauto_commit) {
         // Queries will be written directly to the backend
-        ptransaction = new NonTransaction(*pconn);
+        ptransaction = new pqxx::nontransaction(*pconn);
       }
       else {
         // You have to run a "commit" to send changes to the backend.
-        ptransaction = new Transaction(*pconn);
+        ptransaction = new pqxx::work(*pconn);
       }
     }
   }
@@ -306,7 +306,7 @@ void pg_connection::set_auto_commit_mode(const bool autocommit) {
 pg_result::pg_result(const pg_result & pg_res) {
   presult = NULL;
   introw_num = 1;
-  presult = new Result(*(pg_res.presult));
+  presult = new pqxx::result(*(pg_res.presult));
   strsql = pg_res.strsql;
 }
 
@@ -322,7 +322,7 @@ pg_result& pg_result::operator=(const pg_result & pg_res) {
 
     // Now create a new Result pointer...
     introw_num = 1;
-    presult = new Result(*(pg_res.presult));
+    presult = new pqxx::result(*(pg_res.presult));
     strsql=pg_res.strsql;
   } // end self-assignment check.
 
@@ -344,7 +344,7 @@ pg_result::~pg_result() {
 string pg_result::field(const string & strfield_name, const char * strdefault_val) const {
   // Rethrows exceptions. The re-thrown exceptions also get this file, function, and a nearby line.
   try {
-    const Result::Field & field = (*presult).at(introw_num-1).at(strfield_name);
+    const pqxx::result::field & field = (*presult).at(introw_num-1).at(strfield_name);
     if ((field.is_null()) || (field.c_str() == NULL)) {
       if (strdefault_val == NULL) {
         // The field is NULL and there is no alternate value to return!
@@ -369,7 +369,7 @@ string pg_result::field(const string & strfield_name, const char * strdefault_va
 bool pg_result::field_is_null(const string & strfield) const {
   // Rethrows exceptions
   try {
-    const Result::Field & field = (*presult).at(introw_num-1).at(strfield);
+    const pqxx::result::field & field = (*presult).at(introw_num-1).at(strfield);
     return field.is_null();
   }
   catch (const exception &e) {
@@ -385,9 +385,9 @@ void pg_result::operator ++(int) { // Move to the next record
 }
 
 // A constructor that can only be called by friend class pg_transaction
-pg_result::pg_result(const pqxx::Result res) {
+pg_result::pg_result(const pqxx::result res) {
   introw_num = 1;
-  presult = new Result(res);
+  presult = new pqxx::result(res);
 }
 
 // This is basically a Connection wrapper. When you create it, it creates a new database
@@ -419,14 +419,14 @@ pg_result pg_transaction::exec(const string & strquery) {
 // Committing the transaction:
 void pg_transaction::commit() {
   if (connection.ptransaction == NULL) my_throw("Transaction is not setup!");
-  connection.ptransaction->Commit();
+  connection.ptransaction->commit();
   blncommited = true;
 }
 
 // Aborting the transaction:
 void pg_transaction::abort() {
   if (connection.ptransaction == NULL) my_throw("Transaction is not setup!");
-  connection.ptransaction->Abort();
+  connection.ptransaction->abort();
   blnaborted = true;
 }
 

@@ -13,19 +13,25 @@
 #ifndef PSQL_H
 #define PSQL_H
 
-#include <pqxx/connection.h>
-#include <pqxx/transactionitf.h>
-#include <pqxx/result.h>
+#include <pqxx/connection>
+#include <pqxx/transaction_base>
+#include <pqxx/result>
+
+//#include <pqxx/connection.hxx>
+//#include <pqxx/transaction_base.hxx>
+//#include <pqxx/result.hxx>
 
 #include <string>
 #include "my_time.h"
 
 using namespace std;
-using namespace pqxx;
+//using namespace pqxx;
 
 /***************************************************************************************
           A Connection wrapper
 ***************************************************************************************/
+
+class pg_result; // Forward declaration
 
 // Abstract base class for pg_connection and pg_transaction. Used to allow passing objects of either
 // type to functions that only need to call the "exec" method:
@@ -69,8 +75,8 @@ public:
   void call_on_connect_error(void(*func)());
 private:
   string strconn; ///< Connection string to the database;
-  Connection * pconn; ///< The wrapped libpqxx Connection object.
-  TransactionItf * ptransaction; ///< The current transaction.
+  pqxx::connection * pconn; ///< The wrapped libpqxx Connection object.
+  pqxx::transaction_base * ptransaction; ///< The current transaction.
 
   /// Client code's callback function to call when there are connect errors:
   typedef void (callback_func)();
@@ -141,10 +147,10 @@ private:
   friend class pg_connection;
 
   /// Constructor to create a pg_result object from a Result object:
-  pg_result(const pqxx::Result res);
+  pg_result(const pqxx::result res);
 
   int introw_num;
-  Result * presult;
+  pqxx::result * presult;
   string strsql; ///< The query which was executed to create this result.
 };
 

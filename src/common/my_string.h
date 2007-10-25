@@ -5,6 +5,7 @@
 #define MY_STRING_H
 
 #include <string>
+#include <ext/hash_fun.h>
 
 using namespace std;
 
@@ -71,5 +72,19 @@ string unquote_string(const string & str, const char chquote);
 // Last-character handling
 string remove_last_char(const string & str, const char c); ///< Remove last char if it matches
 string ensure_last_char(const string & str, const char c); ///< Add char to end if not found
+
+// Declaration to allow us to use strings with non-standard STL templates:
+// (hash_set, hash_map, etc). Copied from
+// http://forums.devshed.com/c-programming-42/tip-about-stl-hash-map-and-string-55093.html
+namespace __gnu_cxx
+{
+  template<> struct hash< std::string >
+  {
+    size_t operator()( const std::string& x ) const
+    {
+      return hash< const char* >()( x.c_str() );
+    }
+  };
+}
 
 #endif
