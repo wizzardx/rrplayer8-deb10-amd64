@@ -12,6 +12,7 @@
 #include "common/rr_misc.h"
 #include "common/string_splitter.h"
 #include <fstream>
+#include <iostream>
 #include <linux/cdrom.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -482,9 +483,14 @@ void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags,
 
       // Proceed through recently-played music:
       history_list_type::const_iterator mp3_iter = history_list.begin(); // Start at the most recently-played file
+      int missing_count = 0; // Number of missing recently-played files
       while (mp3_iter != history_list.end()) {
         if (!file_exists(*mp3_iter)) {
-          log_warning("Recently-played file not found, can't check the artist: " + *mp3_iter);
+          missing_count++;
+          // Output the below to the cout, but not to the log file
+          // (it can be distracting for people checking the log file after they
+          // just moved music around)
+          cerr << "WARNING: Recently-played file not found, can't check the artist: " << *mp3_iter << endl;
         }
         else {
           string strartist = lcase(trim(mp3tags.get_mp3_artist(*mp3_iter)));
@@ -494,6 +500,13 @@ void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags,
           }
         }
         mp3_iter++; // Check the next MP3 (ie, less-recently-played)
+      }
+      if (missing_count > 0) {
+        string strplural1 = (missing_count == 1 ? "" : "s");
+        string strplural2 = (missing_count == 1 ? "it's" : "their");
+        log_warning(itostr(missing_count) + " recently-played song" +
+          strplural1 + " could not be found so I couldn't check " + strplural2 +
+          " artist!");
       }
     }
 
