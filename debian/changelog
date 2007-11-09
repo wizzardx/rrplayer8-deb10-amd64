@@ -1,3 +1,10 @@
+rrplayer-fc (7.33) unstable; urgency=low
+
+  * No longer logging "Recently-played file not found" messages to the player
+    log. Logging a summary instead. Original messages sent to stderr instead.
+
+ -- David Purdy <david@radioretail.co.za>  Fri, 09 Nov 2007 11:52:44 +0200
+
 rrplayer-fc (7.32) unstable; urgency=low
 
   * Optimized playlist-pruning logic
