@@ -1,3 +1,10 @@
+rrplayer-fc (7.34) unstable; urgency=low
+
+  * Now anticipating the start of the next hour (when checking upcoming
+    playback-related events) instead of reacting to it immediately afterwards.
+
+ -- David Purdy <david@radioretail.co.za>  Mon, 12 Nov 2007 16:16:57 +0200
+
 rrplayer-fc (7.33) unstable; urgency=low
 
   * No longer logging "Recently-played file not found" messages to the player
