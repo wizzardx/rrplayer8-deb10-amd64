@@ -1130,13 +1130,10 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   }
 
   // Interrupt the current item (regardless of type) when the hour changes:
-  static datetime dtmlast_checked = now();
-  if (dtmlast_checked/(60*60) != now()/(60*60)) {
-    log_message("Hour has changed, current item will be interrupted so the next Format Clock can start immediately.");
-    event_info.inthour_change_interrupt_ms = intinterrupt_promo_delay;
-    dtmlast_checked = now();
-  }
-  
+  // -> Here we calculate the # of milliseconds between now and the start of
+  //    the next hour:
+  event_info.inthour_change_interrupt_ms = 1000 * ((60*60) - (now() % (60*60)));
+
   // If we're playing linein or silence, then check for the next item:
   if (run_data.current_item.blnloaded &&
       run_data.current_item.strmedia == "LineIn" || run_data.current_item.cat == SCAT_SILENCE) {
