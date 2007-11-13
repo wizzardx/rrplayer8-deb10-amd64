@@ -609,7 +609,18 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
   // Also handle all segment timing (eg: last segment played for too long, etc.
 
   // Fetch the "real" time when the next item will start playing (in seconds):
-  datetime dtmnext_starts = now() + intstarts_ms/1000;
+  // - We take the current exact time, add the milliseconds until the start of
+  //   the next item, then truncate to seconds precision. Our "segment delay
+  //   factor" logic prevents any format clock time from being unaccounted for
+  //   due to rounding issues.
+  datetime dtmnext_starts = datetime_error;
+  {
+    timeval tvnow;
+    gettimeofday(&tvnow, NULL);
+    tvnow.tv_usec += (intstarts_ms * 1000);
+    normalise_timeval(tvnow);
+    dtmnext_starts = tvnow.tv_sec;
+  }
 
   // Work out the current delays.
 
