@@ -1132,7 +1132,13 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   // Interrupt the current item (regardless of type) when the hour changes:
   // -> Here we calculate the # of milliseconds between now and the start of
   //    the next hour:
-  event_info.inthour_change_interrupt_ms = 1000 * ((60*60) - (now() % (60*60)));
+
+  // - How many ms into the current hour?
+  timeval tvnow;
+  gettimeofday(&tvnow, NULL);
+  int ms_into_hour = ((tvnow.tv_sec % (60*60)) * 1000) + (tvnow.tv_usec / 1000);
+  // - ms until the start of the next segment?
+  event_info.inthour_change_interrupt_ms = (60*60*1000) - ms_into_hour;
 
   // If we're playing linein or silence, then check for the next item:
   if (run_data.current_item.blnloaded &&
