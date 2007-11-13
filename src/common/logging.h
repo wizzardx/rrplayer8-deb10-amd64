@@ -61,7 +61,7 @@ extern clogging logging;
 // Formatting log_info records into human-readable strings:
 
 /// The default log format. Passed to the format_log() function
-const string strstandard_log_format = "[%DATE %TIME] %TYPE_NOT_LOG%MESSAGE%SOURCE_ERROR";
+const string strstandard_log_format = "[%DATE %TIME_MS] %TYPE_NOT_LOG%MESSAGE%SOURCE_ERROR";
 
 /// Display the contents of a log_info record in a string, in the specified format
 string format_log(const log_info & log_info, const string strformat);

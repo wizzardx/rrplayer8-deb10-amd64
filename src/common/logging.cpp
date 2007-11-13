@@ -75,11 +75,23 @@ string format_log(const log_info & log_info, const string strformat) {
     default: LOGIC_ERROR;
   }
 
+  // Get a string representation of the time:
+  string strtime = format_datetime(now(), "%H:%M:%S");
+  // Get a string representation of the time, including milliseconds:
+  string strtime_ms;
+  {
+    timeval tvnow;
+    gettimeofday(&tvnow, NULL);
+    strtime_ms = strtime + "," + pad_left(itostr(tvnow.tv_usec / 1000), '0', 3);
+  }
+
+  // Now perform log string formatting:
   string strret = strformat;
   strret=replace(strret, "%DEFAULT", strformat); // %DEFAULT is for when the user does not specify a format.
   strret=replace(strret, "%SOURCE_ERROR", ((log_info.LT == LT_ERROR) ? " (%FILE:%LINE)": ""));
   strret=replace(strret, "%DATE", format_datetime(now(), "%Y-%m-%d"));
-  strret=replace(strret, "%TIME", format_datetime(now(), "%H:%M:%S"));
+  strret=replace(strret, "%TIME_MS", strtime_ms);
+  strret=replace(strret, "%TIME", strtime);
   strret=replace(strret, "%FILE", log_info.strfile);
   strret=replace(strret, "%FUNCTION", log_info.strfunc);
   strret=replace(strret, "%LINE", itostr(log_info.intline));
