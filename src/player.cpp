@@ -103,8 +103,10 @@ void player::run() {
   while (true) {
     bool blnsuccess = false; // Set to true at the end of each iteration where no exceptions are trapped
     try {
-      // Sleep 1 second
-      sleep (1);
+      // Sleep until the next second arrives (ie, usually less than 1000ms)
+      timeval tvnow;
+      gettimeofday(&tvnow, NULL);
+      usleep(1000000 - tvnow.tv_usec);
 
       // Check playback status of XMMS, LineIn, etc. Throw errors here if there is something wrong.
       check_playback_status();
