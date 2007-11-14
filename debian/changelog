@@ -1,3 +1,11 @@
+rrplayer-fc (7.35) unstable; urgency=low
+
+  * Fixed problems transitioning from one hour to the next
+  * Event timing is now more precise (less millisecond truncation)
+  * Log message timestamps now include timestamps
+
+ -- David Purdy <david@radioretail.co.za>  Wed, 14 Nov 2007 09:15:11 +0200
+
 rrplayer-fc (7.34) unstable; urgency=low
 
   * Now anticipating the start of the next hour (when checking upcoming
