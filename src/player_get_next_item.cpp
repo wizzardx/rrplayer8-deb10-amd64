@@ -660,43 +660,58 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
     }
   }
 
-  // Check here: has the hour changed?
-  // If it has, then we reset the current segment delay factor.
+  // Have we crossed into the next hour, or will we do so by the time the next
+  // item starts?
+  bool blnhour_change = false;
   {
-    static datetime dtmlast_checked = datetime_error;
+    long lngnext_item_hour = dtmnext_starts / (60*60);
+    static long lnglast_check_hour = lngnext_item_hour; // The hour when we last checked
 
-    // Has the hour changed?
-    datetime dtmnow = now();
+    // Hour change?
+    blnhour_change = lngnext_item_hour != lnglast_check_hour;
+    lnglast_check_hour = lngnext_item_hour; // Now wait until the hour changes again
+  }
 
-    if (dtmlast_checked != datetime_error && dtmlast_checked/(60*60) != dtmnow/(60*60) && run_data.intsegment_delay != 0) {
+  // Did we detect an hour change?
+  if (blnhour_change) {
+    // Hour change detected
+    log_line("Hour change detected: Next item starts at " + format_datetime(dtmnext_starts, "%T"));
+
+    // If necessary we cut off part of our segment delay so that we will start
+    // fetching items from the start of the next hour instead of the previous
+    // hour:
+    // - Work out the maximum allowed segment delay at this point:
+    int intmax_seg_delay = dtmnext_starts % (60*60); // # of seconds into the hour of the next item
+
+    // - Does our current segment delay need to be truncated?
+    if (run_data.intsegment_delay > intmax_seg_delay) {
+      // Yes. Do so
       // Don't bother logging warnings if format clocks are disabled:
       if (config.blnformat_clocks_enabled) {
-        log_warning("Hour has changed. Resetting segment delay (currently: " + itostr(run_data.intsegment_delay) + "s)");
-        log_warning("All segments that were scheduled to play between '" + format_datetime(dtmnext_starts - run_data.intsegment_delay, "%T") + "' and '" + format_datetime((dtmnext_starts) - 1, "%T") + "' will be missed!");
+        log_warning("Segment delay needs to be shortened from " + itostr(run_data.intsegment_delay) + "s to " + itostr(intmax_seg_delay) + "s");
+        log_warning("All segments that were scheduled to play between " + format_datetime(dtmnext_starts - run_data.intsegment_delay, "%T") +  " and " + format_datetime(dtmnext_starts - intmax_seg_delay - 1, "%T") + " will be missed!");
       }
-      run_data.intsegment_delay = 0;
+      run_data.intsegment_delay = intmax_seg_delay;
     }
-
-    // We've done the check now (or not, if this is the first time the function was called)
-    // Wait until the next hour:
-    dtmlast_checked = dtmnow;
   }
 
   // And now get our "delayed" time, the time in the past at which we fetch format clock data
   datetime dtmdelayed = dtmnext_starts - run_data.intsegment_delay;
 
-  // Clamp "delayed" time to the current hour (ie, don't allow it drift into the
-  // next hour, or somehow go into the previous hour):
-  datetime dtmhour_start = (now() / (60*60)) * (60*60);
-  datetime dtmhour_end   = dtmhour_start + (60*60) - 1;
+  // If we didn't just detect an hour change, then make sure that our
+  // segment delay factor does not drift outside the current hour:
+  if (!blnhour_change) {
+    datetime dtmhour_start = (now() / (60*60)) * (60*60);
+    datetime dtmhour_end   = dtmhour_start + (60*60) - 1;
 
-  if (dtmdelayed > dtmhour_end) {
-    log_warning("Segment delay has drifted past the end of the current hour. Clamping to the end of this hour.");
-    dtmdelayed = dtmhour_end;
-  }
-  else if (dtmdelayed < dtmhour_start) {
-    log_warning("Segment delay has somehow ended up before the start of the current hour (this shouldn't be possible). Clamping to the start of this hour.");
-    dtmdelayed = dtmhour_start;
+    if (dtmdelayed > dtmhour_end) {
+      log_warning("Segment delay has drifted past the end of the current hour. Clamping to the end of this hour.");
+      dtmdelayed = dtmhour_end;
+    }
+    else if (dtmdelayed < dtmhour_start) {
+      log_warning("Segment delay has somehow ended up before the start of the current hour (this shouldn't be possible). Clamping to the start of this hour.");
+      dtmdelayed = dtmhour_start;
+    }
   }
 
   // Reset info currently in the item:
