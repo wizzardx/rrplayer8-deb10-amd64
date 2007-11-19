@@ -806,7 +806,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
   // Or, does the system want to reload the segment data?
   // Or, has the current segment expired?
 
-  // - 'Segment expired' means that the a segment's time has run out.
+  // - 'Segment expired' means that the segment's time has run out.
   bool blnsegment_expired = dtmnext_starts > (run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1);
 
   if (!run_data.current_segment.blnloaded ||

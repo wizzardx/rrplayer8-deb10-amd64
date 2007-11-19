@@ -1,6 +1,8 @@
 
 #include "programming_element.h"
-#include "common/testing.h"
+#include "common/file.h"
+#include "common/logging.h"
+#include "common/my_string.h"
 
 // Constructor
 programming_element::programming_element() {
@@ -26,6 +28,52 @@ void programming_element::reset() {
   music_bed.already_handled.blnstart = false;
   music_bed.already_handled.blnstop = false;
   promo.lngtz_slot = -1;
+  end.blnloaded = false;
+  end.intlength_ms = -1;
+  end.intend_silence_start_ms = -1;
+  end.blndynamically_compressed = false;
+  end.intend_quiet_start_ms = -1;
+  end.blnends_with_fade = false;
+}
+
+// Load information about the mp3 end from the database (tblinstore_media)
+void programming_element::load_end(pg_connection & db) {
+  // Some basic checks:
+  if (end.blnloaded) {
+    log_warning("Ending info for " + strmedia + " already loaded");
+    return;
+  }
+  if (strmedia == "LineIn") {
+    log_warning("Not loading ending details for " + strmedia);
+    return;
+  }
+  if (lcase(right(strmedia, 4)) != ".mp3") {
+    log_warning("Not loading ending details for non-mp3 " + strmedia);
+    return;
+  }
+  // Look for ending info in tblinstore_media:
+  // - Split the file into dirname and basename:
+  string strdirname, strbasename;
+  break_down_file_path(strmedia, strdirname, strbasename);
+  // - Query:
+  pg_result rs = db.exec("SELECT intlength_ms, intend_silence_start_ms, "
+    "blndynamically_compressed, intend_quiet_start_ms, blnends_with_fade "
+    "FROM tblinstore_media JOIN tblinstore_media_dir USING "
+    "(lnginstore_media_dir) WHERE strdir = " + psql_str(strdirname) + " AND "
+    "strfile = " + psql_str(strbasename) + " AND intlength_ms IS NOT NULL");
+  if (!rs) {
+    log_warning("No information for end of " + strmedia + " in database!");
+    return;
+  }
+  // We found information, so load it:
+  end.intlength_ms = strtoi(rs.field("intlength_ms", "-1"));
+  end.intend_silence_start_ms = strtoi(rs.field("intend_silence_start_ms", "-1"));
+  end.intlength_ms = strtoi(rs.field("intlength_ms", "-1"));
+  end.intend_silence_start_ms = strtoi(rs.field("intend_silence_start_ms", "-1"));
+  end.blndynamically_compressed = strtobool(rs.field("blndynamically_compressed", "f"));
+  end.intend_quiet_start_ms = strtoi(rs.field("intend_quiet_start_ms", "-1"));
+  end.blnends_with_fade = strtobool(rs.field("blnends_with_fade", "f"));
+  end.blnloaded = true;
 }
 
 // A global variable containing the previous music segment's programming element list
@@ -83,3 +131,4 @@ void cpel_cache::tidy() {
     }
   }
 }
+

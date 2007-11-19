@@ -7,6 +7,7 @@
 #include <string>
 #include "categories.h"
 #include "common/my_time.h"
+#include "common/psql.h"
 
 using namespace std;
 
@@ -38,8 +39,6 @@ public:
     int intlength_ms;    // How long the underlying music will play for before being stopped. Default: -1 (end when the item ends, or when the underlying music ends. No repeat)
                          // If the length is left at INT_MAX, then we don't know the length (eg: silence or linein).
 
-
-
     // For music bed events in an item that were already handled (ie, during the crossfade from the previous item to this item.
     struct already_handled {
       bool blnstart;
@@ -51,6 +50,20 @@ public:
   struct promo {
     long lngtz_slot; // When we're done playing the item we update the database.
   } promo;
+
+  // Extra information about the end of the mp3:
+  struct end {
+    bool blnloaded; // Has this info been loaded?
+    int intlength_ms; // Length of the item in ms
+    int intend_silence_start_ms; // Where the silence at the end of the item starts, in ms
+    bool blndynamically_compressed; // Was the item's range dynamically compressed?
+                                    // - If not then we can't make reasonable
+                                    //   volume-related guesses about the end
+                                    //   of the song
+    int intend_quiet_start_ms; // When does the end of the song start to go quiet/fade?
+    bool blnends_with_fade; // Does the item end with a drawn-out fade?
+  } end;
+  void load_end(pg_connection & db);
 };
 
 /// A list of programming elements (eg: an announcement batch)

@@ -363,8 +363,14 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   // Check: Do we have a "next" item to return?
   if (next_item == programming_elements.end()) LOGIC_ERROR; // This should never happen...
 
-  // Now return it:
+  // Prepare to return it:
   pe = *next_item;
+
+  // If it is a song then load additional mp3 ending details from tblinstore_media,
+  // if available:
+  if (pe.cat == SCAT_MUSIC) {
+    pe.load_end(db);
+  }
 
   // And now we've definitely returned the "first" item from the list if we hadn't
   // already:
