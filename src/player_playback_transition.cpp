@@ -252,24 +252,25 @@ void player::playback_transition(playback_events_info & playback_events) {
 
         // Log a message if no fade will take place during this transition:
         if (!blncrossfade && !blnfade) log_message("No fades during this transition");
+
+        // Add an event to stop the current item (if it's currently loaded).
+        // This is now necessary because we need to end some songs before XMMS
+        // finishes playing them (eg, when the last few seconds are silent
+        if (run_data.current_item.blnloaded) {
+          queue_event(events, "stop_current_item", intitem_ends_ms);
+        }
+
+        // Sort the queue.
+        sort (events.begin(), events.end(), transition_event_less_than);
+
+        // Add a "next becomes current" event which takes place, after all the other events:
+        // - This releases the resources of the "current" item, and switches the "next" item over to
+        //   the "current" item
+        {
+          transition_event last_event = events.back();
+          queue_event(events, "next_becomes_current", last_event.intrun_ms + 1);
+        }
       }
-    }
-
-    // Add an event to check that the current item has finished playing. More important, now
-    // that we are phasing out crossfading (the current item always ended after a crossfade)
-    if (intitem_ends_ms > 0) {
-      queue_event(events, "check_current_item_finished", intitem_ends_ms + 1);
-    }
-
-    // Sort the queue.
-    sort (events.begin(), events.end(), transition_event_less_than);
-
-    // Add a "next becomes current" event which takes place, after all the other events:
-    // - This releases the resources of the "current" item, and switches the "next" item over to
-    //   the "current" item
-    {
-      transition_event last_event = events.back();
-      queue_event(events, "next_becomes_current", last_event.intrun_ms + 1);
     }
 
     // These are used to track the volumes set by "setvol_next" and "setvol_current". Needed so we know what
@@ -565,18 +566,26 @@ void player::playback_transition(playback_events_info & playback_events) {
           // played recently)
           run_data.current_segment.item_played();
         }
-        else if (strcmd == "check_current_item_finished") {
+        else if (strcmd == "stop_current_item") {
           // This only really applies to XMMS
           if (!run_data.current_item.blnloaded) LOGIC_ERROR;
           if (run_data.current_item.strmedia != "LineIn") {
             // If not playing linein then playing XMMS.
             int intsession = run_data.get_xmms_used(SU_CURRENT_FG);
             if (xmmsc::xmms[intsession].playing()) {
-              log_warning("XMMS session " + itostr(intsession) + " is still playing the current item, it should be stopped by now!");
+              // How long until XMMS would normally finish playing the song?
+              int intxmms_song_pos_ms    = xmmsc::xmms[intsession].get_song_pos_ms();
+              int intxmms_song_length_ms = xmmsc::xmms[intsession].get_song_length_ms();
+              int inttime_ms = intxmms_song_length_ms - intxmms_song_pos_ms;
+              // Now log the stopping message:
+              log_line("Stopping XMMS session " + itostr(intsession) + " (" + itostr(inttime_ms) + " ms before the MP3 end)");
+              xmmsc::xmms[intsession].stop();
             }
             else {
-              log_line("XMMS session " + itostr(intsession) + " finished playing the current item");
+              log_line("XMMS session " + itostr(intsession) + " stopped by itself");
             }
+            // Now mark the stopped XMMS session as unused, so it can be re-used:
+            run_data.set_xmms_usage(intsession, SU_UNUSED);
           }
         }
         else if (strcmd == "next_becomes_current") {
