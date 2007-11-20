@@ -77,14 +77,23 @@ void player_run_data::set_xmms_usage(const int intsession, const sound_usage sou
   if (sound_usage == SU_UNUSED) {
     // We're marking an XMMS session as unused.
     // Is the session already unused?
-    if (xmms_usage[intsession] == SU_UNUSED) my_throw("XMMS session was already free, why free it again?");
+    if (xmms_usage[intsession] == SU_UNUSED) {
+      my_throw("XMMS session " + itostr(intsession) + " was already free, why free it again?");
+    }
+    // Is xmms still playing?
+    if (xmmsc::xmms[intsession].playing()) {
+      my_throw("XMMS session " + itostr(intsession) + " was still playing when it was marked as unused!");
+    }
+
     // So mark it as unused.
     xmms_usage[intsession] = SU_UNUSED;
   }
   else {
     // We're marking an XMMS session as used.
     // Is the session marked as used by something else?
-    if (xmms_usage[intsession] != SU_UNUSED) my_throw("Cannot allocate an XMMS session, it is already allocated!");
+    if (xmms_usage[intsession] != SU_UNUSED) {
+      my_throw("Cannot allocate XMMS session " + itostr(intsession) + ", it is already allocated!");
+    }
     // Is this "usage" already allocated for something else?
     if (sound_usage_allocated(sound_usage)) my_throw("There is already a sound allocation for this 'usage', cannot make another allocation!");
     // Everything checks out. So mark the XMMS session as used:
@@ -153,11 +162,15 @@ void player_run_data::next_becomes_current() {
         // "setup_next" handler in player_playback_transition.cpp
       }
       else {
-        // Current item used XMMS. So Stop it's XMMS (it probably already is, but do it anyway).
-        int intsession = get_xmms_used(SU_CURRENT_FG);
-        xmmsc::xmms[intsession].stop();
-        // Free it also:
-        set_xmms_usage(intsession, SU_UNUSED);
+        // Current item used XMMS. It should have already been stopped by the
+        // time this function runs.
+        int intsession = -1;
+        try {
+          intsession = get_xmms_used(SU_CURRENT_FG);
+        } catch(...) {}
+        if (intsession != -1) {
+          my_throw("Current item's XMMS session (" + itostr(intsession) + ") should have been freed earlier!");
+        }
       }
     }
 
