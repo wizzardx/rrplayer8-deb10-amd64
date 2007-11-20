@@ -3,7 +3,7 @@
   <general>
     <author>David Purdy</author>
     <email>david@radioretail.co.za</email>
-    <version>7.35</version>
+    <version>7.36</version>
     <projectmanagement>KDevAutoProject</projectmanagement>
     <primarylanguage>C++</primarylanguage>
     <keywords>

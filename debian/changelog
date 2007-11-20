@@ -1,3 +1,9 @@
+rrplayer-fc (7.36) unstable; urgency=low
+
+  * Implemented Stefans requested end-of-song transition changes
+
+ -- David Purdy <david@radioretail.co.za>  Tue, 20 Nov 2007 14:00:56 +0200
+
 rrplayer-fc (7.35) unstable; urgency=low
 
   * Fixed problems transitioning from one hour to the next
