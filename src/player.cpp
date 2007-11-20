@@ -1056,6 +1056,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   bool blnlinein_used = run_data.uses_linein(SU_CURRENT_FG);
   int intxmms_song_length_ms = -1;
   int intxmms_song_pos_ms = -1;
+  string stritem_ends_descr = "Item ends"; // Default description for the item end
 
   if (!blnlinein_used && run_data.current_item.cat != SCAT_SILENCE) {
     // XMMS is being used to play this item.
@@ -1063,7 +1064,56 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
     intxmms_song_pos_ms    = xmmsc::xmms[intxmms_session].get_song_pos_ms();
     intxmms_song_length_ms = xmmsc::xmms[intxmms_session].get_song_length_ms();
 
-    event_info.intitem_ends_ms = intxmms_song_length_ms - intxmms_song_pos_ms;
+    // Default to assuming the item ends when XMMS gets to the end of the item:
+    int intend_ms = intxmms_song_length_ms;
+
+    // For songs we check the end more closely (if we have the info):
+    if (run_data.current_item.cat == SCAT_MUSIC &&
+        run_data.current_item.end.blnloaded) {
+      // Ending information is available, so we might end the song early.
+      // Check that XMMS's end matches the end recorded in the DB fairly closely:
+      int intdiff = abs(intxmms_song_length_ms - run_data.current_item.end.intlength_ms);
+      if (intdiff > 500) {
+        log_warning("XMMS says that " + run_data.current_item.strmedia + " is " + itostr(intxmms_song_length_ms) + " ms long, but the DB says it is " + itostr(run_data.current_item.end.intlength_ms) + " ms");
+      }
+
+      // Log a warning if the item is dynamically compressed:
+      if (!run_data.current_item.end.blndynamically_compressed) {
+        // Not dynamically range compressed
+        log_warning("It looks like " + run_data.current_item.strmedia + " is not dynamically range compressed, so I can't tell if it ends suddenly.");
+      }
+
+      // If the song becomes silent towards the end, then assume that the
+      // item ends there (until we decide it's okay to use the quiet end
+      // instead)
+      if (run_data.current_item.end.intend_silence_start_ms != -1 &&
+          run_data.current_item.end.intend_silence_start_ms < intend_ms) {
+        stritem_ends_descr = "Item goes silent";
+        intend_ms = run_data.current_item.end.intend_silence_start_ms;
+      }
+
+      // Now check if we end when the song starts getting quiet
+      // - Does the song fade out gradually?
+      if (run_data.current_item.end.blnends_with_fade) {
+        // In this case we stop the song when it starts getting quiet.
+        if (run_data.current_item.end.intend_quiet_start_ms != -1 &&
+            run_data.current_item.end.intend_quiet_start_ms < intend_ms) {
+          // We have a quiet start, and it is sooner than the ends we know
+          // about so far.
+          stritem_ends_descr = "Item goes quiet";
+          intend_ms = run_data.current_item.end.intend_quiet_start_ms;
+        }
+        else {
+          // The item fades out (according to rrmedia-maintenance), but we
+          // don't have a valid time for when it becomes quiet!
+          log_warning("Current item apparently fades out, but I don't know when it starts going quiet!");
+        }
+      }
+    }
+
+    // We now know where item playback should end:
+    event_info.intitem_ends_ms = intend_ms - intxmms_song_pos_ms;
+
     // Does this item have a music bed?
     if (run_data.current_item.blnmusic_bed) {
       // Music bed start:
@@ -1085,7 +1135,8 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   }
 
   // Is this item going to be interrupted to play promos? (ie, item is music, the segment allows promos, and there are waiting promos)
-  if (run_data.current_item.cat == SCAT_MUSIC && !run_data.next_item.blnloaded) {
+  if (run_data.current_item.cat == SCAT_MUSIC &&
+      !run_data.next_item.blnloaded) {
     // Current item is Music. Check if there are promos to play
 
     // Check if there is a promo that wants to play now (and is allowed to)
@@ -1183,15 +1234,21 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   // Find out when the "next" event is going to take place. This is simply the smallest
   // "ms" figure that has already been found.
   event_info.intnext_ms = event_info.intitem_ends_ms;
+  event_info.strnext_descr = stritem_ends_descr;
 
   // Define a macro which sets A to B if B is lower.
-  #define MY_SET_MIN(A,B) if (A > B) A = B
-  MY_SET_MIN(event_info.intnext_ms, event_info.intmusic_bed_starts_ms);
-  MY_SET_MIN(event_info.intnext_ms, event_info.intmusic_bed_ends_ms);
-  MY_SET_MIN(event_info.intnext_ms, event_info.intpromo_interrupt_ms);
-  MY_SET_MIN(event_info.intnext_ms, event_info.intrpls_interrupt_ms);
-  MY_SET_MIN(event_info.intnext_ms, event_info.inthour_change_interrupt_ms);
-  #undef MY_SET_MIN
+  #define COMPARE_NEXT_WITH(MS, DESCR) { \
+    if (MS < event_info.intitem_ends_ms) { \
+      event_info.intnext_ms = MS; \
+      event_info.strnext_descr = DESCR; \
+    } \
+  }
+  COMPARE_NEXT_WITH(event_info.intmusic_bed_starts_ms, "Music bed starts");
+  COMPARE_NEXT_WITH(event_info.intnext_ms, "Music bed ends");
+  COMPARE_NEXT_WITH(event_info.intnext_ms, "Interrupted by promo");
+  COMPARE_NEXT_WITH(event_info.intnext_ms, "Interrupted by playlist change");
+  COMPARE_NEXT_WITH(event_info.intnext_ms, "Interrupted by hour change");
+  #undef COMPARE_NEXT_WITH
 }
 
 int player::get_pe_vol(const string & strpe_vol) {

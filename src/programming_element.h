@@ -61,7 +61,7 @@ public:
                                     //   volume-related guesses about the end
                                     //   of the song
     int intend_quiet_start_ms; // When does the end of the song start to go quiet/fade?
-    bool blnends_with_fade; // Does the item end with a drawn-out fade?
+    bool blnends_with_fade; // Does the item end with a drawn-out fade? (otherwise, it ends suddenly)
   } end;
   void load_end(pg_connection & db);
 };

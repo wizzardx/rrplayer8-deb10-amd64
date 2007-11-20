@@ -74,6 +74,11 @@ void programming_element::load_end(pg_connection & db) {
   end.intend_quiet_start_ms = strtoi(rs.field("intend_quiet_start_ms", "-1"));
   end.blnends_with_fade = strtobool(rs.field("blnends_with_fade", "f"));
   end.blnloaded = true;
+
+  // Log a warning at this point if the mp3 is a song and not dynamically compressed;
+  if (cat == SCAT_MUSIC && !end.blndynamically_compressed) {
+    log_warning("Song " + strmedia + " is not dynamically range compressed! I can't tell if it gradually fades out.");
+  }
 }
 
 // A global variable containing the previous music segment's programming element list

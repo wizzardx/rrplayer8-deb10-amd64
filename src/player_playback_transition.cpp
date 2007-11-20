@@ -149,6 +149,15 @@ void player::playback_transition(playback_events_info & playback_events) {
             run_data.next_item.cat == SCAT_MUSIC) && !blninterrupt) {
             log_line("HACK: One of the items is music, so crossfading");
             blncrossfade = true;
+            // Hack on top of that one: If the current item's ends suddenly
+            // (as determined by rrmedia-maintenance), then we don't
+            // crossfade. The next item will start immediately after the
+            // current item ends, instead.
+            if (run_data.current_item.end.blnloaded &&
+                !run_data.current_item.end.blnends_with_fade) {
+              log_line("HACK: Nevermind. The current item ends suddenly, so we won't crossfade");
+              blncrossfade = false;
+            }
         }
 
         // Log whether we are going to crossfade:
@@ -165,12 +174,38 @@ void player::playback_transition(playback_events_info & playback_events) {
         // Is the current item available?
         if (run_data.current_item.blnloaded) {
           // Yes. Are we going to crossfade?
-          if (blncrossfade)
+          if (blncrossfade) {
             // Yes. Next item starts just after [current item end] - [crossfade length]
-            intnext_item_start_ms = intitem_ends_ms - config.intcrossfade_length_ms + 1;
-          else
+            int intcrossfade_length = config.intcrossfade_length_ms;
+            // If the current item is a song, and it fades out gradually, then
+            // we should overlap for 1 second only (as per Stefan's request)
+            // instead of whatever the player is configured for
+            if (run_data.current_item.cat == SCAT_MUSIC &&
+                run_data.current_item.end.blnloaded &&
+                run_data.current_item.end.blnends_with_fade &&
+                config.intcrossfade_length_ms != 1000) {
+              log_message("The current item is a song which fades out gradually, so I will crossfade for 1000 ms instead of the configured " + itostr(config.intcrossfade_length_ms) + " ms");
+              intcrossfade_length = 1000;
+            }
+            intnext_item_start_ms = intitem_ends_ms - intcrossfade_length + 1;
+          }
+          else {
             // No. Next item starts just after the current item ends
-            intnext_item_start_ms = intitem_ends_ms + 1;
+
+            // Is the current item a song which ends suddenly?
+            if (run_data.current_item.cat == SCAT_MUSIC &&
+                run_data.current_item.end.blnloaded &&
+                !run_data.current_item.end.blnends_with_fade &&
+                run_data.current_item.end.blndynamically_compressed) {
+              // Yes. Start the next song in half a second, as requested by Stefan:
+              log_message("Current song ends suddenly, so the next item will start 500 ms after it ends");
+              intnext_item_start_ms = intitem_ends_ms + 500;
+            }
+            else {
+              // Nope. Start the next song immediately:
+              intnext_item_start_ms = intitem_ends_ms + 1;
+            }
+          }
         }
         else {
           // Current item is not available. Next item starts immediately.
@@ -203,7 +238,20 @@ void player::playback_transition(playback_events_info & playback_events) {
             if (!blncrossfade) log_message("The current item will fade out");
             blnfade = true; // This transition includes a fade
           }
-           
+
+          // Another hack: If the item is music and fades out by itself over a
+          // longish period, then it will be too quiet to hear over the last part
+          // so we need to fade it out earlier.
+          if (!blnfade &&
+              run_data.current_item.cat == SCAT_MUSIC &&
+              run_data.current_item.end.blnloaded &&
+              run_data.current_item.end.blnends_with_fade) {
+            log_line("HACK: Nevermind. It looks like the current item is a song with a long, drawn-out fade, so we will fade it out for 2.5s just before it starts going quiet");
+            queue_volslide(events, "current", 100, 0, intitem_ends_ms - 2500, 2500);
+            if (!blncrossfade) log_message("The current item will fade out");
+            blnfade = true; // This transition includes a fade
+          }
+
 //          queue_volslide(events, "current", 100, 0, intitem_ends_ms - config.intcrossfade_length_ms, config.intcrossfade_length_ms);
 //          if (!blncrossfade) log_message("The current item will fade out");
 //          blnfade = true; // This transition includes a fade

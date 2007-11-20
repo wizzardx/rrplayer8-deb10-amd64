@@ -15,9 +15,10 @@
 class playback_events_info {
 public:
   playback_events_info(); ///< Constructor
-  void reset(); ///< Reset attributes back to default values.
-  int intnext_ms;      ///< ms until the next event happens
-  int intitem_ends_ms; ///< ms until the current item ends
+  void reset();           ///< Reset attributes back to default values.
+  int intnext_ms;         ///< ms until the next event happens
+  string strnext_descr;   ///< Short description of the next event
+  int intitem_ends_ms;    ///< ms until the current item ends
   int intmusic_bed_starts_ms; ///< ms until the music bed starts playing
   int intmusic_bed_ends_ms;   ///< ms until the music bed stops playing.
   int intpromo_interrupt_ms;  ///< ms until the item (ie, music) will be interrupted to play a promo.
