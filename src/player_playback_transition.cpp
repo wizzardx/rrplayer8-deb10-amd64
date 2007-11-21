@@ -148,16 +148,16 @@ void player::playback_transition(playback_events_info & playback_events) {
         if ((run_data.current_item.cat == SCAT_MUSIC ||
             run_data.next_item.cat == SCAT_MUSIC) && !blninterrupt) {
             log_line("HACK: One of the items is music, so crossfading");
-            blncrossfade = true;
-            // Hack on top of that one: If the current item's ends suddenly
-            // (as determined by rrmedia-maintenance), then we don't
-            // crossfade. The next item will start immediately after the
-            // current item ends, instead.
-            if (run_data.current_item.end.blnloaded &&
-                !run_data.current_item.end.blnends_with_fade) {
-              log_line("HACK: Nevermind. The current item ends suddenly, so we won't crossfade");
-              blncrossfade = false;
-            }
+          blncrossfade = true;
+          // Hack on top of that one: If the current item's ends suddenly
+          // (as determined by rrmedia-maintenance), then we don't
+          // crossfade. The next item will start immediately after the
+          // current item ends, instead.
+          if (run_data.current_item.end.blnloaded &&
+              !run_data.current_item.end.blnends_with_fade) {
+            log_line("HACK: Nevermind. The current item ends suddenly, so we won't crossfade");
+            blncrossfade = false;
+          }
         }
 
         // Log whether we are going to crossfade:
