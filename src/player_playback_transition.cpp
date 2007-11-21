@@ -158,6 +158,15 @@ void player::playback_transition(playback_events_info & playback_events) {
             log_line("HACK: Nevermind. The current item ends suddenly, so we won't crossfade");
             blncrossfade = false;
           }
+          // Another hack to this evilness:
+          // - Stefan: Don't crossfade if one of the items (current or next)
+          //           is an advert [aka promo]:
+          if (blncrossfade &&
+              (run_data.current_item.cat == SCAT_PROMOS ||
+                run_data.next_item.cat == SCAT_PROMOS)) {
+            log_line("HACK: Nevermind. One of the items is a promo, so we won't crossfade");
+            blncrossfade = false;
+          }
         }
 
         // Log whether we are going to crossfade:
