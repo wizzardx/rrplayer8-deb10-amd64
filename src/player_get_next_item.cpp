@@ -118,12 +118,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   // Correct announcements that were previously interrupted during playback...
   correct_waiting_promos();
 
-  // Declare the list of items to be played. This list is used mainly for
-  // Checking that ads to play do not have the same mp3 or catagory.
-  TWaitingAnnouncements AnnounceList;
-  TWaitingAnnouncements AnnounceMissed_SameVoice; // These are the announcements missed because the
-                                                  // previous announcement had the same announcer
-
   // Calculate the date and time that the caller wants ads from:
   datetime dtmplayback = now() + intstarts_ms/1000;
   datetime dtmplayback_date = get_datetime_date(dtmplayback);
@@ -317,91 +311,37 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     }
   }
 
-  // 6.14: This loop is now where announcement limiting takes place
-  while (RS && AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
-    string strdbPos, scPriority, scPriorityConv, scFileName, tmplngTZslot, strProductCat, strPlayAtPercent, strAnnCode;
-    datetime dtmTime;
+  // Process the re-ordered list of items from the database, and build the list
+  // of ads to actually be played in this batch:
+  TWaitingAnnouncements AnnounceList; // Ads to be played in the next batch
+  TWaitingAnnouncements AnnounceMissed_SameVoice; // These are the announcements missed because the
+                                                  // previous announcement had the same announcer
 
-    strdbPos = strProductCat = scPriority = scPriorityConv = scFileName
-             = strPlayAtPercent = strAnnCode = "";
+  TWaitingAnnouncements::iterator reordered_iter = reordered_db_announcements.begin();
+  while (reordered_iter != reordered_db_announcements.end()
+         && AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
 
-    strdbPos         = RS.field("lngTZ_Slot", "");
-    strProductCat    = RS.field("strProductCat", "");
-
-    dtmTime          = parse_psql_time(RS.field("dtmForcePlayAt", RS.field("dtmStart", "").c_str()));
-
-    // Check: Do we set the "Forced time advert" flag?
-    bool blnForcedTime = !RS.field_is_null("dtmForcePlayAt");
-
-    scPriority       = RS.field("strPriorityOriginal", "");
-    scPriorityConv   = RS.field("strPriorityConverted", "");
-    scFileName       = lcase(RS.field("strFileName", ""));
-    strPlayAtPercent = RS.field("strPlayAtPercent", "");
-    strAnnCode       = RS.field("strAnnCode", "");
-
-    // v6.14.3 - PAYB stuff:
-    string strPrerecMediaRef = lcase(RS.field("strprerec_mediaref", ""));
-    bool blnCheckPrerecLifespan = (RS.field("bitcheck_prerec_lifespan", "0") == "1");
-
-    // Interpret strPlayAtPercent
-    if (isint(strPlayAtPercent)) {
-      // Clip the value from 0 to 100
-      if (strtoi(strPlayAtPercent) > 100) {
-        testing;
-        strPlayAtPercent="100";
-      }
-      else if (strtoi(strPlayAtPercent) < 0) {
-        testing;
-        strPlayAtPercent = "0";
-      }
-    }
-    else {
-      testing;
-      // Convert playback volume percentage to upper case
-      strPlayAtPercent = ucase(strPlayAtPercent);
-
-      if (strPlayAtPercent != "MUS" && strPlayAtPercent != "ADV") {
-        testing;
-        strPlayAtPercent = "100";
-      }
-    }
-
-    // Get the path of the announcement that wants to play now, it's actual filename at that path, and whether the file exists
-    // on the system...
-    string strFilePath = "";
-    string strFilePrefix = lcase(substr(scFileName, 0, 2));
-
-    if (strFilePrefix == "ca") {
-      strFilePath = config.dirs.strannouncements; // Announcements
-    }
-    else if (strFilePrefix == "sp") {
-      strFilePath = config.dirs.strspecials; // Specials
-    } else if (strFilePrefix == "ad") {
-      strFilePath = config.dirs.stradverts; // Adverts
-    }
-    else {
-      log_error ("Advert filename " + scFileName + " has an unknown prefix " + strFilePrefix);
-      strFilePath = config.dirs.strmp3; // Default to the music folder
-    }
-
-    string strActualFileName = "";   // This is the filename of a matching file (matching meaning there
-                                     // is a case-non-sensitive match of filenames
-
+    // Skip items with problems:
     bool blnSkipItem = false; // Set to true if the announcement is to be skipped
 
-    if (!file_existsi(strFilePath, scFileName, strActualFileName)) {
-      // MP3 not found. Is there an encrypted version of the file instead?
-      if (!file_existsi(strFilePath, scFileName + ".rrcrypt", strActualFileName)) {
-        // Nope, there isn't an encrypted version either.
-        log_error("Could not find announcement MP3: " + strFilePath + scFileName);
-        blnSkipItem = true;
+    // - Skip non-existant files:
+    {
+      string strActualFileName = ""; // This is the filename of a matching file
+                                     // (matching meaning there is a
+                                     // case-non-sensitive match of filenames
+      if (!file_existsi(reordered_iter->strPath, reordered_iter->strFileName, strActualFileName)) {
+        // MP3 not found. Is there an encrypted version of the file instead?
+        if (!file_existsi(reordered_iter->strPath, reordered_iter->strFileName + ".rrcrypt", strActualFileName)) {
+          // Nope, there isn't an encrypted version either.
+          log_error("Could not find announcement MP3: " + reordered_iter->strPath + reordered_iter->strFileName);
+          blnSkipItem = true;
+        }
       }
     }
 
     // v6.14.3 - PAYB stuff:
-    if (blnCheckPrerecLifespan) {
-      if (strPrerecMediaRef == "") {
-        testing;
+    if (reordered_iter->blnCheckPrerecLifespan) {
+      if (reordered_iter->strPrerecMediaRef == "") {
         // The bit for checking the lifespan is set, but the media reference field is empty
         log_error("tblsched.bitcheck_prerec_lifespan set to 1, but tblsched.strprerec_mediaref is empty!");
         blnSkipItem = true;
@@ -409,14 +349,14 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
       else {
         // strprerec_mediaref and bitcheck_prerec_lifespan are set. Retrieve lifespan and global expiry date info from
         // the related tblprerec_item record
-        string psql_PrerecMediaRef = psql_str(lcase(strPrerecMediaRef));
+        string psql_PrerecMediaRef = psql_str(lcase(reordered_iter->strPrerecMediaRef));
         strSQL = "SELECT intglobalexp, intlifespan FROM tblprerec_item WHERE lower(strmediaref) = " + psql_PrerecMediaRef;
 
         pg_result rsPrerecItem = db.exec(strSQL);
         // Check the results of the query.
         if (rsPrerecItem.size() != 1) {
           // We expected to find 1 matching record, but a different number was found
-          log_error(itostr(rsPrerecItem.size()) + " prerecorded items match media reference " + strPrerecMediaRef + ". Cannot play " + scFileName);
+          log_error(itostr(rsPrerecItem.size()) + " prerecorded items match media reference " + reordered_iter->strPrerecMediaRef + ". Cannot play " + reordered_iter->strFileName);
           blnSkipItem = true;
         }
         else {
@@ -430,16 +370,14 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
           // Check the global expiry date
           if ((intglobalexp != -1) && (intglobalexp < inttoday_rrdate)) {
-            testing;
             // Global expiry date has elapsed!
-            log_error("Advert skipped because because it's global expiry date has passed: " + scFileName);
+            log_error("Advert skipped because because it's global expiry date has passed: " + reordered_iter->strFileName);
             blnSkipItem = true;
           }
           // Check the lifespan.
           else if ((intlifespan != -1) && (intlifespan < inttoday_rrdate)) {
-            testing;
             // Lifespan has elapsed!
-            log_error("Advert skipped because the period it was purchased for has expired: " + scFileName);
+            log_error("Advert skipped because the period it was purchased for has expired: " + reordered_iter->strFileName);
             blnSkipItem = true;
           }
         }
@@ -457,13 +395,13 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
       // . Check 1: Do not allow the same file, catagory or playback instance ID to play twice in the same announcement batch.
       TWaitingAnnouncements::const_iterator item = AnnounceList.begin();
       while (!blnSkipItem && item!=AnnounceList.end()) {
-        blnSkipItem = ((*item).strFileName==scFileName) || (strProductCat != "" && (*item).strProductCat==strProductCat);
+        blnSkipItem = (item->strFileName==reordered_iter->strFileName) || (reordered_iter->strProductCat != "" && item->strProductCat == reordered_iter->strProductCat);
         ++item;
       }
 
       // . Check 2: Do not allow ads by the same announcer to play twice in succession:
-      if (!blnSkipItem && strAnnCode != "") {
-        if (AnnounceList[AnnounceList.size()-1].strAnnCode == strAnnCode) {
+      if (!blnSkipItem && reordered_iter->strAnnCode != "") {
+        if (AnnounceList[AnnounceList.size()-1].strAnnCode == reordered_iter->strAnnCode) {
           blnSkipItem = true;
           blnAnnouncerClash = true;
         }
@@ -476,31 +414,18 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     // to find a place in the 'to-play' list where skipped announcements can be played without causing two announcements
     // by the same announcer to play in succession.
     if (!blnSkipItem || blnAnnouncerClash) {
-      TWaitingAnnounce Announce;
-
-      Announce.dbPos = strtoi(strdbPos);
-      Announce.strFileName = scFileName;
-      Announce.strProductCat = strProductCat;
-      Announce.dtmTime = dtmTime;
-
-      Announce.blnForcedTime = blnForcedTime;
-      Announce.strPriority = scPriority;
-      Announce.strPlayAtPercent = strPlayAtPercent;
-      Announce.strAnnCode = strAnnCode;
-      Announce.strPath = strFilePath;
-
       if (!blnSkipItem) {
         // This announcement will be played, queue it in the list of announcements to be played
-        AnnounceList.push_back(Announce);
+        AnnounceList.push_back(*reordered_iter);
       }
       else {
         // This announcement possibly will not play, because the announcer was the same as the last
         // announcer in the "to-play" queue. We will try later to add it to the list anyway (if the maximum
         // allowed number of announcements per batch has not yet been reached)
-        AnnounceMissed_SameVoice.push_back(Announce);
+        AnnounceMissed_SameVoice.push_back(*reordered_iter);
       }
     }
-    RS++; // Move to the next record...
+    reordered_iter++; // Move to the next record...
   }
 
   // We've reached either the end of the recordset, or the limit for number of announcements to play in a single batch.
