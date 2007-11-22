@@ -121,7 +121,8 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   // Declare the list of items to be played. This list is used mainly for
   // Checking that ads to play do not have the same mp3 or catagory.
   TWaitingAnnouncements AnnounceList;
-  TWaitingAnnouncements AnnounceMissed_SameVoice; // These are the announcements missed because their
+  TWaitingAnnouncements AnnounceMissed_SameVoice; // These are the announcements missed because the
+                                                  // previous announcement had the same announcer
 
   string psql_EarliestTime = time_to_psql(time()+(intstarts_ms/1000)-(60*config.intmins_to_miss_promos_after));
 
