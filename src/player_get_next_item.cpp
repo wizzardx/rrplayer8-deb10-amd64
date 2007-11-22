@@ -175,6 +175,144 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   pg_result RS = db.exec(strSQL);
   if (blndebug) cout << "Returned rows: " << RS.size() << endl;
 
+  // Get a list of all the announcements fetched from the db, and re-order them
+  // appropriately
+  TWaitingAnnouncements reordered_db_announcements;
+  {
+    // Get all the announcements from the database
+    if (blndebug) cout << "Fetching adverts from database" << endl;
+    TWaitingAnnouncements db_announcements;
+    while (RS) {
+      TWaitingAnnounce Announce;
+      Announce.dbPos = strtoi(RS.field("lngTZ_Slot", "-1"));
+      Announce.strFileName = lcase(RS.field("strFileName", ""));
+      Announce.strProductCat = RS.field("strProductCat", "");
+      Announce.dtmTime = parse_psql_time(RS.field("dtmForcePlayAt", RS.field("dtmStart", "").c_str()));
+      Announce.blnForcedTime = !RS.field_is_null("dtmForcePlayAt");
+      Announce.strPriority = RS.field("strPriorityOriginal", "");
+
+      // Get strPlayAtPercent
+      {
+        // Fetch from the database:
+        string strPlayAtPercent = RS.field("strPlayAtPercent", "");
+        // Parse it further:
+        if (isint(strPlayAtPercent)) {
+          // Clip the value from 0 to 100
+          if (strtoi(strPlayAtPercent) > 100) {
+            strPlayAtPercent="100";
+          }
+          else if (strtoi(strPlayAtPercent) < 0) {
+            strPlayAtPercent = "0";
+          }
+        }
+        else {
+          // Convert playback volume percentage to upper case
+          strPlayAtPercent = ucase(strPlayAtPercent);
+          if (strPlayAtPercent != "MUS" && strPlayAtPercent != "ADV") {
+            strPlayAtPercent = "100";
+          }
+        }
+        Announce.strPlayAtPercent = strPlayAtPercent;
+      }
+
+      Announce.strAnnCode = RS.field("strAnnCode", "");
+
+      // Get the path of the announcement (ie the directory):
+      {
+        string strFilePath = "";
+        string strFilePrefix = lcase(substr(Announce.strFileName, 0, 2));
+        if (strFilePrefix == "ca") {
+          strFilePath = config.dirs.strannouncements; // Announcements
+        }
+        else if (strFilePrefix == "sp") {
+          strFilePath = config.dirs.strspecials; // Specials
+        } else if (strFilePrefix == "ad") {
+          strFilePath = config.dirs.stradverts; // Adverts
+        }
+        else {
+          log_error ("Advert filename " + Announce.strFileName +
+            " has an unknown prefix " + strFilePrefix);
+          strFilePath = config.dirs.strmp3; // Default to the music folder
+        }
+        Announce.strPath = strFilePath;
+      }
+
+      // We now have all the the info for the advert
+
+      // Skip the ad if it is a "forced time" ad in the future:
+      if (Announce.blnForcedTime && Announce.dtmTime > dtmplayback_time) {
+        if (blndebug) cout << " - Not including advert " << Announce.strFileName << " in list, it has a forced time (" << format_datetime(Announce.dtmTime, "%T") << ") and is in the future" << endl;
+      }
+      else {
+        // No problem, so add it to the list of adverts loaded from the database:
+        db_announcements.push_back(Announce);
+      }
+      RS++; // Move to the next record
+    }
+
+    // Now re-order the adverts:
+    {
+      if (blndebug) cout << "Re-ordering adverts" << endl;
+      TWaitingAnnouncements::iterator iter;
+      // - First "forced playback time" adverts
+      //   (we already filtered out ones in the future)
+      iter = db_announcements.begin();
+      while (iter != db_announcements.end()) {
+        if (iter->blnForcedTime) {
+          if (blndebug) cout << " - Moving advert " << iter->strFileName <<
+            " with forced time (" << format_datetime(iter->dtmTime, "%T") << ") to start of re-ordered advert list" << endl;
+          reordered_db_announcements.push_back(*iter);
+          iter = db_announcements.erase(iter);
+        }
+        else iter++;
+      }
+
+      // A macro to simplify our logic for moving items which play between
+      // 2 times from db_announcements to reordered_db_announcements
+      #define MOVE_ADS_BETWEEN(FROM, TO, DESC) \
+        iter = db_announcements.begin(); \
+        while (iter != db_announcements.end()) { \
+          if (iter->dtmTime >= (FROM) && \
+              iter->dtmTime <= (TO)) { \
+            if (blndebug) cout << " - Advert " << iter->strFileName << " (at " << \
+            format_datetime(iter->dtmTime, "%T") << ") is " << DESC << \
+            ". Appending to re-ordered list" << endl; \
+            reordered_db_announcements.push_back(*iter); \
+            iter = db_announcements.erase(iter); \
+          } \
+          else iter++; \
+        }
+
+      // - Then adverts in this hour:
+      datetime dtmhour_start = (dtmplayback_time / (60*60)) * (60*60);
+      datetime dtmhour_end = dtmhour_start + (60*60) - 1;
+
+      // - Related to the current segment (if it is loaded):
+      if (run_data.current_segment.blnloaded) {
+        datetime dtmseg_start = run_data.current_segment.scheduled.dtmstart;
+        datetime dtmseg_end   = run_data.current_segment.scheduled.dtmend;
+
+        // - Adverts in the current format clock segment
+        MOVE_ADS_BETWEEN(dtmseg_start, dtmseg_end, "in this hour and inside the current Format Clock segment");
+        // - Adverts after the current format clock segment
+        MOVE_ADS_BETWEEN(dtmseg_end+1, dtmhour_end, "in this hour and after the current Format Clock segment");
+        // - Adverts before the current format clock segment
+        MOVE_ADS_BETWEEN(dtmhour_start, dtmseg_start-1, "in this hour and before the current Format Clock segment");
+      }
+      // All other adverts in this hour (eg, if the segment wasn't loaded)
+      MOVE_ADS_BETWEEN(dtmhour_start, dtmhour_end, "in this hour (no Format Clock segments loaded?)");
+
+      // - Lastly, all other adverts (outside the current hour)
+      MOVE_ADS_BETWEEN(DATETIME_MIN, DATETIME_MAX, "outside the current hour");
+
+      // Make sure that the list of adverts read from the database is now empty:
+      if (!db_announcements.empty()) LOGIC_ERROR;
+
+      // Now undefine our macro:
+      #undef MOVE_ADS_BETWEEN
+    }
+  }
+
   // 6.14: This loop is now where announcement limiting takes place
   while (RS && AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
     string strdbPos, scPriority, scPriorityConv, scFileName, tmplngTZslot, strProductCat, strPlayAtPercent, strAnnCode;
