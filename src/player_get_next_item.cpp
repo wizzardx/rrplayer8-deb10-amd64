@@ -124,7 +124,12 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   TWaitingAnnouncements AnnounceMissed_SameVoice; // These are the announcements missed because the
                                                   // previous announcement had the same announcer
 
-  string psql_EarliestTime = time_to_psql(time()+(intstarts_ms/1000)-(60*config.intmins_to_miss_promos_after));
+  // Calculate the date and time that the caller wants ads from:
+  datetime dtmplayback = now() + intstarts_ms/1000;
+  datetime dtmplayback_date = get_datetime_date(dtmplayback);
+  datetime dtmplayback_time = get_datetime_time(dtmplayback);
+
+  string psql_EarliestTime = time_to_psql(dtmplayback_time-(60*config.intmins_to_miss_promos_after));
 
   // This query is changed in version 6.14 - ad batches are restricted to certain intervals, but adverts forced to
   // play at specific times ignore these intervals and will play as close to their playback times as possible
@@ -142,12 +147,12 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
                  "INNER JOIN tblSlot_Assign USING (lngAssign) "
                  "INNER JOIN tblSched ON tblSchedule_TZ_Slot.lngSched = tblSched.lngSchedule "
                  "WHERE"
-                 "  tblSchedule_TZ_Slot.dtmDay = date '" + format_datetime(now() + intstarts_ms/1000, "%F")  + "'" + " AND "
+                 "  tblSchedule_TZ_Slot.dtmDay = date '" + format_datetime(dtmplayback_date, "%F")  + "'" + " AND "
                  "  tblSchedule_TZ_Slot.bitScheduled = " + itostr(ADVERT_SNS_LOADED) + " AND "
                  "("
                      "("
                        "(tblSchedule_TZ_Slot.dtmForcePlayAt >= " + psql_EarliestTime + ") AND "
-                       "(tblSchedule_TZ_Slot.dtmForcePlayAt <= " + psql_time + ")"
+                       "(tblSchedule_TZ_Slot.dtmForcePlayAt <= " + time_to_psql(dtmplayback_time) + ")"
                      ")";
 
   // The query above only asks for "forced" playback times. Now if they are allowed now, then also include an
@@ -157,7 +162,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
                    "("
                      "(tblSchedule_TZ_Slot.dtmForcePlayAt IS NULL) AND"
                      "(tblSlot_Assign.dtmStart >= " + psql_EarliestTime + ") AND "
-                     "(tblSlot_Assign.dtmStart <= " + psql_time + ")"
+                     "(tblSlot_Assign.dtmStart <= " + time_to_psql(dtmplayback_time) + ")"
                    ")";
   }
 
