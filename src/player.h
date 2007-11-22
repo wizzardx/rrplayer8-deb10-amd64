@@ -159,6 +159,10 @@ private:
     string strAnnCode;
 
     string strPath; // The path where this mp3 is found...
+
+    // PAYB stuff:
+    string strPrerecMediaRef;
+    bool blnCheckPrerecLifespan;
   };
   typedef deque <TWaitingAnnounce> TWaitingAnnouncements;
 

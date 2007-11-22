@@ -237,6 +237,10 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
         Announce.strPath = strFilePath;
       }
 
+      // Get PAYB details:
+      Announce.strPrerecMediaRef = lcase(RS.field("strprerec_mediaref", ""));
+      Announce.blnCheckPrerecLifespan = (RS.field("bitcheck_prerec_lifespan", "0") == "1");
+
       // We now have all the the info for the advert
 
       // Skip the ad if it is a "forced time" ad in the future:
