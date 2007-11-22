@@ -542,7 +542,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
             TWaitingAnnouncements::iterator remove_item = AnnounceList.begin();
             while (remove_item!=AnnounceList.end()) {
-              if ((*remove_item).dbPos==test_dbPos) {
+              if (remove_item->dbPos==test_dbPos) {
                 // We've found a matching item to delete - remove it and get the item after...
                 remove_item==AnnounceList.erase(remove_item);
                 log_error("Permutation code error was corrected.. but please check the code anyway..");
@@ -580,26 +580,26 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   TWaitingAnnouncements::const_iterator announce_item = AnnounceList.begin();
   while (announce_item!=AnnounceList.end()) {
     // Log a message to say that this announcement is enqued
-    string strTime = format_datetime((*announce_item).dtmTime, "%T");
+    string strTime = format_datetime(announce_item->dtmTime, "%T");
     string strDate = format_datetime(date(), "%F");
-    log_message("Announcement to be played: " + (*announce_item).strFileName +
-                               ", priority: " + (*announce_item).strPriority +
-                               ", catagory: \"" + (*announce_item).strProductCat +
-                               "\", volume: " + (*announce_item).strPlayAtPercent +
+    log_message("Announcement to be played: " + announce_item->strFileName +
+                               ", priority: " + announce_item->strPriority +
+                               ", catagory: \"" + announce_item->strProductCat +
+                               "\", volume: " + announce_item->strPlayAtPercent +
                                "%,  time: " + strTime +
                                ", date: " + strDate +
-                               ", db index: " + itostr((*announce_item).dbPos));
+                               ", db index: " + itostr(announce_item->dbPos));
 
     // Update the database also
     strSQL = "UPDATE tblSchedule_TZ_Slot SET "
                "bitScheduled = " + itostr(ADVERT_LISTED_TO_PLAY) +
                ", dtmScheduledAtDate = " + psql_date +
                ", dtmScheduledAtTime = " + psql_time +
-               " WHERE lngTZ_Slot = " + itostr((*announce_item).dbPos);
+               " WHERE lngTZ_Slot = " + itostr(announce_item->dbPos);
     db.exec(strSQL);
 
     // Set a flag if this batch to be played, includes a "force to play at time" advert.
-    blnForcedTimeAdToPlay = blnForcedTimeAdToPlay || (*announce_item).blnForcedTime;
+    blnForcedTimeAdToPlay = blnForcedTimeAdToPlay || announce_item->blnForcedTime;
 
     // Move to the next "to play" item..
     ++announce_item;
