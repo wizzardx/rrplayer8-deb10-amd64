@@ -287,8 +287,8 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
       // - Related to the current segment (if it is loaded):
       if (run_data.current_segment.blnloaded) {
-        datetime dtmseg_start = run_data.current_segment.scheduled.dtmstart;
-        datetime dtmseg_end   = run_data.current_segment.scheduled.dtmend;
+        datetime dtmseg_start = get_datetime_time(run_data.current_segment.scheduled.dtmstart);
+        datetime dtmseg_end   = get_datetime_time(run_data.current_segment.scheduled.dtmend);
 
         // - Adverts in the current format clock segment
         MOVE_ADS_BETWEEN(dtmseg_start, dtmseg_end, "in this hour and inside the current Format Clock segment");
