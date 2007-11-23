@@ -4,6 +4,8 @@
 #ifndef MY_TIME_H
 #define MY_TIME_H
 
+#include "maths.h"
+
 #include <sys/time.h>
 #include <limits.h>
 #include <string>
@@ -97,5 +99,13 @@ void normalise_timeval(timeval & tv);
 /// for Daylight Savings on the day specified by datetime. This is important for
 /// calculations which work directly with datetime values.
 #define get_tm_gmtoff(dtm) datetime_to_tm(dtm).tm_gmtoff
+
+/// Clamp a time value to the day. Use this after performing maths with time
+/// values, so that they don't get strange values (eg, when getting a string
+/// representation)
+inline datetime clamp_time(const datetime time) {
+  int gmtoff = get_tm_gmtoff(time);
+  return CLAMP(time, -gmtoff, 60*60*24-1-gmtoff);
+}
 
 #endif

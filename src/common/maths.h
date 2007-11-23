@@ -1,6 +1,10 @@
 /// @file
 /// Basic maths-related functions
 
+#include <string>
+
+using namespace std;
+
 // Straight from the glib macros:
 
 #undef  MAX

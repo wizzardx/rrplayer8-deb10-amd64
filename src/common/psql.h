@@ -217,6 +217,9 @@ string time_to_psql(const datetime dtmtime);
 // Foreign key refs (-1 changes to "NULL")
 #define psql_fkey(fkey) ((fkey == -1) ? "NULL" : ltostr(fkey))
 
+// Boolean fields:
+#define psql_bool(bln) (bln ? "'t'" : "'f'")
+
 // Some postgresql-specific utility functions:
 bool pg_table_exists(pg_conn_exec & conn, const string & table_name, const string & schema_name = "public");
 
