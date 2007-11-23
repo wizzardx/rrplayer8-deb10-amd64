@@ -831,7 +831,7 @@ void player::write_errors_for_missed_promos() {
     // - Not comparing datetime values in case after converting the earliest time to a
     // timetamp, it ends up as a later time of day anyway.
     datetime dtmnow = now();
-    datetime dtmearliest = dtmnow - (60 * config.intmins_to_miss_promos_after);
+    datetime dtmearliest = get_miss_promos_before_time();
     string strnow      = format_datetime(dtmnow,      "%T");
     string strearliest = format_datetime(dtmearliest, "%T");
     if (strearliest > strnow) dtmearliest = dtmnow;
