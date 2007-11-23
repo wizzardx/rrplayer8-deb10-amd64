@@ -123,7 +123,44 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   datetime dtmplayback_date = get_datetime_date(dtmplayback);
   datetime dtmplayback_time = get_datetime_time(dtmplayback);
 
-  string psql_EarliestTime = time_to_psql(dtmplayback_time-(60*config.intmins_to_miss_promos_after));
+  // Get the range of times to query for. The exact logic depends on whether
+  //  Format Clocks are enabled or not.
+  string psql_query_from = "";
+  string psql_query_until = "";
+  {
+    datetime dtmquery_from = datetime_error;
+    datetime dtmquery_until = datetime_error;
+
+    // When do we start missing ads before? (we query for ads after this time):
+    datetime dtmmiss_ads_before = get_miss_promos_before_time();
+
+    if (config.blnformat_clocks_enabled) {
+      // When Format Clocks are enabled we query for ads between X and Y, where:
+      //   - X = the start of the current hour, or [current time minus minutes
+      //         after which we miss adverts], whichever is earliest
+      //   - Y = the current time (if we're not in an FC seg), otherwise the end
+      //         of the current segment or 10 minutes into the future, whichever
+      //         comes earlier
+      datetime dtmhour_start = (dtmplayback_time / (60*60)) * (60*60);
+      dtmquery_from = MIN(dtmhour_start, dtmmiss_ads_before);
+      if (run_data.current_segment.blnloaded) {
+        dtmquery_until = clamp_time(MIN(dtmplayback_time+10*60, (run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1)));
+      }
+      else {
+        dtmquery_until = dtmplayback_time;
+      }
+    }
+    else {
+      // When Format Clocks are disabled we query for ads between X and Y, where:
+      //   - X = the current time minus [the number of minutes after which we miss
+      //         adverts]
+      //   - Y = the current time
+      dtmquery_from = dtmmiss_ads_before;
+      dtmquery_until = dtmplayback_time;
+    }
+    psql_query_from = time_to_psql(dtmquery_from);
+    psql_query_until = time_to_psql(dtmquery_until);
+  }
 
   // This query is changed in version 6.14 - ad batches are restricted to certain intervals, but adverts forced to
   // play at specific times ignore these intervals and will play as close to their playback times as possible
@@ -145,8 +182,8 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
                  "  tblSchedule_TZ_Slot.bitScheduled = " + itostr(ADVERT_SNS_LOADED) + " AND "
                  "("
                      "("
-                       "(tblSchedule_TZ_Slot.dtmForcePlayAt >= " + psql_EarliestTime + ") AND "
-                       "(tblSchedule_TZ_Slot.dtmForcePlayAt <= " + time_to_psql(dtmplayback_time) + ")"
+                       "(tblSchedule_TZ_Slot.dtmForcePlayAt >= " + psql_query_from + ") AND "
+                       "(tblSchedule_TZ_Slot.dtmForcePlayAt <= " + psql_query_until + ")"
                      ")";
 
   // The query above only asks for "forced" playback times. Now if they are allowed now, then also include an
@@ -155,8 +192,8 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     strSQL += " OR "
                    "("
                      "(tblSchedule_TZ_Slot.dtmForcePlayAt IS NULL) AND"
-                     "(tblSlot_Assign.dtmStart >= " + psql_EarliestTime + ") AND "
-                     "(tblSlot_Assign.dtmStart <= " + time_to_psql(dtmplayback_time) + ")"
+                     "(tblSlot_Assign.dtmStart >= " + psql_query_from + ") AND "
+                     "(tblSlot_Assign.dtmStart <= " + psql_query_until + ")"
                    ")";
   }
 
