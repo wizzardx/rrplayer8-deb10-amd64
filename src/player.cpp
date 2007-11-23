@@ -946,6 +946,28 @@ void player::write_errors_for_missed_promos_log_missed(const string strmissed_fi
   }
 }
 
+datetime player::get_miss_promos_before_time() {
+  // Return the time (no date) before which we start missing promos (aka
+  // adverts/announcements)
+
+  // The time at which we miss promos is different, depending on whether
+  // format clocks are enabled or not
+  datetime dtmtime = time();
+  datetime dtmhour_start = (dtmtime / (60*60)) * (60*60);
+  datetime dtmnormal_miss_before = clamp_time(dtmtime - 60*config.intmins_to_miss_promos_after);
+
+  if (config.blnformat_clocks_enabled) {
+    // Format clocks are enabled, so we miss ads before the current hour, or
+    // before now - (mins to miss adverts after), whichever is earlier
+    return MIN(dtmhour_start, dtmnormal_miss_before);
+  }
+  else {
+    // Format clocks are not enabled, so we miss ads before
+    // now - (mins to miss adverts after)
+    return dtmnormal_miss_before;
+  }
+}
+
 // FUNCTIONS AND ATTRIBUTES USED DURING RUN():
 
 void player::check_playback_status() {

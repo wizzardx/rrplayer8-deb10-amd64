@@ -61,6 +61,7 @@ private:
   void correct_waiting_promos();
   void write_errors_for_missed_promos();
   void write_errors_for_missed_promos_log_missed(const std::string strmissed_file, const long lngmissed_count, const datetime dtmmissed_first, const datetime dtmmissed_last);
+  datetime get_miss_promos_before_time(); // Return the time (no date) before which we start missing promos
   void log_xmms_status_to_db();
 
   pg_connection db; ///< Connection to the schedule database. This is used to run queries and fetch records.
