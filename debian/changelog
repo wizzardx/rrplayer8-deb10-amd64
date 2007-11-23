@@ -1,3 +1,25 @@
+rrplayer-fc (7.37) unstable; urgency=low
+
+  * Implemented changes requested by Gerhard:
+    - Adverts fetched from the database are first re-ordered before further
+      processing.
+      - First forced time ads, then ads from the current Format Clock segment,
+        etc (See git commit ad9730dd for more info).
+    - Updated logic for determining when adverts should be determined as
+      missed (too long since they should have played).
+      - We now (mostly) mark ads before the current hour as missed. The
+        exception is when we are close to the start of the current hour.
+    - Updated period in which adverts are fetched.
+      - This is usually from the start of the current hour until the end of
+        the current segment, but it can vary.
+  * Other misc changes:
+    - Fetching adverts slightly more accurately than before
+    - Minor re-organization of PAYB logic
+    - C++ pointer syntax updates (using "var->field" instead of
+      "(*var).field")
+
+ -- David Purdy <david@radioretail.co.za>  Fri, 23 Nov 2007 10:44:34 +0200
+
 rrplayer-fc (7.36) unstable; urgency=low
 
   * Implemented Stefans requested end-of-song transition changes
