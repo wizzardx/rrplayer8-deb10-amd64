@@ -1267,9 +1267,9 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   }
   COMPARE_NEXT_WITH(event_info.intmusic_bed_starts_ms, "Music bed starts");
   COMPARE_NEXT_WITH(event_info.intnext_ms, "Music bed ends");
-  COMPARE_NEXT_WITH(event_info.intnext_ms, "Interrupted by promo");
-  COMPARE_NEXT_WITH(event_info.intnext_ms, "Interrupted by playlist change");
-  COMPARE_NEXT_WITH(event_info.intnext_ms, "Interrupted by hour change");
+  COMPARE_NEXT_WITH(event_info.intpromo_interrupt_ms, "Interrupted by promo");
+  COMPARE_NEXT_WITH(event_info.intrpls_interrupt_ms, "Interrupted by playlist change");
+  COMPARE_NEXT_WITH(event_info.inthour_change_interrupt_ms, "Interrupted by hour change");
   #undef COMPARE_NEXT_WITH
 }
 
