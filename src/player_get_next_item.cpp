@@ -753,7 +753,7 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       run_data.intsegment_delay = intnew_segment_delay;
     }
     // Otherwise, is the item going to end 10 or less seconds before the next segment starts? 
-    else if (intdiff >= -10) {
+    else if (intdiff >= -10 && intdiff < 0) {
       // Predict if fetching the next item from the current segment will cause the
       // playback to revert (ie, start playing music instead of links etc)
       string strreason;
