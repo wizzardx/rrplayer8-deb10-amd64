@@ -367,12 +367,8 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
                                      // (matching meaning there is a
                                      // case-non-sensitive match of filenames
       if (!file_existsi(reordered_iter->strPath, reordered_iter->strFileName, strActualFileName)) {
-        // MP3 not found. Is there an encrypted version of the file instead?
-        if (!file_existsi(reordered_iter->strPath, reordered_iter->strFileName + ".rrcrypt", strActualFileName)) {
-          // Nope, there isn't an encrypted version either.
-          log_error("Could not find announcement MP3: " + reordered_iter->strPath + reordered_iter->strFileName);
-          blnSkipItem = true;
-        }
+        log_error("Could not find announcement MP3: " + reordered_iter->strPath + reordered_iter->strFileName);
+        blnSkipItem = true;
       }
     }
 
