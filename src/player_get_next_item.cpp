@@ -80,6 +80,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   static datetime dtmlast_now         = datetime_error; // Used to check for system clock changes
   static datetime dtmlast_run         = datetime_error; // The last time the function's main logic ran.
   static datetime dtmlast_promo_batch = datetime_error; // The last time a promo batch was returned.
+  static long lnglast_fc_seg          = -1;             // The last format clock segment.
 
   // Check if the system clock was set back in time since the last time:
   datetime dtmnow = now();
@@ -90,14 +91,41 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     dtmlast_promo_batch = datetime_error;
   }
 
-  // Check that enough time has passed since the last time this function was called:
-  if (dtmlast_run != datetime_error && (dtmnow/30 == dtmlast_run/30)) {
-    if (blndebug) cout << "Function was called within the last 30 seconds, not running main logic..." << endl;
+  // Don't query the database for adverts too regularly. Require that either at
+  // least 30 seconds have elapsed from the last time, or that the Format Clock
+  // segment has changed
+  bool blnallow_query = false;
+
+  if (blndebug) cout << "Can we query the database for adverts now?" << endl;
+
+  if (!blnallow_query) {
+    if (dtmlast_run == datetime_error || (dtmnow/30 != dtmlast_run/30)) {
+      if (blndebug) cout << " - Yes. Enough time has elapsed since the last query" << endl;
+      blnallow_query = true;
+    }
+    else if (blndebug) cout << " - (Not enough time has elapsed since the last query)" << endl;
+  }
+  if (!blnallow_query) {
+    if (run_data.current_segment.blnloaded) {
+      if (lnglast_fc_seg != run_data.current_segment.lngfc_seg) {
+        if (blndebug) cout << " - Yes. The Format Clock segment has changed (from " <<
+          lnglast_fc_seg << " to " << run_data.current_segment.lngfc_seg << ")" << endl;
+        blnallow_query = true;
+      }
+      else if (blndebug) cout << " - (The Format Clock segment has not changed)" << endl;
+    }
+    else if (blndebug) cout << " - (Format Clock segment is not yet loaded)" << endl;
+  }
+  if (!blnallow_query) {
+    if (blndebug) cout << " - No. See above for more info." << endl;
     return;
   }
 
   // Now remember the last time we ran:
   dtmlast_run = dtmnow;
+  if (run_data.current_segment.blnloaded) {
+    lnglast_fc_seg = run_data.current_segment.lngfc_seg;
+  }
 
   // Now check that the minimum time has passed since the last announcement batch
 
