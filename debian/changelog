@@ -1,3 +1,16 @@
+rrplayer-fc (7.38) unstable; urgency=low
+
+  * Removed obsolete rrcrypt-related logic
+  * Fixed incorrect "Something else for the next 0s?" message
+  * Fixed a bug when calculating the time of the next playback event
+  * Logging more messages in debug mode
+    - To clarify logic flow when fetching the next item
+  * Querying for adverts immediately when the FC seg changes
+    - Instead of waiting for up to 30 seconds
+  * Checking for FC seg changes before fetching promo items
+
+ -- David Purdy <david@radioretail.co.za>  Wed, 28 Nov 2007 10:10:13 +0200
+
 rrplayer-fc (7.37) unstable; urgency=low
 
   * Implemented changes requested by Gerhard:
