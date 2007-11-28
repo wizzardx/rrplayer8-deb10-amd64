@@ -77,10 +77,13 @@ void player::playback_transition(playback_events_info & playback_events) {
       // Queue a transition over to the next item:
 
       // Fetch the next item now if it isn't already loaded:
+      if (blndebug) cout << "Do we have the next item yet?" << endl;
       if (!run_data.next_item.blnloaded) {
         // Next item is not already known. Switch over:
+        if (blndebug) cout << " - Not yet. Fetching it so we have something to transition into." << endl;
         get_next_item(run_data.next_item, intitem_ends_ms);
       }
+      else if (blndebug) cout << " - Yes. Will transition into it." << endl;
 
       // Are crossfades allowed now?
 

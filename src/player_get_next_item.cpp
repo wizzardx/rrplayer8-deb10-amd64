@@ -17,6 +17,7 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
   // item is automatically the "Silence" category (overriding anything else that might want to play now)
   // Also here must come logic for when a) repeat runs out before the segment end, and b) when some time of
   // the next segement is used up by accident (push slots forwards by up to 6 mins, reclaim space by using up music time).
+  if (blndebug) cout << "Fetching the next item" << endl;
 
   // Check if the item is already loaded:
   if (item.blnloaded) my_throw("Item is already loaded! Can't load it again! Reset it first!");
@@ -29,6 +30,7 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
 
   // Stop playback if we are within store hours:
   if (!item.blnloaded && !store_status.blnopen) {
+    if (blndebug) cout << "Store is closed, next item is silence" << endl;
     // Store is closed. Next item is silence.
     item.cat = SCAT_SILENCE;
     item.blnloaded = true;
@@ -43,16 +45,20 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
   // Return the next promo if there is one waiting in the database (or in a recently-retrieved batch):
   if (!item.blnloaded) {
     // Inside store hours. Any promos?
+    if (blndebug) cout << " - Don't have the next item yet, checking for a promo" << endl;
     get_next_item_promo(item, intstarts_ms);
   }
 
   if (!item.blnloaded) {
     // No promos. Use Format Clocks to determine the next item.
+    if (blndebug) cout << " - Don't have the next item yet, checking for a format clock item" << endl;
     get_next_item_format_clock(item, intstarts_ms);
   }
 
   // Check if we found something to play:
   if (!item.blnloaded) my_throw("Could not find the next item!");
+
+  if (blndebug) cout << "Found item: " << item.strmedia << endl;
 }
 
 // Functions called by get_next_item():
