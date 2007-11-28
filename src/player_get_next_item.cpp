@@ -69,8 +69,30 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
 void player::get_next_item_promo(programming_element & item, const int intstarts_ms) {
   if (blndebug) cout << "Checking if there is a promo (regular Radio Retail announcement) to play..." << endl;
 
+  // Check for Format Clock segment changes:
+  bool blnfc_seg_changed = false;
+  {
+    static long lnglast_fc_seg = -1;
+    if (run_data.current_segment.blnloaded &&
+        run_data.current_segment.lngfc_seg != lnglast_fc_seg) {
+      if (blndebug) cout << " - Detected: Format Clock segment just changed" << endl;
+      lnglast_fc_seg = run_data.current_segment.lngfc_seg;
+      blnfc_seg_changed = true;
+    }
+  }
+
+  // Reset our list of waiting promos if the format clock segment changed and
+  // the new segment doesn't allow promos (if there were "forced time" adverts
+  // then those will be queried for again.
+  if (blnfc_seg_changed &&
+      !run_data.waiting_promos.empty() &&
+      !run_data.current_segment.blnpromos) {
+    log_message("Format Clock segment changed, and the new segment does not allow promos (except for 'forced time' promos), so clearing our 'waiting promos' list. It will be re-populated a bit later with any 'forced time' promos");
+    run_data.waiting_promos.clear();
+  }
+
   // Are there any promos waiting to be returned?
-  if (run_data.waiting_promos.size() != 0) {
+  if (!run_data.waiting_promos.empty()) {
     if (blndebug) cout << "Using a promo from a previously retrieved batch" << endl;
     // Yes: Return the promo and then leave this function
     item = run_data.waiting_promos[0];
@@ -78,13 +100,13 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     return;
   }
 
-  // No promos waiting to be returned.
+  // No promos waiting to be returned. So query the database (if it's ok at
+  // this time)
 
   // Timing variables:
   static datetime dtmlast_now         = datetime_error; // Used to check for system clock changes
   static datetime dtmlast_run         = datetime_error; // The last time the function's main logic ran.
   static datetime dtmlast_promo_batch = datetime_error; // The last time a promo batch was returned.
-  static long lnglast_fc_seg          = -1;             // The last format clock segment.
 
   // Check if the system clock was set back in time since the last time:
   datetime dtmnow = now();
@@ -110,16 +132,12 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     else if (blndebug) cout << " - (Not enough time has elapsed since the last query)" << endl;
   }
   if (!blnallow_query) {
-    if (run_data.current_segment.blnloaded) {
-      if (lnglast_fc_seg != run_data.current_segment.lngfc_seg) {
-        if (blndebug) cout << " - Yes. The Format Clock segment has changed (from " <<
-          lnglast_fc_seg << " to " << run_data.current_segment.lngfc_seg << ")" << endl;
-        blnallow_query = true;
-      }
-      else if (blndebug) cout << " - (The Format Clock segment has not changed)" << endl;
+    if (blnfc_seg_changed) {
+      if (blndebug) cout << " - Yes. The Format Clock segment has just changed" << endl;
+      blnallow_query = true;
     }
-    else if (blndebug) cout << " - (Format Clock segment is not yet loaded)" << endl;
   }
+
   if (!blnallow_query) {
     if (blndebug) cout << " - No. See above for more info." << endl;
     return;
@@ -127,9 +145,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
   // Now remember the last time we ran:
   dtmlast_run = dtmnow;
-  if (run_data.current_segment.blnloaded) {
-    lnglast_fc_seg = run_data.current_segment.lngfc_seg;
-  }
 
   // Now check that the minimum time has passed since the last announcement batch
 

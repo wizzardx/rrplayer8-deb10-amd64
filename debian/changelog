@@ -1,3 +1,9 @@
+rrplayer-fc (7.38.1) unstable; urgency=low
+
+  *  No longer playing cached (non-forced time) promos when not allowed
+
+ -- David Purdy <david@radioretail.co.za>  Wed, 28 Nov 2007 11:15:49 +0200
+
 rrplayer-fc (7.38) unstable; urgency=low
 
   * Removed obsolete rrcrypt-related logic
