@@ -42,6 +42,10 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
     run_data.waiting_promos.clear();
   }
 
+  // Check for Format Clock segment changes
+  if (blndebug) cout << " - Checking for Format Clock segment change" << endl;
+  get_next_item_check_fc_seg_change(intstarts_ms);
+
   // Return the next promo if there is one waiting in the database (or in a recently-retrieved batch):
   if (!item.blnloaded) {
     // Inside store hours. Any promos?
@@ -744,9 +748,12 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   }
 }
 
-void player::get_next_item_format_clock(programming_element & next_item, const int intstarts_ms) {
-  // Fetch info about the "next" item to be played, according to the Format Clock.
-  // Also handle all segment timing (eg: last segment played for too long, etc.
+void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
+  // This function is called while fetching the next item to determine if
+  // the Format Clock segment has changed. This logic was separated from
+  // get_next_item_format_clock() so that get_next_item_promo() (called earlier)
+  // can know about Format Clock changes immediately after the FC segment
+  // change.
 
   // Fetch the "real" time when the next item will start playing (in seconds):
   // - We take the current exact time, add the milliseconds until the start of
@@ -853,9 +860,6 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       dtmdelayed = dtmhour_start;
     }
   }
-
-  // Reset info currently in the item:
-  next_item.reset(); // Reset info currently in the item.
 
   long lngfc     = -1; // -1 means no Format Clock found...
   long lngfc_seg = -1; // -1 means no Format Clock segment found.
@@ -1055,6 +1059,16 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
       log_message("Still playing " + strmsg);
     }
   }
+}
+
+void player::get_next_item_format_clock(programming_element & next_item, const int intstarts_ms) {
+  // Fetch the next item from the current format clock
+  // NB: You should call get_next_item_check_fc_seg_change() before calling this function.
+  //
+  // Currently all this code does is call "get_next_item_not_recent_music()".
+  // The main logic was moved to get_next_item_check_fc_seg_change()
+
+  // From the end of the old version of this function:
 
   // Now fetch the next item to play, from the segment. Make sure it isn't a
   // song which was played recently:

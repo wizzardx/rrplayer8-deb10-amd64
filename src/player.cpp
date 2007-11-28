@@ -1177,6 +1177,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
       !run_data.next_item.blnloaded &&
       run_data.blnforce_segment_reload) {
     // Get the next format clock item:
+    get_next_item_check_fc_seg_change(intinterrupt_promo_delay);
     get_next_item_format_clock(run_data.next_item, intinterrupt_promo_delay);
 
     // Is the current item inside the current playlist?

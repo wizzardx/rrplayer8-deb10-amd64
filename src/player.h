@@ -121,6 +121,7 @@ private:
   void get_next_item(programming_element & item, const int intstarts_ms); // intstarts_ms - how long from now (in ms) the item will be played.
 
   // Functions called by get_next_item():
+    void get_next_item_check_fc_seg_change(const int intstarts_ms); // Call this before the others, to detect FC seg changes.
     void get_next_item_promo(programming_element & next_item, const int intstarts_ms); // Populate argument with the next promo if there are promos waiting.
     void get_next_item_format_clock(programming_element & next_item, const int intstarts_ms); // Use Format Clocks to determine an item to be played.
 
