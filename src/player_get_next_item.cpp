@@ -192,12 +192,23 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
       //   - X = the start of the current hour, or [current time minus minutes
       //         after which we miss adverts], whichever is earliest
       //   - Y = the current time (if we're not in an FC seg), otherwise the end
-      //         of the current segment or 10 minutes into the future, whichever
-      //         comes earlier
+      //         of the current segment, or 10 minutes into the future, or the
+      //         end of the hour in which the segment started, whichever comes
+      //         earliest.
       datetime dtmhour_start = (dtmplayback_time / (60*60)) * (60*60);
       dtmquery_from = MIN(dtmhour_start, dtmmiss_ads_before);
       if (run_data.current_segment.blnloaded) {
-        dtmquery_until = clamp_time(MIN(dtmplayback_time+10*60, (run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1)));
+        // Store the various times in variables, so we can get the earliest time:
+        datetime dtmseg_start = get_datetime_time(run_data.current_segment.dtmstart);
+        // - End of the current segment:
+        datetime dtmseg_end = clamp_time(dtmseg_start + run_data.current_segment.intlength - 1);
+        // - 10 minutes into the future:
+        datetime dtmten_mins = clamp_time(dtmplayback_time+10*60);
+        // - End of the hour in which the segment started:
+        datetime dtmseg_start_hour_end = clamp_time(((dtmseg_start / (60*60)) * (60*60)) + (60*60)-1);
+
+        // Now get the time we query up until:
+        dtmquery_until = MIN(MIN(dtmseg_end, dtmten_mins), dtmseg_start_hour_end);
       }
       else {
         dtmquery_until = dtmplayback_time;
