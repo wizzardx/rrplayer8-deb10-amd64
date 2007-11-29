@@ -59,7 +59,7 @@
         <ccompiler>kdevgccoptions</ccompiler>
         <cxxcompiler>kdevgppoptions</cxxcompiler>
         <f77compiler>kdevg77options</f77compiler>
-        <cxxflags>-O0 -g3</cxxflags>
+        <cxxflags>-O0 -Wall -g3</cxxflags>
         <envvars/>
         <topsourcedir/>
         <cppflags> -I/usr/include/postgresql/ -I/usr/include/glib-1.2/ -I/usr/lib/glib/include/</cppflags>
