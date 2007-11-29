@@ -1102,7 +1102,12 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
       // Log a warning if the item is dynamically compressed:
       if (!run_data.current_item.end.blndynamically_compressed) {
         // Not dynamically range compressed
-        log_warning("It looks like " + run_data.current_item.strmedia + " is not dynamically range compressed, so I can't tell if it ends suddenly.");
+        // - Don't keep warning every second:
+        static string strlast_warned = "";
+        if (run_data.current_item.strmedia != strlast_warned) {
+          log_warning("It looks like " + run_data.current_item.strmedia + " is not dynamically range compressed, so I can't tell if it ends suddenly");
+          strlast_warned = run_data.current_item.strmedia;
+        }
       }
 
       // If the song becomes silent towards the end, then assume that the
