@@ -38,7 +38,7 @@ string get_hostname() {
   pclose(fp);
 
   // Now return the line
-  if (line!="") {
+  if (strlen(line) != 0) {
     strHostname=line;
     // Strip the last character from the line (usually a newline)
     strHostname=substr(strHostname, 0, strHostname.length()-1);

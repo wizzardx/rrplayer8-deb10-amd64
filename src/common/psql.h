@@ -38,6 +38,7 @@ class pg_result; // Forward declaration
 class pg_conn_exec {
 public:
   virtual pg_result exec(const string & strquery)=0;
+  virtual ~pg_conn_exec() {};
 };
 
 /// Generate a connection string from parts:
@@ -51,7 +52,7 @@ public:
   pg_connection(); ///< Default constructor - no connection created, call open to do this
 
   // Destructor
-  ~pg_connection();
+  virtual ~pg_connection();
 
   // Set the connect retry settings
   void set_connect_retries(const int intretries); ///< Default setting is 0 (no retries)
@@ -166,7 +167,7 @@ public:
   pg_transaction(pg_connection & conn);
 
   /// Destructor
-  ~pg_transaction();
+  virtual ~pg_transaction();
 
   /// Execute a query
   virtual pg_result exec(const string & strquery);

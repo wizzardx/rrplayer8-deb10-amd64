@@ -418,7 +418,7 @@ string pad_left(const string & str, const char chpad, const int intfinal_length)
 string pad_right(const string & str, const char chpad, const int intfinal_length) {
   // Append a character to the right side of a string until the string is long enough:
   string strret = str;
-  while (strret.length() < intfinal_length) strret += chpad;
+  while ((int)strret.length() < intfinal_length) strret += chpad;
   return strret;
 }
 

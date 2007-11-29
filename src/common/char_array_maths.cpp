@@ -347,7 +347,7 @@ void char_array_maths::include_string(const string & strString, const string & s
       my_throw("Invalid Radix (numeric base) " + itostr(intRadix) + ". Check the allowed characters string is \"" + strAllowedChars + "\"");
     }
 
-    int intcode_pos = 0;
+    unsigned int intcode_pos = 0;
     while (intcode_pos < strString.length()) {
       // Determine the place value of the character.
       char chletter = code_chars[intcode_pos];

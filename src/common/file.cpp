@@ -552,7 +552,7 @@ string relpath_to_abs(const string & strPath, const PATH_TYPE path_type) {
 
 //  char *ptr = realpath(strPath.c_str(), actualpath);
   realpath(strret.c_str(), actualpath);
-  if (actualpath!="") {
+  if (strlen(actualpath) != 0) {
     strret = actualpath;
   }
 
