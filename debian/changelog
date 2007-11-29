@@ -1,3 +1,9 @@
+rrplayer-fc (7.39.1) unstable; urgency=low
+
+  * Only logging warnings about songs not being dynamically compressed once.
+
+ -- David Purdy <david@radioretail.co.za>  Thu, 29 Nov 2007 15:09:02 +0200
+
 rrplayer-fc (7.39) unstable; urgency=low
 
   * Now obeying the "blnAdvertsWaitForSongEnd" setting
