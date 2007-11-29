@@ -1,3 +1,12 @@
+rrplayer-fc (7.39) unstable; urgency=low
+
+  * Now obeying the "blnAdvertsWaitForSongEnd" setting
+    - Except when playing from LineIn, and not for "forced time" promos.
+  * Logic to decide whether promo batches are allowed is more verbose in debug
+    mode
+
+ -- David Purdy <david@radioretail.co.za>  Thu, 29 Nov 2007 12:06:00 +0200
+
 rrplayer-fc (7.38.2) unstable; urgency=low
 
   * Fixed problems with calculating the time to query for ads up until
