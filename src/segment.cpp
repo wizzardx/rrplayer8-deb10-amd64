@@ -1516,7 +1516,7 @@ void segment::add_music_profile_to_string_list(vector <string> & file_list, cons
   bool blnload_success = false; // Set to true if we successfully load a playlist
   log_message("Loading music profile \"" + (strProfileName=="" ? "default" : strProfileName) + "\": " + strNewMusicSource);
   {
-    int intsize_before = file_list.size();
+    unsigned int intsize_before = file_list.size();
     recursive_add_to_string_list(file_list, strNewMusicSource, intrecursion_level, db, config);
     if (file_list.size() > intsize_before)
       blnload_success = true;
@@ -1525,7 +1525,7 @@ void segment::add_music_profile_to_string_list(vector <string> & file_list, cons
   // If there was an error, see if we can fall back to default music...
   if (!blnload_success && (strNewMusicSource != config.strdefault_music_source)) {
     // There was an error creating the random playlist... attempt to fall back to the default music location...
-    int intsize_before = file_list.size();
+    unsigned intsize_before = file_list.size();
     log_message("Error loading playlist, attempting to use default music location: " + config.strdefault_music_source);
     recursive_add_to_string_list(file_list, config.strdefault_music_source, intrecursion_level, db, config);
     if (file_list.size() > intsize_before)
@@ -1537,7 +1537,7 @@ void segment::add_music_profile_to_string_list(vector <string> & file_list, cons
   if (!blnload_success && (strNewMusicSource != config.dirs.strmp3)) {
     // There was an error creating the random playlist... attempt to fall back to the default music location...
     log_message("Error creating playlist, attempting to use default mp3 repository: " + config.dirs.strmp3);
-    int intsize_before = file_list.size();
+    unsigned int intsize_before = file_list.size();
     recursive_add_to_string_list(file_list, config.dirs.strmp3, intrecursion_level, db, config);
     if (file_list.size() > intsize_before)
       blnload_success = true;

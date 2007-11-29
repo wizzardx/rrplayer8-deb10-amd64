@@ -35,7 +35,7 @@ class music_history
 
  private:
    /// Maximum history entries to keep in memory
-   static const int max_history_length = 1000;
+   static const unsigned int max_history_length = 1000;
 
    /// A list of the most recent music files played
    std::list<std::string> m_history;

@@ -687,8 +687,6 @@ void player::process_waiting_cmds() {
   string strSQL;
 
   try {
-    bool blnVolZones = false;
-    double volChange;
     string chDay, chZone, chTime;
 
     string psql_Time;
