@@ -50,7 +50,7 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
   if (!item.blnloaded) {
     // Inside store hours. Any promos?
     if (blndebug) cout << " - Don't have the next item yet, checking for a promo" << endl;
-    get_next_item_promo(item, intstarts_ms);
+    get_next_item_promo(item, intstarts_ms, false);
   }
 
   if (!item.blnloaded) {
@@ -66,7 +66,7 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
 }
 
 // Functions called by get_next_item():
-void player::get_next_item_promo(programming_element & item, const int intstarts_ms) {
+void player::get_next_item_promo(programming_element & item, const int intstarts_ms, const bool blnwould_interrupt_song) {
   if (blndebug) cout << "Checking if there is a promo (regular Radio Retail announcement) to play..." << endl;
 
   // Check for Format Clock segment changes:
@@ -153,8 +153,10 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   // batches
   bool blnAdBatchesAllowedNow = run_data.current_segment.blnloaded &&
                                 run_data.current_segment.blnpromos &&
-                                (dtmnow >= dtmlast_promo_batch + 60 * config.intmin_mins_between_batches);
-
+                                (dtmnow >= dtmlast_promo_batch + 60 * config.intmin_mins_between_batches) &&
+                                !(blnwould_interrupt_song &&
+                                  run_data.current_item.strmedia != "LineIn" &&
+                                  config.blnpromos_wait_for_song_end);
   if (blndebug) {
     if (blnAdBatchesAllowedNow) {
       cout << "Regular advert batches are allowed to play now." << endl;
@@ -163,6 +165,9 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
       cout << "Regular advert batches are not allowed to play now." << endl;
       if (!run_data.current_segment.blnloaded) cout << " - Format Clock segment not yet loaded." << endl;
       if (!run_data.current_segment.blnpromos) cout << " - Segment does not allow promos." << endl;
+      if (blnwould_interrupt_song &&
+          run_data.current_item.strmedia != "LineIn" &&
+          config.blnpromos_wait_for_song_end) cout << " - Playing a promo now would interrupt a song and this is not allowed (blnAdvertsWaitForSongEnd=true)." << endl;
       if (!(dtmnow >= dtmlast_promo_batch + 60 * config.intmin_mins_between_batches)) cout << " - Last promo batch played too recently." << endl;
       cout << "However, promos with 'forced' times will still be played." << endl;
     }

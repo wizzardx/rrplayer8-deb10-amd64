@@ -1162,7 +1162,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
     // Current item is Music. Check if there are promos to play
 
     // Check if there is a promo that wants to play now (and is allowed to)
-    get_next_item_promo(run_data.next_item, intinterrupt_promo_delay);
+    get_next_item_promo(run_data.next_item, intinterrupt_promo_delay, true);
 
     // So, is there a promo that wants to play now?
     if (run_data.next_item.blnloaded) {
