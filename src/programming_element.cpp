@@ -28,6 +28,7 @@ void programming_element::reset() {
   music_bed.already_handled.blnstart = false;
   music_bed.already_handled.blnstop = false;
   promo.lngtz_slot = -1;
+  promo.blnforced_time = false;
   end.blnloaded = false;
   end.intlength_ms = -1;
   end.intend_silence_start_ms = -1;

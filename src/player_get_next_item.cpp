@@ -778,6 +778,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
             promo.strmedia  = Announce.strPath + Announce.strFileName;
             promo.strvol    = Announce.strPlayAtPercent;
             promo.promo.lngtz_slot = Announce.dbPos;
+            promo.promo.blnforced_time = Announce.blnForcedTime;
             promo.blnloaded = true;
             run_data.waiting_promos.push_back(promo);
           }

@@ -49,6 +49,7 @@ public:
   // Additional info if this is a promo:
   struct promo {
     long lngtz_slot; // When we're done playing the item we update the database.
+    bool blnforced_time; // Was this promo scheduled to play at a specific time?
   } promo;
 
   // Extra information about the end of the mp3:
