@@ -72,6 +72,14 @@ void player::playback_transition(playback_events_info & playback_events) {
       // At this point, if the previous (current) item was a promo, we mark it as complete now:
       if (run_data.current_item.blnloaded && run_data.current_item.promo.lngtz_slot != -1) {
         mark_promo_complete(run_data.current_item.promo.lngtz_slot);
+        // If the promo was from an advert batch (ie, not a forced time advert) then
+        // update our record of when the last item from a promo batch played.
+        // This is so we don't fetch any more promo batches until enough
+        // time has elapsed since the last one.
+        if (!run_data.current_item.promo.blnforced_time) {
+          run_data.dtmlast_promo_batch_item_played = now() + intitem_ends_ms/1000;
+          log_debug("Remembering that a promo from an advert batch (ie not forced time) finishes playing at " + format_datetime(run_data.dtmlast_promo_batch_item_played, "%F %T"));
+        }
       }
 
       // Queue a transition over to the next item:

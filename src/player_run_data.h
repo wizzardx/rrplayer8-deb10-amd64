@@ -50,6 +50,8 @@ public:
 
   programming_element_list waiting_promos; ///< List of promos waiting to play. Populated by get_next_item_promo
 
+  datetime dtmlast_promo_batch_item_played; ///< When the last promo batch item played. Used for determining when we can fetch more promo batches
+
   /// Set to true when the player wants to log 1) the XMMS music playlist, and 2) All available music on the machine.
   bool blnlog_all_music_to_db;
 

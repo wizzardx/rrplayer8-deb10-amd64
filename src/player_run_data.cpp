@@ -48,6 +48,8 @@ void player_run_data::init() {
 
   waiting_promos.clear(); // List of promos waiting to play. Populated by get_next_item_promo
 
+  dtmlast_promo_batch_item_played = datetime_error; // Set when an item from a promo batch plays
+
   blnlog_all_music_to_db = false; // Set to true when the player wants to log all available music (and the current XMMS playlist) to the database.
 
   blnforce_segment_reload = false; // Set to true when the player wants to reload the current segment (eg, a RPLS command was found)

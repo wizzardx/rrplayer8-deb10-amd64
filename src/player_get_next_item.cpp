@@ -105,17 +105,15 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     // this time)
 
     // Timing variables:
-    static datetime dtmlast_now         = datetime_error; // Used to check for system clock changes
-    static datetime dtmlast_run         = datetime_error; // The last time the function's main logic ran.
-    static datetime dtmlast_promo_batch = datetime_error; // The last time a promo batch was returned.
+    static datetime dtmlast_now = datetime_error; // Used to check for system clock changes
+    static datetime dtmlast_run = datetime_error; // The last time the function's main logic ran.
 
     // Check if the system clock was set back in time since the last time:
     datetime dtmnow = now();
     if (dtmnow < dtmlast_now) {
-      testing;
       log_message("System clock change detected, recallibrating function timing...");
-      dtmlast_run         = datetime_error;
-      dtmlast_promo_batch = datetime_error;
+      dtmlast_run = datetime_error;
+      run_data.dtmlast_promo_batch_item_played = datetime_error;
     }
 
     // Don't query the database for adverts too regularly. Require that either at
@@ -174,9 +172,12 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     CHECK(run_data.current_segment.blnpromos,
       "Current segment allows promos",
       "Current segment does not allow promos");
-    CHECK((dtmnow >= dtmlast_promo_batch + 60 * config.intmin_mins_between_batches),
-      "Enough time has elapsed since the last advert batch",
-      "Not enough time has elapsed since the last advert batch");
+    {
+      datetime dtmwaiting_until = run_data.dtmlast_promo_batch_item_played + 60 * config.intmin_mins_between_batches;
+      CHECK((dtmnow >= dtmwaiting_until),
+        "Enough time has elapsed since the last advert batch",
+        "Not enough time has elapsed since the last advert batch. Waiting until " + format_datetime(dtmwaiting_until, "%T"));
+    }
     if (blnAdBatchesAllowedNow) {
       if (blnwould_interrupt_song) {
         if (run_data.current_item.strmedia == "LineIn") {
@@ -791,17 +792,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
             run_data.waiting_promos.push_back(promo);
           }
         }
-      }
-
-      // Only if a regular (non-time-forced) advert batch played now, reset the time when the last
-      // advert batch stopped playing. This is because we ignore forced-time playback, if for eg
-      // The min time between announcemnt batches is 5 minutes, then "forced-time" playbacks
-      // can occur in the middle of the 5 minutes, without affecting when the next regular announcement batch
-      // will play
-      if (blnAdBatchesAllowedNow) {
-        dtmlast_promo_batch = now(); // The last announcement of the batch just finished playing.
-                                    // So we grab the current time to ensure a minimum amount of music
-                                    // before the next set of announcements can play.
       }
     }
   }
