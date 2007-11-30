@@ -13,13 +13,8 @@
 
 // A "call-back" logging function:
 void log(const log_info & LI) {
-  // Standard log handling - logfile & cout.
-  // Doing this here instead of in player::log in case the player object no longer
-  // exists (eg: Player constructor threw an execption)
-  if (pplayer != NULL) {
-    pplayer->log(LI); // Log to cout, file & db.
-  }
-  else rr_log_file(LI, PLAYER_LOG_FILE); // Just log to cout & file.
+  // Standard log handling - logfile & clog
+  rr_log_file(LI, PLAYER_LOG_FILE, PLAYER_DEBUG_LOG_FILE);
 }
 
 int main(int argc, char *argv[])
@@ -44,16 +39,13 @@ int main(int argc, char *argv[])
           return EXIT_SUCCESS;
         } else if (strarg == "debug") {
           log_line("Starting the Player in debug mode.");
-          blndebug = true;
+          logging.blndebug = true;
         } else my_throw("Unknown argument: " + strarg);
       }
     }
 
     //  Init the player:
     player player;
-
-    // Setup debugging mode if requested:
-    player.debug(blndebug);
 
     // Run the Player main event loop:
     player.run();

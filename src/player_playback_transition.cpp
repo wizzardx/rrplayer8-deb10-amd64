@@ -77,13 +77,13 @@ void player::playback_transition(playback_events_info & playback_events) {
       // Queue a transition over to the next item:
 
       // Fetch the next item now if it isn't already loaded:
-      if (blndebug) cout << "Do we have the next item yet?" << endl;
+      log_debug("Do we have the next item yet?");
       if (!run_data.next_item.blnloaded) {
         // Next item is not already known. Switch over:
-        if (blndebug) cout << " - Not yet. Fetching it so we have something to transition into." << endl;
+        log_debug(" - Not yet. Fetching it so we have something to transition into.");
         get_next_item(run_data.next_item, intitem_ends_ms);
       }
-      else if (blndebug) cout << " - Yes. Will transition into it." << endl;
+      else log_debug(" - Yes. Will transition into it.");
 
       // Are crossfades allowed now?
 
@@ -382,7 +382,7 @@ void player::playback_transition(playback_events_info & playback_events) {
 
       // Now handle the event:
       {
-        if (blndebug) cout << "[" << current_event->intrun_ms << "] " << current_event->strevent << endl;
+        log_debug("[" + itostr(current_event->intrun_ms) + "] " + current_event->strevent);
         // Fetch the main command, and any argument from the event string:
         string strcmd = "";
         string strarg = "";
@@ -559,7 +559,7 @@ void player::playback_transition(playback_events_info & playback_events) {
             // fade (ie, before we switch over completely to the next item), and queue them here.
             if (blncrossfade && run_data.next_item.blnmusic_bed) {
   testing_throw;
-              if (blndebug) cout << "Queuing any music bed events (for the next item), during the upcoming crossfade..." << endl;
+              log_debug("Queuing any music bed events (for the next item), during the upcoming crossfade...");
               // Work out the current time in ms, compared to when the queue started:
               timeval tvnow;
               gettimeofday(&tvnow, NULL);
@@ -760,7 +760,7 @@ void player::playback_transition(playback_events_info & playback_events) {
 
 // Used by playback_transition():
 void player::queue_event(transition_event_list & events, const string & strevent, const int intwhen_ms) {
-  if (blndebug) cout << "Queued: [" << intwhen_ms << "] " << strevent << endl;
+  log_debug("Queued: [" + itostr(intwhen_ms) + "] " + strevent);
   // Add an event to the queue.
   // Setup the event:
   transition_event event;

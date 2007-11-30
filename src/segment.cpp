@@ -445,9 +445,11 @@ void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags,
   //   because they were played recently (this can cause songs by the same
   //   artist to play sooner than expected)
 
+  int intproblems = 0; // Count the number of problems encountered while alternating.
+
   // Make a copy of the music history object for this function to abuse:
   music_history history(musichistory);
-  
+
   typedef vector<string> artist_mp3s; // Listing songs by a single artist;
   map <string, artist_mp3s> mp3s; // MP3s, sorted by artist
 
@@ -496,7 +498,8 @@ void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags,
           // Output the below to the cout, but not to the log file
           // (it can be distracting for people checking the log file after they
           // just moved music around)
-          cerr << "WARNING: Recently-played file not found, can't check the artist: " << *mp3_iter << endl;
+          intproblems++;
+          log_debug("Recently-played file not found, can't check the artist: " + *mp3_iter);
         }
         else {
           string strartist = lcase(trim(mp3tags.get_mp3_artist(*mp3_iter)));
@@ -557,7 +560,10 @@ void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags,
 
     // Did we find a song by this artist?
     if (mp3_iter == mp3s[*artist_iter].end()) {
-      log_warning("Problem alternating playlist artists: Can't find a song by \"" + *artist_iter + "\" that won't have played recently by slot " + itostr(file_list.size() + 1) + " in the new playlist");
+      intproblems++;
+      log_debug("Problem alternating playlist artists: Can't find a song by \"" +
+        *artist_iter + "\" that won't have played recently by slot " +
+        itostr(file_list.size() + 1) + " in the new playlist");
       // But we push a song by the artist into the playlist anyway, so that the
       // logic of this function doesn't get undermined (eg, what happens in
       // weird cases when our logic thinks that all the remaining songs have been played
@@ -585,6 +591,9 @@ void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags,
       artist_iter = artists.begin();
     }
   }
+
+  // Log a warning if we had problems alternating artists:
+  if (intproblems > 0) log_warning("Had " + itostr(intproblems) + " problems while alternating playlist artists. See debug log for more info.");
 }
 
 void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnshuffle, const bool blnasap) {

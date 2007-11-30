@@ -46,8 +46,6 @@ public:
   player();  ///< Constructor.
   ~player(); ///< Destructor
   void run(); ///< Main logic
-  void log(const log_info & LI); ///< Call this to write a log to the player logfile & to the schedule database.
-  void debug(const bool blndebug); // Additional messages are sent to cout...
 private:
   void init();  ///< Called by the constructor to do the actual init (kdevelop breakpoint problems).
 
@@ -198,9 +196,6 @@ private:
 
   /// Player music history. For updating tblmusichistory & preventing song repetition.
   music_history m_music_history;
-
-  // Debugging-related:
-  bool blndebug; // Set to true to output additional logging messages to cout.
 };
 
 extern player * pplayer; // A pointer to the currently-running player instance. Automatically maintained

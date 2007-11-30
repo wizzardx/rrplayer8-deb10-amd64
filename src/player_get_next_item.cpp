@@ -17,7 +17,7 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
   // item is automatically the "Silence" category (overriding anything else that might want to play now)
   // Also here must come logic for when a) repeat runs out before the segment end, and b) when some time of
   // the next segement is used up by accident (push slots forwards by up to 6 mins, reclaim space by using up music time).
-  if (blndebug) cout << "Fetching the next item" << endl;
+  log_debug("Fetching the next item");
 
   // Check if the item is already loaded:
   if (item.blnloaded) my_throw("Item is already loaded! Can't load it again! Reset it first!");
@@ -30,7 +30,7 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
 
   // Stop playback if we are within store hours:
   if (!item.blnloaded && !store_status.blnopen) {
-    if (blndebug) cout << "Store is closed, next item is silence" << endl;
+    log_debug("Store is closed, next item is silence");
     // Store is closed. Next item is silence.
     item.cat = SCAT_SILENCE;
     item.blnloaded = true;
@@ -43,31 +43,31 @@ void player::get_next_item(programming_element & item, const int intstarts_ms) {
   }
 
   // Check for Format Clock segment changes
-  if (blndebug) cout << " - Checking for Format Clock segment change" << endl;
+  log_debug(" - Checking for Format Clock segment change");
   get_next_item_check_fc_seg_change(intstarts_ms);
 
   // Return the next promo if there is one waiting in the database (or in a recently-retrieved batch):
   if (!item.blnloaded) {
     // Inside store hours. Any promos?
-    if (blndebug) cout << " - Don't have the next item yet, checking for a promo" << endl;
+    log_debug(" - Don't have the next item yet, checking for a promo");
     get_next_item_promo(item, intstarts_ms, false);
   }
 
   if (!item.blnloaded) {
     // No promos. Use Format Clocks to determine the next item.
-    if (blndebug) cout << " - Don't have the next item yet, checking for a format clock item" << endl;
+    log_debug(" - Don't have the next item yet, checking for a format clock item");
     get_next_item_format_clock(item, intstarts_ms);
   }
 
   // Check if we found something to play:
   if (!item.blnloaded) my_throw("Could not find the next item!");
 
-  if (blndebug) cout << "Found item: " << item.strmedia << endl;
+  log_debug("Found item: " + item.strmedia);
 }
 
 // Functions called by get_next_item():
 void player::get_next_item_promo(programming_element & item, const int intstarts_ms, const bool blnwould_interrupt_song) {
-  if (blndebug) cout << "Checking if there is a promo (regular Radio Retail announcement) to play..." << endl;
+  log_debug("Checking if there is a promo (regular Radio Retail announcement) to play...");
 
   // Check for Format Clock segment changes:
   bool blnfc_seg_changed = false;
@@ -75,7 +75,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     static long lnglast_fc_seg = -1;
     if (run_data.current_segment.blnloaded &&
         run_data.current_segment.lngfc_seg != lnglast_fc_seg) {
-      if (blndebug) cout << " - Detected: Format Clock segment just changed" << endl;
+      log_debug(" - Detected: Format Clock segment just changed");
       lnglast_fc_seg = run_data.current_segment.lngfc_seg;
       blnfc_seg_changed = true;
     }
@@ -93,7 +93,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
   // Are there any promos waiting to be returned?
   if (!run_data.waiting_promos.empty()) {
-    if (blndebug) cout << "Using a promo from a previously retrieved batch" << endl;
+    log_debug("Using a promo from a previously retrieved batch");
     // Yes: Return the promo and then leave this function
     item = run_data.waiting_promos[0];
     run_data.waiting_promos.pop_front();
@@ -122,24 +122,24 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   // segment has changed
   bool blnallow_query = false;
 
-  if (blndebug) cout << "Can we query the database for adverts now?" << endl;
+  log_debug("Can we query the database for adverts now?");
 
   if (!blnallow_query) {
     if (dtmlast_run == datetime_error || (dtmnow/30 != dtmlast_run/30)) {
-      if (blndebug) cout << " - Yes. Enough time has elapsed since the last query" << endl;
+      log_debug(" - Yes. Enough time has elapsed since the last query");
       blnallow_query = true;
     }
-    else if (blndebug) cout << " - (Not enough time has elapsed since the last query)" << endl;
+    else log_debug(" - (Not enough time has elapsed since the last query)");
   }
   if (!blnallow_query) {
     if (blnfc_seg_changed) {
-      if (blndebug) cout << " - Yes. The Format Clock segment has just changed" << endl;
+      log_debug(" - Yes. The Format Clock segment has just changed");
       blnallow_query = true;
     }
   }
 
   if (!blnallow_query) {
-    if (blndebug) cout << " - No. See above for more info." << endl;
+    log_debug(" - No. See above for more info.");
     return;
   }
 
@@ -151,17 +151,17 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   // Check if any ads can play now (ie, in a regular batch), or only adverts which have a specific "forced" time
   // (these could end up in "batches" also, but they take precedence over the artificial forced waits between
   // batches
-  if (blndebug) cout << "Are regular advert batches allowed now?" << endl;
+  log_debug("Are regular advert batches allowed now?");
   bool blnAdBatchesAllowedNow = true; // Assume they are allowed for the moment
 
   // Define a macro to make our logic below simpler:
   #define CHECK(COND, PASS_MSG, FAIL_MSG) { \
     if (blnAdBatchesAllowedNow) { \
       if (COND) { \
-        if (blndebug) cout << " - (" << PASS_MSG << ")" << endl; \
+        log_debug(" - (" PASS_MSG ")"); \
       } \
       else { \
-        if (blndebug) cout << " - No. " << FAIL_MSG << endl; \
+        log_debug(" - No. " FAIL_MSG); \
         blnAdBatchesAllowedNow = false; \
       } \
     } \
@@ -179,28 +179,26 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   if (blnAdBatchesAllowedNow) {
     if (blnwould_interrupt_song) {
       if (run_data.current_item.strmedia == "LineIn") {
-        if (blndebug) cout << " - (Promo would interrupt LineIn, this is always allowed)" << endl;
+        log_debug(" - (Promo would interrupt LineIn, this is always allowed)");
       }
       else if (config.blnpromos_wait_for_song_end) {
-        if (blndebug) cout << " - No. Promo would interrupt a song and this is not allowed (tbldefs.blnAdvertsWaitForSongEnd=true)" << endl;
+        log_debug(" - No. Promo would interrupt a song and this is not allowed (tbldefs.blnAdvertsWaitForSongEnd=true)");
         blnAdBatchesAllowedNow = false;
       }
       else {
-        if (blndebug) cout << " - (Promo would interrupt a song, but this is allowed (tbldefs.blnAdvertsWaitForSongEnd=false))" << endl;
+        log_debug(" - (Promo would interrupt a song, but this is allowed (tbldefs.blnAdvertsWaitForSongEnd=false))");
       }
     }
-    else if (blndebug) cout << " - (Promo wouldn't interrupt a song)" << endl;
+    else log_debug(" - (Promo wouldn't interrupt a song)");
   }
 
-  if (blndebug) {
-    if (blnAdBatchesAllowedNow) {
-      cout << " - Advert batches are allowed now. Check above for more info" << endl;
-    }
-    else {
-      cout << " - Advert batches are not allowed now." << endl;
-      cout << "   However, promos with 'forced' times will still be played." << endl;
-      cout << "   Check above for more info." << endl;
-    }
+  if (blnAdBatchesAllowedNow) {
+    log_debug(" - Advert batches are allowed now. Check above for more info");
+  }
+  else {
+    log_debug(" - Advert batches are not allowed now.");
+    log_debug("   However, promos with 'forced' times will still be played.");
+    log_debug("   Check above for more info.");
   }
 
   // Remove the macro:
@@ -304,16 +302,16 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
   // - Player v6.15 - Now the announcement priority code (CA=1,SP=2,AD=3) actually has an effect on the announcement
   // playback priority (ORDER BY tblSched.strPriorityConverted)
-  if (blndebug) cout << "Querying database for adverts. SQL: " << strSQL << endl;
+  log_debug("Querying database for adverts. SQL: " + strSQL);
   pg_result RS = db.exec(strSQL);
-  if (blndebug) cout << "Returned rows: " << RS.size() << endl;
+  log_debug("Returned rows: " + itostr(RS.size()));
 
   // Get a list of all the announcements fetched from the db, and re-order them
   // appropriately
   TWaitingAnnouncements reordered_db_announcements;
   {
     // Get all the announcements from the database
-    if (blndebug) cout << "Fetching adverts from database" << endl;
+    log_debug("Fetching adverts from database");
     TWaitingAnnouncements db_announcements;
     while (RS) {
       TWaitingAnnounce Announce;
@@ -378,7 +376,9 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
       // Skip the ad if it is a "forced time" ad in the future:
       if (Announce.blnForcedTime && Announce.dtmTime > dtmplayback_time) {
-        if (blndebug) cout << " - Not including advert " << Announce.strFileName << " in list, it has a forced time (" << format_datetime(Announce.dtmTime, "%T") << ") and is in the future" << endl;
+        log_debug(" - Not including advert " + Announce.strFileName +
+          " in list, it has a forced time (" +
+          format_datetime(Announce.dtmTime, "%T") + ") and is in the future");
       }
       else {
         // No problem, so add it to the list of adverts loaded from the database:
@@ -389,15 +389,16 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
 
     // Now re-order the adverts:
     {
-      if (blndebug) cout << "Re-ordering adverts" << endl;
+      log_debug("Re-ordering adverts");
       TWaitingAnnouncements::iterator iter;
       // - First "forced playback time" adverts
       //   (we already filtered out ones in the future)
       iter = db_announcements.begin();
       while (iter != db_announcements.end()) {
         if (iter->blnForcedTime) {
-          if (blndebug) cout << " - Moving advert " << iter->strFileName <<
-            " with forced time (" << format_datetime(iter->dtmTime, "%T") << ") to start of re-ordered advert list" << endl;
+          log_debug(" - Moving advert " + iter->strFileName +
+            " with forced time (" + format_datetime(iter->dtmTime, "%T") +
+             ") to start of re-ordered advert list");
           reordered_db_announcements.push_back(*iter);
           iter = db_announcements.erase(iter);
         }
@@ -411,9 +412,9 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
         while (iter != db_announcements.end()) { \
           if (iter->dtmTime >= (FROM) && \
               iter->dtmTime <= (TO)) { \
-            if (blndebug) cout << " - Advert " << iter->strFileName << " (at " << \
-            format_datetime(iter->dtmTime, "%T") << ") is " << DESC << \
-            ". Appending to re-ordered list" << endl; \
+            log_debug(" - Advert " + iter->strFileName + " (at " + \
+            format_datetime(iter->dtmTime, "%T") + ") is " + DESC + \
+            ". Appending to re-ordered list"); \
             reordered_db_announcements.push_back(*iter); \
             iter = db_announcements.erase(iter); \
           } \

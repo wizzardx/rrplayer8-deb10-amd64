@@ -139,16 +139,6 @@ void player::run() {
   }
 }
 
-void player::log(const log_info & LI) {
-  // Log to the logfile & to database:
-  rr_log_file(LI, PLAYER_LOG_FILE);
-}
-
-// Enable or disable extra messages sent to cout...
-void player::debug(const bool _blndebug) {
-  blndebug = _blndebug;
-}
-
 void player::init() {
   // Log the player version:
   rr_log_prog_starting();
@@ -188,9 +178,6 @@ void player::init() {
 
   // Now attempt to connect to the database, and retry until successful
   db.open(strconn);
-
-  // If the player is in debugging mode then say so:
-  if (blndebug) log_warning("Running in debug mode");
 
   // Reload all config settings from the database:
   load_db_config();
@@ -288,11 +275,7 @@ void player::reset() {
   store_status.volumes.intannounce = -1;
   store_status.volumes.intlinein   = -1;
   store_status.volumes.dblxmmseqpreamp = -1;
-
-  // Debugging output:
-  blndebug = false;
 }
-
 
 void player::remove_waiting_mediaplayer_cmds() {
   // Remove waiting MediaPlayer commands (pause, stop, resume, etc)
