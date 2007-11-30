@@ -87,8 +87,16 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   if (blnfc_seg_changed &&
       !run_data.waiting_promos.empty() &&
       !run_data.current_segment.blnpromos) {
-    log_message("Format Clock segment changed, and the new segment does not allow promos (except for 'forced time' promos), so clearing our 'waiting promos' list. It will be re-populated a bit later with any 'forced time' promos");
-    run_data.waiting_promos.clear();
+    log_message("Format Clock segment changed, and the new segment does not allow promos (except for 'forced time' promos)");
+    log_message("Clearing any non-'forced time' promos from our list");
+    programming_element_list::iterator pel_iter = run_data.waiting_promos.begin();
+    while (pel_iter != run_data.waiting_promos.end()) {
+      if (!pel_iter->promo.blnforced_time) {
+        log_message(" - Removing " + pel_iter->strmedia + " from the list");
+        pel_iter = run_data.waiting_promos.erase(pel_iter);
+      }
+      else pel_iter++;
+    }
   }
 
   // Do we have anly queued promos waiting to play?
