@@ -1,3 +1,13 @@
+rrplayer-fc (7.40) unstable; urgency=low
+
+  * Player now has a debugging log file: player_debug.log
+  * Logging debug messages for playlist artist-alternation problems instead
+    of warnings.
+    - The problems are now summarized as a single warning message.
+  * Fixed compile warnings
+
+ -- David Purdy <david@radioretail.co.za>  Fri, 30 Nov 2007 10:39:11 +0200
+
 rrplayer-fc (7.39.1) unstable; urgency=low
 
   * Only logging warnings about songs not being dynamically compressed once.
