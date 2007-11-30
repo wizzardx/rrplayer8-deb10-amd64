@@ -1077,18 +1077,13 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
       // Check that XMMS's end matches the end recorded in the DB fairly closely:
       int intdiff = abs(intxmms_song_length_ms - run_data.current_item.end.intlength_ms);
       if (intdiff > 500) {
-        log_warning("XMMS says that " + run_data.current_item.strmedia + " is " + itostr(intxmms_song_length_ms) + " ms long, but the DB says it is " + itostr(run_data.current_item.end.intlength_ms) + " ms");
+        log_debug("XMMS says that " + run_data.current_item.strmedia + " is " + itostr(intxmms_song_length_ms) + " ms long, but the DB says it is " + itostr(run_data.current_item.end.intlength_ms) + " ms. I might not end the song at the correct time!");
       }
 
       // Log a warning if the item is dynamically compressed:
       if (!run_data.current_item.end.blndynamically_compressed) {
         // Not dynamically range compressed
-        // - Don't keep warning every second:
-        static string strlast_warned = "";
-        if (run_data.current_item.strmedia != strlast_warned) {
-          log_warning("It looks like " + run_data.current_item.strmedia + " is not dynamically range compressed, so I can't tell if it ends suddenly");
-          strlast_warned = run_data.current_item.strmedia;
-        }
+        log_debug("It looks like " + run_data.current_item.strmedia + " is not dynamically range compressed, so I can't tell if it ends suddenly");
       }
 
       // If the song becomes silent towards the end, then assume that the

@@ -100,9 +100,11 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   }
 
   // Do we have anly queued promos waiting to play?
+  log_debug("Do we have any queued promos waiting to play?");
   if (run_data.waiting_promos.empty()) {
     // No promos waiting to be returned. So query the database (if it's ok at
     // this time)
+    log_debug(" - No. Will check if we can query for promos to add to the queue.");
 
     // Timing variables:
     static datetime dtmlast_now = datetime_error; // Used to check for system clock changes
@@ -794,13 +796,18 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
         }
       }
     }
-  }
+  } // if (run_data.waiting_promos.empty())
+  else log_debug(" - Yes. Using a promo from a previously retrieved batch");
 
   // Are there any promos waiting to be returned?
-  if (!run_data.waiting_promos.empty()) {
+  if (run_data.waiting_promos.empty()) {
+    log_debug("No promos to play now");
+  }
+  else {
     // Yes: Return the promo and then leave this function
     item = run_data.waiting_promos[0];
     run_data.waiting_promos.pop_front();
+    log_debug("Found a promo to play now");
   }
 }
 
