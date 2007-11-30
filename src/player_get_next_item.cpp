@@ -91,723 +91,720 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     run_data.waiting_promos.clear();
   }
 
-  // Are there any promos waiting to be returned?
-  if (!run_data.waiting_promos.empty()) {
-    log_debug("Using a promo from a previously retrieved batch");
-    // Yes: Return the promo and then leave this function
-    item = run_data.waiting_promos[0];
-    run_data.waiting_promos.pop_front();
-    return;
-  }
+  // Do we have anly queued promos waiting to play?
+  if (run_data.waiting_promos.empty()) {
+    // No promos waiting to be returned. So query the database (if it's ok at
+    // this time)
 
-  // No promos waiting to be returned. So query the database (if it's ok at
-  // this time)
+    // Timing variables:
+    static datetime dtmlast_now         = datetime_error; // Used to check for system clock changes
+    static datetime dtmlast_run         = datetime_error; // The last time the function's main logic ran.
+    static datetime dtmlast_promo_batch = datetime_error; // The last time a promo batch was returned.
 
-  // Timing variables:
-  static datetime dtmlast_now         = datetime_error; // Used to check for system clock changes
-  static datetime dtmlast_run         = datetime_error; // The last time the function's main logic ran.
-  static datetime dtmlast_promo_batch = datetime_error; // The last time a promo batch was returned.
-
-  // Check if the system clock was set back in time since the last time:
-  datetime dtmnow = now();
-  if (dtmnow < dtmlast_now) {
-    testing;
-    log_message("System clock change detected, recallibrating function timing...");
-    dtmlast_run         = datetime_error;
-    dtmlast_promo_batch = datetime_error;
-  }
-
-  // Don't query the database for adverts too regularly. Require that either at
-  // least 30 seconds have elapsed from the last time, or that the Format Clock
-  // segment has changed
-  bool blnallow_query = false;
-
-  log_debug("Can we query the database for adverts now?");
-
-  if (!blnallow_query) {
-    if (dtmlast_run == datetime_error || (dtmnow/30 != dtmlast_run/30)) {
-      log_debug(" - Yes. Enough time has elapsed since the last query");
-      blnallow_query = true;
+    // Check if the system clock was set back in time since the last time:
+    datetime dtmnow = now();
+    if (dtmnow < dtmlast_now) {
+      testing;
+      log_message("System clock change detected, recallibrating function timing...");
+      dtmlast_run         = datetime_error;
+      dtmlast_promo_batch = datetime_error;
     }
-    else log_debug(" - (Not enough time has elapsed since the last query)");
-  }
-  if (!blnallow_query) {
-    if (blnfc_seg_changed) {
-      log_debug(" - Yes. The Format Clock segment has just changed");
-      blnallow_query = true;
+
+    // Don't query the database for adverts too regularly. Require that either at
+    // least 30 seconds have elapsed from the last time, or that the Format Clock
+    // segment has changed
+    bool blnallow_query = false;
+
+    log_debug("Can we query the database for adverts now?");
+
+    if (!blnallow_query) {
+      if (dtmlast_run == datetime_error || (dtmnow/30 != dtmlast_run/30)) {
+        log_debug(" - Yes. Enough time has elapsed since the last query");
+        blnallow_query = true;
+      }
+      else log_debug(" - (Not enough time has elapsed since the last query)");
     }
-  }
+    if (!blnallow_query) {
+      if (blnfc_seg_changed) {
+        log_debug(" - Yes. The Format Clock segment has just changed");
+        blnallow_query = true;
+      }
+    }
 
-  if (!blnallow_query) {
-    log_debug(" - No. See above for more info.");
-    return;
-  }
+    if (!blnallow_query) {
+      log_debug(" - No. See above for more info.");
+      return;
+    }
 
-  // Now remember the last time we ran:
-  dtmlast_run = dtmnow;
+    // Now remember the last time we ran:
+    dtmlast_run = dtmnow;
 
-  // Now check that the minimum time has passed since the last announcement batch
+    // Now check that the minimum time has passed since the last announcement batch
 
-  // Check if any ads can play now (ie, in a regular batch), or only adverts which have a specific "forced" time
-  // (these could end up in "batches" also, but they take precedence over the artificial forced waits between
-  // batches
-  log_debug("Are regular advert batches allowed now?");
-  bool blnAdBatchesAllowedNow = true; // Assume they are allowed for the moment
+    // Check if any ads can play now (ie, in a regular batch), or only adverts which have a specific "forced" time
+    // (these could end up in "batches" also, but they take precedence over the artificial forced waits between
+    // batches
+    log_debug("Are regular advert batches allowed now?");
+    bool blnAdBatchesAllowedNow = true; // Assume they are allowed for the moment
 
-  // Define a macro to make our logic below simpler:
-  #define CHECK(COND, PASS_MSG, FAIL_MSG) { \
-    if (blnAdBatchesAllowedNow) { \
-      if (COND) { \
-        log_debug(" - (" PASS_MSG ")"); \
+    // Define a macro to make our logic below simpler:
+    #define CHECK(COND, PASS_MSG, FAIL_MSG) { \
+      if (blnAdBatchesAllowedNow) { \
+        if (COND) { \
+          log_debug(" - (" PASS_MSG ")"); \
+        } \
+        else { \
+          log_debug(" - No. " FAIL_MSG); \
+          blnAdBatchesAllowedNow = false; \
+        } \
       } \
-      else { \
-        log_debug(" - No. " FAIL_MSG); \
-        blnAdBatchesAllowedNow = false; \
-      } \
-    } \
-  }
-
-  CHECK(run_data.current_segment.blnloaded,
-    "Current segment is loaded",
-    "Current segment is not loaded");
-  CHECK(run_data.current_segment.blnpromos,
-    "Current segment allows promos",
-    "Current segment does not allow promos");
-  CHECK((dtmnow >= dtmlast_promo_batch + 60 * config.intmin_mins_between_batches),
-    "Enough time has elapsed since the last advert batch",
-    "Not enough time has elapsed since the last advert batch");
-  if (blnAdBatchesAllowedNow) {
-    if (blnwould_interrupt_song) {
-      if (run_data.current_item.strmedia == "LineIn") {
-        log_debug(" - (Promo would interrupt LineIn, this is always allowed)");
-      }
-      else if (config.blnpromos_wait_for_song_end) {
-        log_debug(" - No. Promo would interrupt a song and this is not allowed (tbldefs.blnAdvertsWaitForSongEnd=true)");
-        blnAdBatchesAllowedNow = false;
-      }
-      else {
-        log_debug(" - (Promo would interrupt a song, but this is allowed (tbldefs.blnAdvertsWaitForSongEnd=false))");
-      }
     }
-    else log_debug(" - (Promo wouldn't interrupt a song)");
-  }
 
-  if (blnAdBatchesAllowedNow) {
-    log_debug(" - Advert batches are allowed now. Check above for more info");
-  }
-  else {
-    log_debug(" - Advert batches are not allowed now.");
-    log_debug("   However, promos with 'forced' times will still be played.");
-    log_debug("   Check above for more info.");
-  }
-
-  // Remove the macro:
-  #undef CHECK
-
-  // Correct announcements that were previously interrupted during playback...
-  correct_waiting_promos();
-
-  // Calculate the date and time that the caller wants ads from:
-  datetime dtmplayback = now() + intstarts_ms/1000;
-  datetime dtmplayback_date = get_datetime_date(dtmplayback);
-  datetime dtmplayback_time = get_datetime_time(dtmplayback);
-
-  // Get the range of times to query for. The exact logic depends on whether
-  //  Format Clocks are enabled or not.
-  string psql_query_from = "";
-  string psql_query_until = "";
-  {
-    datetime dtmquery_from = datetime_error;
-    datetime dtmquery_until = datetime_error;
-
-    // When do we start missing ads before? (we query for ads after this time):
-    datetime dtmmiss_ads_before = get_miss_promos_before_time();
-
-    if (config.blnformat_clocks_enabled) {
-      // When Format Clocks are enabled we query for ads between X and Y, where:
-      //   - X = the start of the current hour, or [current time minus minutes
-      //         after which we miss adverts], whichever is earliest
-      //   - Y = the current time (if we're not in an FC seg), otherwise the end
-      //         of the current segment, or 10 minutes into the future, or the
-      //         end of the hour in which the segment started, whichever comes
-      //         earliest.
-      datetime dtmhour_start = (dtmplayback_time / (60*60)) * (60*60);
-      dtmquery_from = MIN(dtmhour_start, dtmmiss_ads_before);
-      if (run_data.current_segment.blnloaded) {
-        // Store the various times in variables, so we can get the earliest time:
-        datetime dtmseg_start = get_datetime_time(run_data.current_segment.dtmstart);
-        // - End of the current segment:
-        datetime dtmseg_end = clamp_time(dtmseg_start + run_data.current_segment.intlength - 1);
-        // - 10 minutes into the future:
-        datetime dtmten_mins = clamp_time(dtmplayback_time+10*60);
-        // - End of the hour in which the segment started:
-        datetime dtmseg_start_hour_end = clamp_time(((dtmseg_start / (60*60)) * (60*60)) + (60*60)-1);
-
-        // Now get the time we query up until:
-        dtmquery_until = MIN(MIN(dtmseg_end, dtmten_mins), dtmseg_start_hour_end);
+    CHECK(run_data.current_segment.blnloaded,
+      "Current segment is loaded",
+      "Current segment is not loaded");
+    CHECK(run_data.current_segment.blnpromos,
+      "Current segment allows promos",
+      "Current segment does not allow promos");
+    CHECK((dtmnow >= dtmlast_promo_batch + 60 * config.intmin_mins_between_batches),
+      "Enough time has elapsed since the last advert batch",
+      "Not enough time has elapsed since the last advert batch");
+    if (blnAdBatchesAllowedNow) {
+      if (blnwould_interrupt_song) {
+        if (run_data.current_item.strmedia == "LineIn") {
+          log_debug(" - (Promo would interrupt LineIn, this is always allowed)");
+        }
+        else if (config.blnpromos_wait_for_song_end) {
+          log_debug(" - No. Promo would interrupt a song and this is not allowed (tbldefs.blnAdvertsWaitForSongEnd=true)");
+          blnAdBatchesAllowedNow = false;
+        }
+        else {
+          log_debug(" - (Promo would interrupt a song, but this is allowed (tbldefs.blnAdvertsWaitForSongEnd=false))");
+        }
       }
-      else {
-        dtmquery_until = dtmplayback_time;
-      }
+      else log_debug(" - (Promo wouldn't interrupt a song)");
+    }
+
+    if (blnAdBatchesAllowedNow) {
+      log_debug(" - Advert batches are allowed now. Check above for more info");
     }
     else {
-      // When Format Clocks are disabled we query for ads between X and Y, where:
-      //   - X = the current time minus [the number of minutes after which we miss
-      //         adverts]
-      //   - Y = the current time
-      dtmquery_from = dtmmiss_ads_before;
-      dtmquery_until = dtmplayback_time;
-    }
-    psql_query_from = time_to_psql(dtmquery_from);
-    psql_query_until = time_to_psql(dtmquery_until);
-  }
-
-  // This query is changed in version 6.14 - ad batches are restricted to certain intervals, but adverts forced to
-  // play at specific times ignore these intervals and will play as close to their playback times as possible
-
-  // Version 6.14.3 - If necessary, check the the related tblprerec_item's lifespan...
-  string strSQL = "SELECT"
-                 " tblSchedule_TZ_Slot.lngTZ_Slot, tblSched.strFilename, lower(tblSched.strProductCat) AS strProductCat,"
-                 " tblSched.strPlayAtPercent, tblSchedule_TZ_Slot.dtmDay, tblSlot_Assign.dtmStart, tblSlot_Assign.dtmEnd,"
-                 " tblSched.strPriorityOriginal, tblSched.strPriorityConverted, tblSchedule_TZ_Slot.bitScheduled,"
-                 " tblSchedule_TZ_Slot.bitPlayed, tblSchedule_TZ_Slot.dtmForcePlayAt,"
-                 " lower(tblsched.strAnnCode) AS strAnnCode,"
-                 " lower(tblsched.strprerec_mediaref) AS strprerec_mediaref," // 6.14.3 - The 2 fields related to PAYB
-                 " tblSched.bitcheck_prerec_lifespan "
-                 "FROM tblschedule_tz_slot "
-                 "INNER JOIN tblSlot_Assign USING (lngAssign) "
-                 "INNER JOIN tblSched ON tblSchedule_TZ_Slot.lngSched = tblSched.lngSchedule "
-                 "WHERE"
-                 "  tblSchedule_TZ_Slot.dtmDay = date '" + format_datetime(dtmplayback_date, "%F")  + "'" + " AND "
-                 "  tblSchedule_TZ_Slot.bitScheduled = " + itostr(ADVERT_SNS_LOADED) + " AND "
-                 "("
-                     "("
-                       "(tblSchedule_TZ_Slot.dtmForcePlayAt >= " + psql_query_from + ") AND "
-                       "(tblSchedule_TZ_Slot.dtmForcePlayAt <= " + psql_query_until + ")"
-                     ")";
-
-  // The query above only asks for "forced" playback times. Now if they are allowed now, then also include an
-  // "OR" which will include the regular, un-forced times.
-  if (blnAdBatchesAllowedNow) {
-    strSQL += " OR "
-                   "("
-                     "(tblSchedule_TZ_Slot.dtmForcePlayAt IS NULL) AND"
-                     "(tblSlot_Assign.dtmStart >= " + psql_query_from + ") AND "
-                     "(tblSlot_Assign.dtmStart <= " + psql_query_until + ")"
-                   ")";
-  }
-
-  // Now close the "WHERE" block and append the rest of the query.
-  strSQL += ") ORDER BY tblSched.strPriorityConverted, tblSlot_Assign.dtmStart, tblSchedule_TZ_Slot.lngTZ_Slot";
-
-  // - Player v6.15 - Now the announcement priority code (CA=1,SP=2,AD=3) actually has an effect on the announcement
-  // playback priority (ORDER BY tblSched.strPriorityConverted)
-  log_debug("Querying database for adverts. SQL: " + strSQL);
-  pg_result RS = db.exec(strSQL);
-  log_debug("Returned rows: " + itostr(RS.size()));
-
-  // Get a list of all the announcements fetched from the db, and re-order them
-  // appropriately
-  TWaitingAnnouncements reordered_db_announcements;
-  {
-    // Get all the announcements from the database
-    log_debug("Fetching adverts from database");
-    TWaitingAnnouncements db_announcements;
-    while (RS) {
-      TWaitingAnnounce Announce;
-      Announce.dbPos = strtoi(RS.field("lngTZ_Slot", "-1"));
-      Announce.strFileName = lcase(RS.field("strFileName", ""));
-      Announce.strProductCat = RS.field("strProductCat", "");
-      Announce.dtmTime = parse_psql_time(RS.field("dtmForcePlayAt", RS.field("dtmStart", "").c_str()));
-      Announce.blnForcedTime = !RS.field_is_null("dtmForcePlayAt");
-      Announce.strPriority = RS.field("strPriorityOriginal", "");
-
-      // Get strPlayAtPercent
-      {
-        // Fetch from the database:
-        string strPlayAtPercent = RS.field("strPlayAtPercent", "");
-        // Parse it further:
-        if (isint(strPlayAtPercent)) {
-          // Clip the value from 0 to 100
-          if (strtoi(strPlayAtPercent) > 100) {
-            strPlayAtPercent="100";
-          }
-          else if (strtoi(strPlayAtPercent) < 0) {
-            strPlayAtPercent = "0";
-          }
-        }
-        else {
-          // Convert playback volume percentage to upper case
-          strPlayAtPercent = ucase(strPlayAtPercent);
-          if (strPlayAtPercent != "MUS" && strPlayAtPercent != "ADV") {
-            strPlayAtPercent = "100";
-          }
-        }
-        Announce.strPlayAtPercent = strPlayAtPercent;
-      }
-
-      Announce.strAnnCode = RS.field("strAnnCode", "");
-
-      // Get the path of the announcement (ie the directory):
-      {
-        string strFilePath = "";
-        string strFilePrefix = lcase(substr(Announce.strFileName, 0, 2));
-        if (strFilePrefix == "ca") {
-          strFilePath = config.dirs.strannouncements; // Announcements
-        }
-        else if (strFilePrefix == "sp") {
-          strFilePath = config.dirs.strspecials; // Specials
-        } else if (strFilePrefix == "ad") {
-          strFilePath = config.dirs.stradverts; // Adverts
-        }
-        else {
-          log_error ("Advert filename " + Announce.strFileName +
-            " has an unknown prefix " + strFilePrefix);
-          strFilePath = config.dirs.strmp3; // Default to the music folder
-        }
-        Announce.strPath = strFilePath;
-      }
-
-      // Get PAYB details:
-      Announce.strPrerecMediaRef = lcase(RS.field("strprerec_mediaref", ""));
-      Announce.blnCheckPrerecLifespan = (RS.field("bitcheck_prerec_lifespan", "0") == "1");
-
-      // We now have all the the info for the advert
-
-      // Skip the ad if it is a "forced time" ad in the future:
-      if (Announce.blnForcedTime && Announce.dtmTime > dtmplayback_time) {
-        log_debug(" - Not including advert " + Announce.strFileName +
-          " in list, it has a forced time (" +
-          format_datetime(Announce.dtmTime, "%T") + ") and is in the future");
-      }
-      else {
-        // No problem, so add it to the list of adverts loaded from the database:
-        db_announcements.push_back(Announce);
-      }
-      RS++; // Move to the next record
+      log_debug(" - Advert batches are not allowed now.");
+      log_debug("   However, promos with 'forced' times will still be played.");
+      log_debug("   Check above for more info.");
     }
 
-    // Now re-order the adverts:
+    // Remove the macro:
+    #undef CHECK
+
+    // Correct announcements that were previously interrupted during playback...
+    correct_waiting_promos();
+
+    // Calculate the date and time that the caller wants ads from:
+    datetime dtmplayback = now() + intstarts_ms/1000;
+    datetime dtmplayback_date = get_datetime_date(dtmplayback);
+    datetime dtmplayback_time = get_datetime_time(dtmplayback);
+
+    // Get the range of times to query for. The exact logic depends on whether
+    //  Format Clocks are enabled or not.
+    string psql_query_from = "";
+    string psql_query_until = "";
     {
-      log_debug("Re-ordering adverts");
-      TWaitingAnnouncements::iterator iter;
-      // - First "forced playback time" adverts
-      //   (we already filtered out ones in the future)
-      iter = db_announcements.begin();
-      while (iter != db_announcements.end()) {
-        if (iter->blnForcedTime) {
-          log_debug(" - Moving advert " + iter->strFileName +
-            " with forced time (" + format_datetime(iter->dtmTime, "%T") +
-             ") to start of re-ordered advert list");
-          reordered_db_announcements.push_back(*iter);
-          iter = db_announcements.erase(iter);
+      datetime dtmquery_from = datetime_error;
+      datetime dtmquery_until = datetime_error;
+
+      // When do we start missing ads before? (we query for ads after this time):
+      datetime dtmmiss_ads_before = get_miss_promos_before_time();
+
+      if (config.blnformat_clocks_enabled) {
+        // When Format Clocks are enabled we query for ads between X and Y, where:
+        //   - X = the start of the current hour, or [current time minus minutes
+        //         after which we miss adverts], whichever is earliest
+        //   - Y = the current time (if we're not in an FC seg), otherwise the end
+        //         of the current segment, or 10 minutes into the future, or the
+        //         end of the hour in which the segment started, whichever comes
+        //         earliest.
+        datetime dtmhour_start = (dtmplayback_time / (60*60)) * (60*60);
+        dtmquery_from = MIN(dtmhour_start, dtmmiss_ads_before);
+        if (run_data.current_segment.blnloaded) {
+          // Store the various times in variables, so we can get the earliest time:
+          datetime dtmseg_start = get_datetime_time(run_data.current_segment.dtmstart);
+          // - End of the current segment:
+          datetime dtmseg_end = clamp_time(dtmseg_start + run_data.current_segment.intlength - 1);
+          // - 10 minutes into the future:
+          datetime dtmten_mins = clamp_time(dtmplayback_time+10*60);
+          // - End of the hour in which the segment started:
+          datetime dtmseg_start_hour_end = clamp_time(((dtmseg_start / (60*60)) * (60*60)) + (60*60)-1);
+
+          // Now get the time we query up until:
+          dtmquery_until = MIN(MIN(dtmseg_end, dtmten_mins), dtmseg_start_hour_end);
         }
-        else iter++;
-      }
-
-      // A macro to simplify our logic for moving items which play between
-      // 2 times from db_announcements to reordered_db_announcements
-      #define MOVE_ADS_BETWEEN(FROM, TO, DESC) \
-        iter = db_announcements.begin(); \
-        while (iter != db_announcements.end()) { \
-          if (iter->dtmTime >= (FROM) && \
-              iter->dtmTime <= (TO)) { \
-            log_debug(" - Advert " + iter->strFileName + " (at " + \
-            format_datetime(iter->dtmTime, "%T") + ") is " + DESC + \
-            ". Appending to re-ordered list"); \
-            reordered_db_announcements.push_back(*iter); \
-            iter = db_announcements.erase(iter); \
-          } \
-          else iter++; \
+        else {
+          dtmquery_until = dtmplayback_time;
         }
-
-      // - Then adverts in this hour:
-      datetime dtmhour_start = (dtmplayback_time / (60*60)) * (60*60);
-      datetime dtmhour_end = dtmhour_start + (60*60) - 1;
-
-      // - Related to the current segment (if it is loaded):
-      if (run_data.current_segment.blnloaded) {
-        datetime dtmseg_start = get_datetime_time(run_data.current_segment.scheduled.dtmstart);
-        datetime dtmseg_end   = get_datetime_time(run_data.current_segment.scheduled.dtmend);
-
-        // - Adverts in the current format clock segment
-        MOVE_ADS_BETWEEN(dtmseg_start, dtmseg_end, "in this hour and inside the current Format Clock segment");
-        // - Adverts after the current format clock segment
-        MOVE_ADS_BETWEEN(dtmseg_end+1, dtmhour_end, "in this hour and after the current Format Clock segment");
-        // - Adverts before the current format clock segment
-        MOVE_ADS_BETWEEN(dtmhour_start, dtmseg_start-1, "in this hour and before the current Format Clock segment");
       }
-      // All other adverts in this hour (eg, if the segment wasn't loaded)
-      MOVE_ADS_BETWEEN(dtmhour_start, dtmhour_end, "in this hour (no Format Clock segments loaded?)");
-
-      // - Lastly, all other adverts (outside the current hour)
-      MOVE_ADS_BETWEEN(DATETIME_MIN, DATETIME_MAX, "outside the current hour");
-
-      // Make sure that the list of adverts read from the database is now empty:
-      if (!db_announcements.empty()) LOGIC_ERROR;
-
-      // Now undefine our macro:
-      #undef MOVE_ADS_BETWEEN
+      else {
+        // When Format Clocks are disabled we query for ads between X and Y, where:
+        //   - X = the current time minus [the number of minutes after which we miss
+        //         adverts]
+        //   - Y = the current time
+        dtmquery_from = dtmmiss_ads_before;
+        dtmquery_until = dtmplayback_time;
+      }
+      psql_query_from = time_to_psql(dtmquery_from);
+      psql_query_until = time_to_psql(dtmquery_until);
     }
-  }
 
-  // Process the re-ordered list of items from the database, and build the list
-  // of ads to actually be played in this batch:
-  TWaitingAnnouncements AnnounceList; // Ads to be played in the next batch
-  TWaitingAnnouncements AnnounceMissed_SameVoice; // These are the announcements missed because the
-                                                  // previous announcement had the same announcer
+    // This query is changed in version 6.14 - ad batches are restricted to certain intervals, but adverts forced to
+    // play at specific times ignore these intervals and will play as close to their playback times as possible
 
-  TWaitingAnnouncements::iterator reordered_iter = reordered_db_announcements.begin();
-  while (reordered_iter != reordered_db_announcements.end()
-         && AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
+    // Version 6.14.3 - If necessary, check the the related tblprerec_item's lifespan...
+    string strSQL = "SELECT"
+                  " tblSchedule_TZ_Slot.lngTZ_Slot, tblSched.strFilename, lower(tblSched.strProductCat) AS strProductCat,"
+                  " tblSched.strPlayAtPercent, tblSchedule_TZ_Slot.dtmDay, tblSlot_Assign.dtmStart, tblSlot_Assign.dtmEnd,"
+                  " tblSched.strPriorityOriginal, tblSched.strPriorityConverted, tblSchedule_TZ_Slot.bitScheduled,"
+                  " tblSchedule_TZ_Slot.bitPlayed, tblSchedule_TZ_Slot.dtmForcePlayAt,"
+                  " lower(tblsched.strAnnCode) AS strAnnCode,"
+                  " lower(tblsched.strprerec_mediaref) AS strprerec_mediaref," // 6.14.3 - The 2 fields related to PAYB
+                  " tblSched.bitcheck_prerec_lifespan "
+                  "FROM tblschedule_tz_slot "
+                  "INNER JOIN tblSlot_Assign USING (lngAssign) "
+                  "INNER JOIN tblSched ON tblSchedule_TZ_Slot.lngSched = tblSched.lngSchedule "
+                  "WHERE"
+                  "  tblSchedule_TZ_Slot.dtmDay = date '" + format_datetime(dtmplayback_date, "%F")  + "'" + " AND "
+                  "  tblSchedule_TZ_Slot.bitScheduled = " + itostr(ADVERT_SNS_LOADED) + " AND "
+                  "("
+                      "("
+                        "(tblSchedule_TZ_Slot.dtmForcePlayAt >= " + psql_query_from + ") AND "
+                        "(tblSchedule_TZ_Slot.dtmForcePlayAt <= " + psql_query_until + ")"
+                      ")";
 
-    // Skip items with problems:
-    bool blnSkipItem = false; // Set to true if the announcement is to be skipped
+    // The query above only asks for "forced" playback times. Now if they are allowed now, then also include an
+    // "OR" which will include the regular, un-forced times.
+    if (blnAdBatchesAllowedNow) {
+      strSQL += " OR "
+                    "("
+                      "(tblSchedule_TZ_Slot.dtmForcePlayAt IS NULL) AND"
+                      "(tblSlot_Assign.dtmStart >= " + psql_query_from + ") AND "
+                      "(tblSlot_Assign.dtmStart <= " + psql_query_until + ")"
+                    ")";
+    }
 
-    // - Skip non-existant files:
+    // Now close the "WHERE" block and append the rest of the query.
+    strSQL += ") ORDER BY tblSched.strPriorityConverted, tblSlot_Assign.dtmStart, tblSchedule_TZ_Slot.lngTZ_Slot";
+
+    // - Player v6.15 - Now the announcement priority code (CA=1,SP=2,AD=3) actually has an effect on the announcement
+    // playback priority (ORDER BY tblSched.strPriorityConverted)
+    log_debug("Querying database for adverts. SQL: " + strSQL);
+    pg_result RS = db.exec(strSQL);
+    log_debug("Returned rows: " + itostr(RS.size()));
+
+    // Get a list of all the announcements fetched from the db, and re-order them
+    // appropriately
+    TWaitingAnnouncements reordered_db_announcements;
     {
-      string strActualFileName = ""; // This is the filename of a matching file
-                                     // (matching meaning there is a
-                                     // case-non-sensitive match of filenames
-      if (!file_existsi(reordered_iter->strPath, reordered_iter->strFileName, strActualFileName)) {
-        log_error("Could not find announcement MP3: " + reordered_iter->strPath + reordered_iter->strFileName);
-        blnSkipItem = true;
-      }
-    }
+      // Get all the announcements from the database
+      log_debug("Fetching adverts from database");
+      TWaitingAnnouncements db_announcements;
+      while (RS) {
+        TWaitingAnnounce Announce;
+        Announce.dbPos = strtoi(RS.field("lngTZ_Slot", "-1"));
+        Announce.strFileName = lcase(RS.field("strFileName", ""));
+        Announce.strProductCat = RS.field("strProductCat", "");
+        Announce.dtmTime = parse_psql_time(RS.field("dtmForcePlayAt", RS.field("dtmStart", "").c_str()));
+        Announce.blnForcedTime = !RS.field_is_null("dtmForcePlayAt");
+        Announce.strPriority = RS.field("strPriorityOriginal", "");
 
-    // v6.14.3 - PAYB stuff:
-    if (reordered_iter->blnCheckPrerecLifespan) {
-      if (reordered_iter->strPrerecMediaRef == "") {
-        // The bit for checking the lifespan is set, but the media reference field is empty
-        log_error("tblsched.bitcheck_prerec_lifespan set to 1, but tblsched.strprerec_mediaref is empty!");
-        blnSkipItem = true;
-      }
-      else {
-        // strprerec_mediaref and bitcheck_prerec_lifespan are set. Retrieve lifespan and global expiry date info from
-        // the related tblprerec_item record
-        string psql_PrerecMediaRef = psql_str(lcase(reordered_iter->strPrerecMediaRef));
-        strSQL = "SELECT intglobalexp, intlifespan FROM tblprerec_item WHERE lower(strmediaref) = " + psql_PrerecMediaRef;
-
-        pg_result rsPrerecItem = db.exec(strSQL);
-        // Check the results of the query.
-        if (rsPrerecItem.size() != 1) {
-          // We expected to find 1 matching record, but a different number was found
-          log_error(itostr(rsPrerecItem.size()) + " prerecorded items match media reference " + reordered_iter->strPrerecMediaRef + ". Cannot play " + reordered_iter->strFileName);
-          blnSkipItem = true;
-        }
-        else {
-          // We found 1 matching record, and found it. Now check the current date against the listed global expiry date, and
-          // the current lifespan, of the prerecorded item.
-          int intglobalexp = strtoi(rsPrerecItem.field("intglobalexp", "-1"));
-          int intlifespan = strtoi(rsPrerecItem.field("intlifespan", "-1"));
-
-          // Get today's rr date, as an integer.
-          int inttoday_rrdate = get_rrdateint(date());
-
-          // Check the global expiry date
-          if ((intglobalexp != -1) && (intglobalexp < inttoday_rrdate)) {
-            // Global expiry date has elapsed!
-            log_error("Advert skipped because because it's global expiry date has passed: " + reordered_iter->strFileName);
-            blnSkipItem = true;
-          }
-          // Check the lifespan.
-          else if ((intlifespan != -1) && (intlifespan < inttoday_rrdate)) {
-            // Lifespan has elapsed!
-            log_error("Advert skipped because the period it was purchased for has expired: " + reordered_iter->strFileName);
-            blnSkipItem = true;
-          }
-        }
-      }
-    }
-
-    bool blnAnnouncerClash = false; // Set to true if the announcement was skipped because the
-                                    // announcer is the same as the previous one listed to be played.
-
-    // Are there any announcements already in the queue?
-    if (!blnSkipItem && AnnounceList.size() > 0) {
-      // Two checks: First, the same announcement cannot play twice in an announcement batch
-      //             Secondly, the same announcer cannot play twice in succession
-
-      // . Check 1: Do not allow the same file, catagory or playback instance ID to play twice in the same announcement batch.
-      TWaitingAnnouncements::const_iterator item = AnnounceList.begin();
-      while (!blnSkipItem && item!=AnnounceList.end()) {
-        blnSkipItem = (item->strFileName==reordered_iter->strFileName) || (reordered_iter->strProductCat != "" && item->strProductCat == reordered_iter->strProductCat);
-        ++item;
-      }
-
-      // . Check 2: Do not allow ads by the same announcer to play twice in succession:
-      if (!blnSkipItem && reordered_iter->strAnnCode != "") {
-        if (AnnounceList[AnnounceList.size()-1].strAnnCode == reordered_iter->strAnnCode) {
-          blnSkipItem = true;
-          blnAnnouncerClash = true;
-        }
-      }
-    }
-
-    // Now store the announcement details - we will either add it to the list of "to-play" items, or
-    // the skipped (because of announcer clashes) list. If at the end of processing the announcements that
-    // want to play now, we have not reached the bax maximum allowed announcements, we can try very hard
-    // to find a place in the 'to-play' list where skipped announcements can be played without causing two announcements
-    // by the same announcer to play in succession.
-    if (!blnSkipItem || blnAnnouncerClash) {
-      if (!blnSkipItem) {
-        // This announcement will be played, queue it in the list of announcements to be played
-        AnnounceList.push_back(*reordered_iter);
-      }
-      else {
-        // This announcement possibly will not play, because the announcer was the same as the last
-        // announcer in the "to-play" queue. We will try later to add it to the list anyway (if the maximum
-        // allowed number of announcements per batch has not yet been reached)
-        AnnounceMissed_SameVoice.push_back(*reordered_iter);
-      }
-    }
-    reordered_iter++; // Move to the next record...
-  }
-
-  // We've reached either the end of the recordset, or the limit for number of announcements to play in a single batch.
-
-  // If we have not reached the maximum number of allowed announcements, but there were announcements skipped
-  // because their announcer was the same as the previously-queued announcer, then...
-  if (AnnounceList.size() < (unsigned) config.intmax_promos_per_batch &&
-    AnnounceMissed_SameVoice.size() > 0) {
-
-    // There are missed announcements (because of the same voice), but there is still space for announcements.. here comes
-    // the fun algorithm for finding a home in the "to-play" list for these voices!
-
-    // Each time that we try to fit new announcements into the "to-play" list, and are successful, the "to-play" list length will
-    // grow. If the list grows, there is a chance that we can do another pass and insert more announcements with
-    // clashing codes. If the announcement list size does not grow on one pass, then there is no use in trying further passes
-    long lngPrevAnnListSize = -1; // Always try at least once...
-    while (lngPrevAnnListSize < (signed)AnnounceList.size()) {
-      lngPrevAnnListSize = AnnounceList.size(); // Now remember the current announcement list size. If this
-                                                // length increases, then we will run this loop again.. etc, etc..
-      // Try to find a spot for each "same-voice" missed announcement, but only while there is space left in this
-      // announcement batch...
-      TWaitingAnnouncements::iterator item = AnnounceMissed_SameVoice.begin();
-      while (item!=AnnounceMissed_SameVoice.end() &&
-             AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
-        // Temporarily append the skipped announcement to the end of the "to-play" list
-        //    . The item will stay in the queue if a valid playlist order is found, otherwise it will be removed later..
-
-        AnnounceList.push_back(*item);
-        // -- remember the DB ID of the announcement in case we mess up and don't get the permutations correct...
-        unsigned long test_dbPos = item->dbPos;
-
-        // - Calculate the number of permutations possible with the new "to-play" length
-        long lngPermutations = calc_permutations(AnnounceList.size());
-
-        // Start the permutation-generation... loop
-        bool blnValidSequenceFound = false; // set to true if a valid order for the ads is found...
-        long lngPermutationNum = 1; // The number of the current permutiation out of the total possible.
-
-        // Init variables used for generating permutations...
-        long lngTransposePos = 0; // We swap two elements, the one at this pos, and the one just after.
-        int intTransposeDir = 1; // After doing a swap, the next permuation will be generated by swapping two adjacent elements
-                                 // - eg after swapping element 1 and 2, we swap element 2 and 3. When we reach
-                                 //   the end of the list, we start moving backwards again - eg, swap 9 and 10, then swap 8 and 9
-                                 // - intTransposDir controls how lngTransposePos progresses.
-
-        while (lngPermutationNum <= lngPermutations && !blnValidSequenceFound) {
-          // Firstly, is this "to-play" list valid? Check that the same announcer code does not occur twice in succession.
-          bool blnTestFailed=false;
-          string strPrevAnnCode = AnnounceList[0].strAnnCode;
-
-          for (long lngAnnTest=1;lngAnnTest < (signed)AnnounceList.size() && !blnTestFailed;++lngAnnTest) {
-            string strAnnCode = AnnounceList[lngAnnTest].strAnnCode;
-            if (strAnnCode != "" && strAnnCode==strPrevAnnCode) {
-              // Same announcement code found - test failed
-              blnTestFailed = true;
+        // Get strPlayAtPercent
+        {
+          // Fetch from the database:
+          string strPlayAtPercent = RS.field("strPlayAtPercent", "");
+          // Parse it further:
+          if (isint(strPlayAtPercent)) {
+            // Clip the value from 0 to 100
+            if (strtoi(strPlayAtPercent) > 100) {
+              strPlayAtPercent="100";
             }
-            else {
-              // Different announcer code - update the "prev" announcer code
-              strPrevAnnCode = strAnnCode;
-            }
-          }
-          blnValidSequenceFound=!blnTestFailed;
-
-          // Was a valid announcement order found?
-          if (!blnValidSequenceFound) {
-            //  If it isn't, then generate the next "transposition order" permutation, by exchanging two adjacent elements
-            // of the "to-play" announcement list. Thanks go to the Canadian web-page
-            // "http://www.schoolnet.ca/vp-pv/amof/e_permI.htm" where some concepts behind generating permutations are
-            // explained.
-
-            // Swap two adjacent elements...
-            TWaitingAnnounce TempAnn = AnnounceList[lngTransposePos];
-            AnnounceList[lngTransposePos] = AnnounceList[lngTransposePos+1];
-            AnnounceList[lngTransposePos+1] = TempAnn;
-
-            // Are there more than 2 elements?
-            if (AnnounceList.size() > 2) {
-              // Check the current swap pos - have we reached the end of the current direction? (depends on the
-              // current direction)
-              if ((intTransposeDir==1 && (lngTransposePos>=(signed)AnnounceList.size()-2)) ||
-                  (intTransposeDir==-1 && (lngTransposePos<=0))) {
-                // Yes - Change the progress direction..
-                intTransposeDir *= -1;
-              }
-              // Now progress the current swap position.
-              lngTransposePos += intTransposeDir;
-            }
-          }
-          // Now we go to the next attempt to find a valid announcement order...
-          ++lngPermutationNum;
-        }
-
-        bool blnEraseFromMissedList = false; // This variable determines if the next missed item
-                                             // to be checked is determined either by 1)
-                                             // erasing from the list (which gives you the next item)
-                                             // or 2) - incrementing the iterator to the next item.
-        if (blnValidSequenceFound)  {
-          // We found a valid playbackorder, and the "to-play" announcement list now
-          // contains the announcement that would have otherwise been missed.
-          // - so now we remove the announcement from the "missed" list.
-          blnEraseFromMissedList = true;
-        }
-        else {
-          // A valid sequence was not found...
-          //If no valid permutations were found, then remove the temporarily-added announcement from the end
-          // of the"to-play" queue. Check that we have the correct element by comparing the DB id with the one we retrieved
-          // earlier...
-
-          // If we retrieved the incorrect DB id then log an error message and scan the the list for the correct element to remove
-          // (it was only temporarily added), and remove it from there...
-          if (AnnounceList[AnnounceList.size()-1].dbPos !=  test_dbPos) {
-            log_error("Error in the permutation generation code! After all the permutations, the last element should be the same as it was at the beginning!");
-            // The code outside this block is buggy - but attempt to correct the "listed to play" playlist anyway.
-
-            TWaitingAnnouncements::iterator remove_item = AnnounceList.begin();
-            while (remove_item!=AnnounceList.end()) {
-              if (remove_item->dbPos==test_dbPos) {
-                // We've found a matching item to delete - remove it and get the item after...
-                remove_item==AnnounceList.erase(remove_item);
-                log_error("Permutation code error was corrected.. but please check the code anyway..");
-              }
-              else {
-                // This item isn't one to delete.. go to the next one.
-                ++remove_item;
-              }
+            else if (strtoi(strPlayAtPercent) < 0) {
+              strPlayAtPercent = "0";
             }
           }
           else {
-            // The correct DB id is at the end of the list - so just erase the last item...
-            AnnounceList.erase(AnnounceList.end());
+            // Convert playback volume percentage to upper case
+            strPlayAtPercent = ucase(strPlayAtPercent);
+            if (strPlayAtPercent != "MUS" && strPlayAtPercent != "ADV") {
+              strPlayAtPercent = "100";
+            }
+          }
+          Announce.strPlayAtPercent = strPlayAtPercent;
+        }
+
+        Announce.strAnnCode = RS.field("strAnnCode", "");
+
+        // Get the path of the announcement (ie the directory):
+        {
+          string strFilePath = "";
+          string strFilePrefix = lcase(substr(Announce.strFileName, 0, 2));
+          if (strFilePrefix == "ca") {
+            strFilePath = config.dirs.strannouncements; // Announcements
+          }
+          else if (strFilePrefix == "sp") {
+            strFilePath = config.dirs.strspecials; // Specials
+          } else if (strFilePrefix == "ad") {
+            strFilePath = config.dirs.stradverts; // Adverts
+          }
+          else {
+            log_error ("Advert filename " + Announce.strFileName +
+              " has an unknown prefix " + strFilePrefix);
+            strFilePath = config.dirs.strmp3; // Default to the music folder
+          }
+          Announce.strPath = strFilePath;
+        }
+
+        // Get PAYB details:
+        Announce.strPrerecMediaRef = lcase(RS.field("strprerec_mediaref", ""));
+        Announce.blnCheckPrerecLifespan = (RS.field("bitcheck_prerec_lifespan", "0") == "1");
+
+        // We now have all the the info for the advert
+
+        // Skip the ad if it is a "forced time" ad in the future:
+        if (Announce.blnForcedTime && Announce.dtmTime > dtmplayback_time) {
+          log_debug(" - Not including advert " + Announce.strFileName +
+            " in list, it has a forced time (" +
+            format_datetime(Announce.dtmTime, "%T") + ") and is in the future");
+        }
+        else {
+          // No problem, so add it to the list of adverts loaded from the database:
+          db_announcements.push_back(Announce);
+        }
+        RS++; // Move to the next record
+      }
+
+      // Now re-order the adverts:
+      {
+        log_debug("Re-ordering adverts");
+        TWaitingAnnouncements::iterator iter;
+        // - First "forced playback time" adverts
+        //   (we already filtered out ones in the future)
+        iter = db_announcements.begin();
+        while (iter != db_announcements.end()) {
+          if (iter->blnForcedTime) {
+            log_debug(" - Moving advert " + iter->strFileName +
+              " with forced time (" + format_datetime(iter->dtmTime, "%T") +
+              ") to start of re-ordered advert list");
+            reordered_db_announcements.push_back(*iter);
+            iter = db_announcements.erase(iter);
+          }
+          else iter++;
+        }
+
+        // A macro to simplify our logic for moving items which play between
+        // 2 times from db_announcements to reordered_db_announcements
+        #define MOVE_ADS_BETWEEN(FROM, TO, DESC) \
+          iter = db_announcements.begin(); \
+          while (iter != db_announcements.end()) { \
+            if (iter->dtmTime >= (FROM) && \
+                iter->dtmTime <= (TO)) { \
+              log_debug(" - Advert " + iter->strFileName + " (at " + \
+              format_datetime(iter->dtmTime, "%T") + ") is " + DESC + \
+              ". Appending to re-ordered list"); \
+              reordered_db_announcements.push_back(*iter); \
+              iter = db_announcements.erase(iter); \
+            } \
+            else iter++; \
+          }
+
+        // - Then adverts in this hour:
+        datetime dtmhour_start = (dtmplayback_time / (60*60)) * (60*60);
+        datetime dtmhour_end = dtmhour_start + (60*60) - 1;
+
+        // - Related to the current segment (if it is loaded):
+        if (run_data.current_segment.blnloaded) {
+          datetime dtmseg_start = get_datetime_time(run_data.current_segment.scheduled.dtmstart);
+          datetime dtmseg_end   = get_datetime_time(run_data.current_segment.scheduled.dtmend);
+
+          // - Adverts in the current format clock segment
+          MOVE_ADS_BETWEEN(dtmseg_start, dtmseg_end, "in this hour and inside the current Format Clock segment");
+          // - Adverts after the current format clock segment
+          MOVE_ADS_BETWEEN(dtmseg_end+1, dtmhour_end, "in this hour and after the current Format Clock segment");
+          // - Adverts before the current format clock segment
+          MOVE_ADS_BETWEEN(dtmhour_start, dtmseg_start-1, "in this hour and before the current Format Clock segment");
+        }
+        // All other adverts in this hour (eg, if the segment wasn't loaded)
+        MOVE_ADS_BETWEEN(dtmhour_start, dtmhour_end, "in this hour (no Format Clock segments loaded?)");
+
+        // - Lastly, all other adverts (outside the current hour)
+        MOVE_ADS_BETWEEN(DATETIME_MIN, DATETIME_MAX, "outside the current hour");
+
+        // Make sure that the list of adverts read from the database is now empty:
+        if (!db_announcements.empty()) LOGIC_ERROR;
+
+        // Now undefine our macro:
+        #undef MOVE_ADS_BETWEEN
+      }
+    }
+
+    // Process the re-ordered list of items from the database, and build the list
+    // of ads to actually be played in this batch:
+    TWaitingAnnouncements AnnounceList; // Ads to be played in the next batch
+    TWaitingAnnouncements AnnounceMissed_SameVoice; // These are the announcements missed because the
+                                                    // previous announcement had the same announcer
+
+    TWaitingAnnouncements::iterator reordered_iter = reordered_db_announcements.begin();
+    while (reordered_iter != reordered_db_announcements.end()
+          && AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
+
+      // Skip items with problems:
+      bool blnSkipItem = false; // Set to true if the announcement is to be skipped
+
+      // - Skip non-existant files:
+      {
+        string strActualFileName = ""; // This is the filename of a matching file
+                                      // (matching meaning there is a
+                                      // case-non-sensitive match of filenames
+        if (!file_existsi(reordered_iter->strPath, reordered_iter->strFileName, strActualFileName)) {
+          log_error("Could not find announcement MP3: " + reordered_iter->strPath + reordered_iter->strFileName);
+          blnSkipItem = true;
+        }
+      }
+
+      // v6.14.3 - PAYB stuff:
+      if (reordered_iter->blnCheckPrerecLifespan) {
+        if (reordered_iter->strPrerecMediaRef == "") {
+          // The bit for checking the lifespan is set, but the media reference field is empty
+          log_error("tblsched.bitcheck_prerec_lifespan set to 1, but tblsched.strprerec_mediaref is empty!");
+          blnSkipItem = true;
+        }
+        else {
+          // strprerec_mediaref and bitcheck_prerec_lifespan are set. Retrieve lifespan and global expiry date info from
+          // the related tblprerec_item record
+          string psql_PrerecMediaRef = psql_str(lcase(reordered_iter->strPrerecMediaRef));
+          strSQL = "SELECT intglobalexp, intlifespan FROM tblprerec_item WHERE lower(strmediaref) = " + psql_PrerecMediaRef;
+
+          pg_result rsPrerecItem = db.exec(strSQL);
+          // Check the results of the query.
+          if (rsPrerecItem.size() != 1) {
+            // We expected to find 1 matching record, but a different number was found
+            log_error(itostr(rsPrerecItem.size()) + " prerecorded items match media reference " + reordered_iter->strPrerecMediaRef + ". Cannot play " + reordered_iter->strFileName);
+            blnSkipItem = true;
+          }
+          else {
+            // We found 1 matching record, and found it. Now check the current date against the listed global expiry date, and
+            // the current lifespan, of the prerecorded item.
+            int intglobalexp = strtoi(rsPrerecItem.field("intglobalexp", "-1"));
+            int intlifespan = strtoi(rsPrerecItem.field("intlifespan", "-1"));
+
+            // Get today's rr date, as an integer.
+            int inttoday_rrdate = get_rrdateint(date());
+
+            // Check the global expiry date
+            if ((intglobalexp != -1) && (intglobalexp < inttoday_rrdate)) {
+              // Global expiry date has elapsed!
+              log_error("Advert skipped because because it's global expiry date has passed: " + reordered_iter->strFileName);
+              blnSkipItem = true;
+            }
+            // Check the lifespan.
+            else if ((intlifespan != -1) && (intlifespan < inttoday_rrdate)) {
+              // Lifespan has elapsed!
+              log_error("Advert skipped because the period it was purchased for has expired: " + reordered_iter->strFileName);
+              blnSkipItem = true;
+            }
           }
         }
+      }
 
-        if (blnEraseFromMissedList) {
-          // Erase an item from the missed list, because a place in the announcement order was found.
-          // for it.
-          item = AnnounceMissed_SameVoice.erase(item);
-         }
+      bool blnAnnouncerClash = false; // Set to true if the announcement was skipped because the
+                                      // announcer is the same as the previous one listed to be played.
+
+      // Are there any announcements already in the queue?
+      if (!blnSkipItem && AnnounceList.size() > 0) {
+        // Two checks: First, the same announcement cannot play twice in an announcement batch
+        //             Secondly, the same announcer cannot play twice in succession
+
+        // . Check 1: Do not allow the same file, catagory or playback instance ID to play twice in the same announcement batch.
+        TWaitingAnnouncements::const_iterator item = AnnounceList.begin();
+        while (!blnSkipItem && item!=AnnounceList.end()) {
+          blnSkipItem = (item->strFileName==reordered_iter->strFileName) || (reordered_iter->strProductCat != "" && item->strProductCat == reordered_iter->strProductCat);
+          ++item;
+        }
+
+        // . Check 2: Do not allow ads by the same announcer to play twice in succession:
+        if (!blnSkipItem && reordered_iter->strAnnCode != "") {
+          if (AnnounceList[AnnounceList.size()-1].strAnnCode == reordered_iter->strAnnCode) {
+            blnSkipItem = true;
+            blnAnnouncerClash = true;
+          }
+        }
+      }
+
+      // Now store the announcement details - we will either add it to the list of "to-play" items, or
+      // the skipped (because of announcer clashes) list. If at the end of processing the announcements that
+      // want to play now, we have not reached the bax maximum allowed announcements, we can try very hard
+      // to find a place in the 'to-play' list where skipped announcements can be played without causing two announcements
+      // by the same announcer to play in succession.
+      if (!blnSkipItem || blnAnnouncerClash) {
+        if (!blnSkipItem) {
+          // This announcement will be played, queue it in the list of announcements to be played
+          AnnounceList.push_back(*reordered_iter);
+        }
         else {
-          // A place in the announcement list was not found, just jump normally to the next
-          // item we will attempt to insert....
-          item++;
+          // This announcement possibly will not play, because the announcer was the same as the last
+          // announcer in the "to-play" queue. We will try later to add it to the list anyway (if the maximum
+          // allowed number of announcements per batch has not yet been reached)
+          AnnounceMissed_SameVoice.push_back(*reordered_iter);
         }
+      }
+      reordered_iter++; // Move to the next record...
+    }
+
+    // We've reached either the end of the recordset, or the limit for number of announcements to play in a single batch.
+
+    // If we have not reached the maximum number of allowed announcements, but there were announcements skipped
+    // because their announcer was the same as the previously-queued announcer, then...
+    if (AnnounceList.size() < (unsigned) config.intmax_promos_per_batch &&
+      AnnounceMissed_SameVoice.size() > 0) {
+
+      // There are missed announcements (because of the same voice), but there is still space for announcements.. here comes
+      // the fun algorithm for finding a home in the "to-play" list for these voices!
+
+      // Each time that we try to fit new announcements into the "to-play" list, and are successful, the "to-play" list length will
+      // grow. If the list grows, there is a chance that we can do another pass and insert more announcements with
+      // clashing codes. If the announcement list size does not grow on one pass, then there is no use in trying further passes
+      long lngPrevAnnListSize = -1; // Always try at least once...
+      while (lngPrevAnnListSize < (signed)AnnounceList.size()) {
+        lngPrevAnnListSize = AnnounceList.size(); // Now remember the current announcement list size. If this
+                                                  // length increases, then we will run this loop again.. etc, etc..
+        // Try to find a spot for each "same-voice" missed announcement, but only while there is space left in this
+        // announcement batch...
+        TWaitingAnnouncements::iterator item = AnnounceMissed_SameVoice.begin();
+        while (item!=AnnounceMissed_SameVoice.end() &&
+              AnnounceList.size() < (unsigned) config.intmax_promos_per_batch) {
+          // Temporarily append the skipped announcement to the end of the "to-play" list
+          //    . The item will stay in the queue if a valid playlist order is found, otherwise it will be removed later..
+
+          AnnounceList.push_back(*item);
+          // -- remember the DB ID of the announcement in case we mess up and don't get the permutations correct...
+          unsigned long test_dbPos = item->dbPos;
+
+          // - Calculate the number of permutations possible with the new "to-play" length
+          long lngPermutations = calc_permutations(AnnounceList.size());
+
+          // Start the permutation-generation... loop
+          bool blnValidSequenceFound = false; // set to true if a valid order for the ads is found...
+          long lngPermutationNum = 1; // The number of the current permutiation out of the total possible.
+
+          // Init variables used for generating permutations...
+          long lngTransposePos = 0; // We swap two elements, the one at this pos, and the one just after.
+          int intTransposeDir = 1; // After doing a swap, the next permuation will be generated by swapping two adjacent elements
+                                  // - eg after swapping element 1 and 2, we swap element 2 and 3. When we reach
+                                  //   the end of the list, we start moving backwards again - eg, swap 9 and 10, then swap 8 and 9
+                                  // - intTransposDir controls how lngTransposePos progresses.
+
+          while (lngPermutationNum <= lngPermutations && !blnValidSequenceFound) {
+            // Firstly, is this "to-play" list valid? Check that the same announcer code does not occur twice in succession.
+            bool blnTestFailed=false;
+            string strPrevAnnCode = AnnounceList[0].strAnnCode;
+
+            for (long lngAnnTest=1;lngAnnTest < (signed)AnnounceList.size() && !blnTestFailed;++lngAnnTest) {
+              string strAnnCode = AnnounceList[lngAnnTest].strAnnCode;
+              if (strAnnCode != "" && strAnnCode==strPrevAnnCode) {
+                // Same announcement code found - test failed
+                blnTestFailed = true;
+              }
+              else {
+                // Different announcer code - update the "prev" announcer code
+                strPrevAnnCode = strAnnCode;
+              }
+            }
+            blnValidSequenceFound=!blnTestFailed;
+
+            // Was a valid announcement order found?
+            if (!blnValidSequenceFound) {
+              //  If it isn't, then generate the next "transposition order" permutation, by exchanging two adjacent elements
+              // of the "to-play" announcement list. Thanks go to the Canadian web-page
+              // "http://www.schoolnet.ca/vp-pv/amof/e_permI.htm" where some concepts behind generating permutations are
+              // explained.
+
+              // Swap two adjacent elements...
+              TWaitingAnnounce TempAnn = AnnounceList[lngTransposePos];
+              AnnounceList[lngTransposePos] = AnnounceList[lngTransposePos+1];
+              AnnounceList[lngTransposePos+1] = TempAnn;
+
+              // Are there more than 2 elements?
+              if (AnnounceList.size() > 2) {
+                // Check the current swap pos - have we reached the end of the current direction? (depends on the
+                // current direction)
+                if ((intTransposeDir==1 && (lngTransposePos>=(signed)AnnounceList.size()-2)) ||
+                    (intTransposeDir==-1 && (lngTransposePos<=0))) {
+                  // Yes - Change the progress direction..
+                  intTransposeDir *= -1;
+                }
+                // Now progress the current swap position.
+                lngTransposePos += intTransposeDir;
+              }
+            }
+            // Now we go to the next attempt to find a valid announcement order...
+            ++lngPermutationNum;
+          }
+
+          bool blnEraseFromMissedList = false; // This variable determines if the next missed item
+                                              // to be checked is determined either by 1)
+                                              // erasing from the list (which gives you the next item)
+                                              // or 2) - incrementing the iterator to the next item.
+          if (blnValidSequenceFound)  {
+            // We found a valid playbackorder, and the "to-play" announcement list now
+            // contains the announcement that would have otherwise been missed.
+            // - so now we remove the announcement from the "missed" list.
+            blnEraseFromMissedList = true;
+          }
+          else {
+            // A valid sequence was not found...
+            //If no valid permutations were found, then remove the temporarily-added announcement from the end
+            // of the"to-play" queue. Check that we have the correct element by comparing the DB id with the one we retrieved
+            // earlier...
+
+            // If we retrieved the incorrect DB id then log an error message and scan the the list for the correct element to remove
+            // (it was only temporarily added), and remove it from there...
+            if (AnnounceList[AnnounceList.size()-1].dbPos !=  test_dbPos) {
+              log_error("Error in the permutation generation code! After all the permutations, the last element should be the same as it was at the beginning!");
+              // The code outside this block is buggy - but attempt to correct the "listed to play" playlist anyway.
+
+              TWaitingAnnouncements::iterator remove_item = AnnounceList.begin();
+              while (remove_item!=AnnounceList.end()) {
+                if (remove_item->dbPos==test_dbPos) {
+                  // We've found a matching item to delete - remove it and get the item after...
+                  remove_item==AnnounceList.erase(remove_item);
+                  log_error("Permutation code error was corrected.. but please check the code anyway..");
+                }
+                else {
+                  // This item isn't one to delete.. go to the next one.
+                  ++remove_item;
+                }
+              }
+            }
+            else {
+              // The correct DB id is at the end of the list - so just erase the last item...
+              AnnounceList.erase(AnnounceList.end());
+            }
+          }
+
+          if (blnEraseFromMissedList) {
+            // Erase an item from the missed list, because a place in the announcement order was found.
+            // for it.
+            item = AnnounceMissed_SameVoice.erase(item);
+          }
+          else {
+            // A place in the announcement list was not found, just jump normally to the next
+            // item we will attempt to insert....
+            item++;
+          }
+        }
+      }
+    }
+
+    bool blnForcedTimeAdToPlay = false; // Set to true if there is a "forced to play at time" advert to be played.
+
+    // Now, we have the final list of announcements to be played. Mark these announcements in the database
+    // as "listed to be played", and log a message in the player log...
+    TWaitingAnnouncements::const_iterator announce_item = AnnounceList.begin();
+    while (announce_item!=AnnounceList.end()) {
+      // Log a message to say that this announcement is enqued
+      string strTime = format_datetime(announce_item->dtmTime, "%T");
+      string strDate = format_datetime(date(), "%F");
+      log_message("Announcement to be played: " + announce_item->strFileName +
+                                ", priority: " + announce_item->strPriority +
+                                ", catagory: \"" + announce_item->strProductCat +
+                                "\", volume: " + announce_item->strPlayAtPercent +
+                                "%,  time: " + strTime +
+                                ", date: " + strDate +
+                                ", db index: " + itostr(announce_item->dbPos));
+
+      // Update the database also
+      strSQL = "UPDATE tblSchedule_TZ_Slot SET "
+                "bitScheduled = " + itostr(ADVERT_LISTED_TO_PLAY) +
+                ", dtmScheduledAtDate = " + psql_date +
+                ", dtmScheduledAtTime = " + psql_time +
+                " WHERE lngTZ_Slot = " + itostr(announce_item->dbPos);
+      db.exec(strSQL);
+
+      // Set a flag if this batch to be played, includes a "force to play at time" advert.
+      blnForcedTimeAdToPlay = blnForcedTimeAdToPlay || announce_item->blnForcedTime;
+
+      // Move to the next "to play" item..
+      ++announce_item;
+    }
+
+    // Now queue the list of announcements to be played.
+    if (AnnounceList.size() > 0) {
+      // This means that there are ads to play.
+
+      // Now play the waiting announcements, one after another. This is a different approach:
+      // previously a continuosly called function checked the status of
+      // XMMS, and when an ad finished, it would check for the next ad, or resume music playback.
+      while (AnnounceList.size() > 0) {
+        // Fetch details about the current announcement in the queue
+        TWaitingAnnounce Announce = AnnounceList[0];
+        AnnounceList.pop_front(); // We have the ad details now, remove it from the queue
+
+        string strActualFileName = "";   // This is the filename of a matching file (matching meaning there
+                                        // is a case-non-sensitive match of filenames
+
+        bool blnFileExists = true; // Set to false if the file is not found.
+
+        // File exists?
+        if (!file_existsi(Announce.strPath, Announce.strFileName, strActualFileName)) {
+          testing;
+          // No.
+          blnFileExists = false;
+          log_error("Could not find announcement MP3: " + Announce.strPath + Announce.strFileName);
+          testing;
+        }
+
+        // So did we find the file?
+        if (blnFileExists) {
+          // Announcement MP3 found.
+
+          // Convert old-style volume strings:
+          if (Announce.strPlayAtPercent == "MUS") {
+            testing;
+            Announce.strPlayAtPercent = "MUSIC";
+            testing;
+          }
+          else if (Announce.strPlayAtPercent == "ADV") {
+            testing;
+            Announce.strPlayAtPercent = "PROMO";
+            testing;
+          }
+
+          // Queue the announcement to play...
+          {
+            programming_element promo;
+            promo.cat       = SCAT_PROMOS;
+            promo.strmedia  = Announce.strPath + Announce.strFileName;
+            promo.strvol    = Announce.strPlayAtPercent;
+            promo.promo.lngtz_slot = Announce.dbPos;
+            promo.blnloaded = true;
+            run_data.waiting_promos.push_back(promo);
+          }
+        }
+      }
+
+      // Only if a regular (non-time-forced) advert batch played now, reset the time when the last
+      // advert batch stopped playing. This is because we ignore forced-time playback, if for eg
+      // The min time between announcemnt batches is 5 minutes, then "forced-time" playbacks
+      // can occur in the middle of the 5 minutes, without affecting when the next regular announcement batch
+      // will play
+      if (blnAdBatchesAllowedNow) {
+        dtmlast_promo_batch = now(); // The last announcement of the batch just finished playing.
+                                    // So we grab the current time to ensure a minimum amount of music
+                                    // before the next set of announcements can play.
       }
     }
   }
 
-  bool blnForcedTimeAdToPlay = false; // Set to true if there is a "forced to play at time" advert to be played.
-
-  // Now, we have the final list of announcements to be played. Mark these announcements in the database
-  // as "listed to be played", and log a message in the player log...
-  TWaitingAnnouncements::const_iterator announce_item = AnnounceList.begin();
-  while (announce_item!=AnnounceList.end()) {
-    // Log a message to say that this announcement is enqued
-    string strTime = format_datetime(announce_item->dtmTime, "%T");
-    string strDate = format_datetime(date(), "%F");
-    log_message("Announcement to be played: " + announce_item->strFileName +
-                               ", priority: " + announce_item->strPriority +
-                               ", catagory: \"" + announce_item->strProductCat +
-                               "\", volume: " + announce_item->strPlayAtPercent +
-                               "%,  time: " + strTime +
-                               ", date: " + strDate +
-                               ", db index: " + itostr(announce_item->dbPos));
-
-    // Update the database also
-    strSQL = "UPDATE tblSchedule_TZ_Slot SET "
-               "bitScheduled = " + itostr(ADVERT_LISTED_TO_PLAY) +
-               ", dtmScheduledAtDate = " + psql_date +
-               ", dtmScheduledAtTime = " + psql_time +
-               " WHERE lngTZ_Slot = " + itostr(announce_item->dbPos);
-    db.exec(strSQL);
-
-    // Set a flag if this batch to be played, includes a "force to play at time" advert.
-    blnForcedTimeAdToPlay = blnForcedTimeAdToPlay || announce_item->blnForcedTime;
-
-    // Move to the next "to play" item..
-    ++announce_item;
-  }
-
-  // Now queue the list of announcements to be played.
-  if (AnnounceList.size() > 0) {
-    // This means that there are ads to play.
-
-    // Now play the waiting announcements, one after another. This is a different approach:
-    // previously a continuosly called function checked the status of
-    // XMMS, and when an ad finished, it would check for the next ad, or resume music playback.
-    while (AnnounceList.size() > 0) {
-      // Fetch details about the current announcement in the queue
-      TWaitingAnnounce Announce = AnnounceList[0];
-      AnnounceList.pop_front(); // We have the ad details now, remove it from the queue
-
-      string strActualFileName = "";   // This is the filename of a matching file (matching meaning there
-                                       // is a case-non-sensitive match of filenames
-
-      bool blnFileExists = true; // Set to false if the file is not found.
-
-      // File exists?
-      if (!file_existsi(Announce.strPath, Announce.strFileName, strActualFileName)) {
-        testing;
-        // No.
-        blnFileExists = false;
-        log_error("Could not find announcement MP3: " + Announce.strPath + Announce.strFileName);
-        testing;
-      }
-
-      // So did we find the file?
-      if (blnFileExists) {
-        // Announcement MP3 found.
-
-        // Convert old-style volume strings:
-        if (Announce.strPlayAtPercent == "MUS") {
-          testing;
-          Announce.strPlayAtPercent = "MUSIC";
-          testing;
-        }
-        else if (Announce.strPlayAtPercent == "ADV") {
-          testing;
-          Announce.strPlayAtPercent = "PROMO";
-          testing;
-        }
-
-        // Queue the announcement to play...
-        {
-          programming_element promo;
-          promo.cat       = SCAT_PROMOS;
-          promo.strmedia  = Announce.strPath + Announce.strFileName;
-          promo.strvol    = Announce.strPlayAtPercent;
-          promo.promo.lngtz_slot = Announce.dbPos;
-          promo.blnloaded = true;
-          run_data.waiting_promos.push_back(promo);
-        }
-      }
-    }
-
-    // Only if a regular (non-time-forced) advert batch played now, reset the time when the last
-    // advert batch stopped playing. This is because we ignore forced-time playback, if for eg
-    // The min time between announcemnt batches is 5 minutes, then "forced-time" playbacks
-    // can occur in the middle of the 5 minutes, without affecting when the next regular announcement batch
-    // will play
-    if (blnAdBatchesAllowedNow) {
-      dtmlast_promo_batch = now(); // The last announcement of the batch just finished playing.
-                                   // So we grab the current time to ensure a minimum amount of music
-                                   // before the next set of announcements can play.
-    }
-
-    // Now return a promo to the calling func:
+  // Are there any promos waiting to be returned?
+  if (!run_data.waiting_promos.empty()) {
+    // Yes: Return the promo and then leave this function
     item = run_data.waiting_promos[0];
     run_data.waiting_promos.pop_front();
   }
