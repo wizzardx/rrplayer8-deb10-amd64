@@ -24,7 +24,6 @@ int main(int argc, char *argv[])
     logging.add_logger(log);
 
     // Check arguments:
-    bool blndebug = false; // Set to true for Player debugging messages.
     {
       if (argc > 1) {
         string strarg = argv[1];
