@@ -702,8 +702,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
       }
     }
 
-    bool blnForcedTimeAdToPlay = false; // Set to true if there is a "forced to play at time" advert to be played.
-
     // Now, we have the final list of announcements to be played. Mark these announcements in the database
     // as "listed to be played", and log a message in the player log...
     TWaitingAnnouncements::const_iterator announce_item = AnnounceList.begin();
@@ -726,9 +724,6 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
                 ", dtmScheduledAtTime = " + psql_time +
                 " WHERE lngTZ_Slot = " + itostr(announce_item->dbPos);
       db.exec(strSQL);
-
-      // Set a flag if this batch to be played, includes a "force to play at time" advert.
-      blnForcedTimeAdToPlay = blnForcedTimeAdToPlay || announce_item->blnForcedTime;
 
       // Move to the next "to play" item..
       ++announce_item;
