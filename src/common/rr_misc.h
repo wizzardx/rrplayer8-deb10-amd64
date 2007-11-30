@@ -31,8 +31,8 @@ string convert_international_prerec_filename_to_sa(const string & strfile);
 /// Extract the prefix of an rr media filename. This is done by removing the numeric characters from the end
 string get_rr_media_prefix(const string & strfile);
 
-/// Standard RR logging (stdout, logfile, and month-day-based logfile rotation)
-void rr_log_file(const log_info & LI, const string & strlog_file);
+/// Standard RR logging (clog, logfile (normal and debugging), and month-day-based logfile rotation)
+void rr_log_file(const log_info & LI, const string & strlog_file, const string & strdebug_log_file="");
 
 // Is the file a cd track? (as understood by XMMS)
 bool file_is_cd_track(const string & strfile); // Return true if the filename is ends with .cda or .cdr

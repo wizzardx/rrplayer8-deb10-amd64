@@ -110,18 +110,26 @@ string get_rr_media_prefix(const string & strfile) {
 }
 
 // Standard RR file logging (stdout, logfile, and month-day-based logfile rotation)
-void rr_log_file(const log_info & LI, const string & strlog_file) {
+void rr_log_file(const log_info & LI, const string & strlog_file, const string & strdebug_log_file) {
   // Format into a string for text-based logging:
   string strmessage = format_log(LI, strstandard_log_format);
 
   // Write to clog:
-  clog << strmessage << endl;
+  if (LI.LT != LT_DEBUG || logging.blndebug) {
+    clog << strmessage << endl;
+  }
 
-  // Log to file:
-  append_file_str(strlog_file, strmessage);
+  // Log (non-debugging lines) to file:
+  if (LI.LT != LT_DEBUG) {
+    append_file_str(strlog_file, strmessage);
+    rotate_logfile(strlog_file); // Rotate the logfile also
+  }
 
-  // And some basic log rotation:
-  rotate_logfile(strlog_file);
+  // Log all messages including debug to the debugging log file:
+  if (strlog_file != "") {
+    append_file_str(strdebug_log_file, strmessage);
+    rotate_logfile(strdebug_log_file); // Rotate the logfile also
+  }
 }
 
 // File is a cd track file?

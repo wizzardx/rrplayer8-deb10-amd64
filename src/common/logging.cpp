@@ -14,6 +14,11 @@
 // The global object used for logging.
 clogging logging;
 
+// clogging constructor
+clogging::clogging() {
+  blndebug = false;
+}
+
 // Add a callback function for logging.
 void clogging::add_logger(void(*func)(const log_info&)) {
   callbacks.push_front(func);
@@ -69,6 +74,7 @@ string format_log(const log_info & log_info, const string strformat) {
   string strlog_type = "";
   switch(log_info.LT) {
     case LT_LINE:    strlog_type="LINE";    break;
+    case LT_DEBUG:   strlog_type="DEBUG"; break;
     case LT_MESSAGE: strlog_type="MESSAGE"; break;
     case LT_WARNING: strlog_type="WARNING"; break;
     case LT_ERROR:   strlog_type="ERROR";   break;
@@ -147,7 +153,7 @@ bool is_time_to_rotate_logfile(const string & strlog_file) {
 
   // ./logs/ subdirectory exists now.
   // 4) Check for the existance of a ".rotated" file
-  string strRotateFile = strLogBackupDir + ".rotated";
+  string strRotateFile = strLogBackupDir + "." + get_short_filename(strlog_file) + ".rotated";
 
   // if the .rotated file does not exist, create it and return false
   if (!file_exists(strRotateFile)) {
@@ -215,7 +221,7 @@ void rotate_logfile(const string & strlog_file) {
 
       // Reset the .rotated file, this lets us know when to perform the rotation again...
       {
-        string strRotateFile = strLogBackupDir + ".rotated";
+        string strRotateFile = strLogBackupDir + "." + get_short_filename(strlog_file) + ".rotated";
         remove(strRotateFile.c_str());
         append_file_str(strRotateFile, ""); // Logs an error and throws an exception if there are any errors.
       }

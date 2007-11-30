@@ -14,6 +14,7 @@
 // eg: log_message("Hello");
 
 #define log_line(strdesc)    logging.log(LT_LINE,    strdesc, __FILE__, __FUNCTION__, __LINE__)
+#define log_debug(strdesc)   logging.log(LT_DEBUG,   strdesc, __FILE__, __FUNCTION__, __LINE__)
 #define log_message(strdesc) logging.log(LT_MESSAGE, strdesc, __FILE__, __FUNCTION__, __LINE__)
 #define log_warning(strdesc) logging.log(LT_WARNING, strdesc, __FILE__, __FUNCTION__, __LINE__)
 #define log_error(strdesc)   logging.log(LT_ERROR,   strdesc, __FILE__, __FUNCTION__, __LINE__)
@@ -24,6 +25,7 @@ using namespace __gnu_cxx;
 /// Error types
 enum log_type {
   LT_LINE,    ///< Formatting output (eg: dots & lines, etc). Logging functions shouldn't do database output.
+  LT_DEBUG,   ///< A debugging message, not usually output, except when programs are running in verbose mode
   LT_MESSAGE, ///< A general status output message. Can be logged to database
   LT_WARNING, ///< A warning message. eg, the software detects a problem, but it can continue anyway.
   LT_ERROR    ///< A serious problem which a user should attend to.
@@ -42,6 +44,12 @@ public:
 /// Use this class for manipulating your applications logging
 class clogging {
 public:
+  /// Constructor
+  clogging();
+
+  /// Should loggers be verbose and show debugging output?
+  bool blndebug;
+
   /// Client apps pass "callback" functions to this class.
   void add_logger(void(*func)(const log_info&));
 
