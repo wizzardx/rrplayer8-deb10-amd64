@@ -126,7 +126,7 @@ private:
   // If there is a problem with playing category items, we revert to alternate category. If there is also a problem
   // with the alternate category, we attempt to revert to the currently-scheduled music profile. If there are still problems
   // we throw an exception. This function is called to revert from the current playback status to the next lower.
-  void revert_down(pg_connection & db, const player_config & db, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
+  void revert_down(pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
 
   // Functions called by load_from_db:
   seg_category parse_category_string(const string & strcat);

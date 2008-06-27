@@ -16,7 +16,7 @@
 #include <linux/cdrom.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <ext/hash_set>
+#include <tr1/unordered_set>
 
 using namespace std;
 
@@ -659,7 +659,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
     pg_result rs = db.exec(strsql);
     // Now load all the "disabled" mp3s into memory, use this list for a more efficient "playlist culling"
     // process
-    hash_set<string> disabled_mp3s;
+    tr1::unordered_set<string> disabled_mp3s;
 
     while (rs) {
       try {
@@ -685,7 +685,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   {
     filter_monitor fm(file_list, "duplicate (file)");
     vector<string>::iterator i = file_list.begin();
-    hash_set<string> unique_fnames;
+    tr1::unordered_set<string> unique_fnames;
     while (i != file_list.end()) {
       string strfile = lcase(get_short_filename(*i));
       // Fname already seen?
@@ -704,7 +704,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   {
     filter_monitor fm(file_list, "duplicate (description)");
     vector<string>::iterator i = file_list.begin();
-    hash_set<string> unique_descrs;
+    tr1::unordered_set<string> unique_descrs;
     while (i != file_list.end()) {
       string strdescr = trim(lcase(mp3tags.get_mp3_description(*i)));
       // Description already seen?

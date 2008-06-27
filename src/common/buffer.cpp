@@ -8,7 +8,6 @@
 // Save a buffer to a file.
 void save_buffer(char * Data, long lngSize, const string & strFileName) {
   FILE *stream;
-  bool blnResult = false;
 
   // Open the file.
   stream = fopen (strFileName.c_str(), "wb");
@@ -24,7 +23,6 @@ void save_buffer(char * Data, long lngSize, const string & strFileName) {
 
 // Read a file into a buffer: Caution: Buffer must be freed by the caller.
 void load_buffer(const string & strFileName, char * & pData, long & lngSize) {
-  bool blnResult = false;
   pData = NULL;
 
   FILE * stream = fopen(strFileName.c_str(), "rb");

@@ -1,6 +1,8 @@
 
+#include <limits.h>
 #include <string>
 #include <stdlib.h>
+
 #include "my_string.h"
 #include "exception.h"
 

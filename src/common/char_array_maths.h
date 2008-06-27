@@ -8,6 +8,7 @@
 #ifndef CHAR_ARRAY_MATHS_H
 #define CHAR_ARRAY_MATHS_H
 
+#include <limits.h>
 #include <string>
 
 using namespace std;

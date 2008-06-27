@@ -10,6 +10,7 @@
 #define FORMAT_CLOCK_TEST_DATA_H
 
 #include "common/my_time.h"
+#include <cstdlib>
 
 // Forward declarations:
 class pg_connection;

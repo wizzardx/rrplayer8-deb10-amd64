@@ -5,11 +5,13 @@
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
+#include <cstring>
+#include <errno.h>
 #include <exception>
 #include <string>
+
 #include "logging.h"
 #include "my_string.h"
-#include <errno.h>
 
 using namespace std;
 

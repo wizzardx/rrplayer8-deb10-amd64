@@ -240,8 +240,7 @@ void player::playback_transition(playback_events_info & playback_events) {
         //  - Only if the current item is music
         //  - Not if the next item is music but crossfading is disabled
         //  *evil hack*: Always when interrupting an item (even if the item is not music)
-        if (run_data.current_item.blnloaded &&
-            blninterrupt || 
+        if ((run_data.current_item.blnloaded && blninterrupt) ||
              (run_data.current_item.cat == SCAT_MUSIC &&
              !(run_data.next_item.cat == SCAT_MUSIC && !blncrossfade))) {
           // Setup the current item fade-out:

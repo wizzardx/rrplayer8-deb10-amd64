@@ -724,7 +724,7 @@ void reencode_mp3(const string & strMP3) {
 
   // Check that the new bitrate is the same as the original:
   if (intnew_bitrate != intold_bitrate)
-    my_throw("Bitrate after MP3->WAV->MP3 conversion (" + itostr(intold_bitrate) +
+    my_throw("Bitrate before MP3->WAV->MP3 conversion (" + itostr(intold_bitrate) +
         ") is different to the bitrate afterwards (" + itostr(intnew_bitrate) + ")!");
 
   // Bitrate is the same before and afterwards. Move the temporary mp3 file
@@ -750,10 +750,10 @@ string get_mp3_lyrics_tag(const string & strmp3) {
       // Fetch the file size.
       struct stat file_stats;
       if (fstat(fileno (stream), &file_stats) != 0) my_throw("File stats not retrieved!");
-      long lngfile_size = file_stats.st_size;
+      unsigned long lngfile_size = file_stats.st_size;
 
       // The size of the block to read from the end of the file:
-      long lngto_read = 10*1024;
+      unsigned long lngto_read = 10*1024;
       if (lngto_read > lngfile_size) lngto_read = lngfile_size;
 
       // Seek to the start:

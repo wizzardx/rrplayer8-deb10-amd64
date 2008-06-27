@@ -1199,7 +1199,8 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
 
   // If we're playing linein or silence, then check for the next item:
   if (run_data.current_item.blnloaded &&
-      run_data.current_item.strmedia == "LineIn" || run_data.current_item.cat == SCAT_SILENCE) {
+      (run_data.current_item.strmedia == "LineIn" ||
+       run_data.current_item.cat == SCAT_SILENCE)) {
     // Is the next item loaded?
     if (!run_data.next_item.blnloaded) {
       // So check if there is another item to be played:
