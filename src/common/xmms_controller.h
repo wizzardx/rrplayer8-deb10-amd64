@@ -19,23 +19,24 @@ namespace xmms_controller {
     xmms_controller(); ///< sesssion defaults to 0. Use set_session to change it.
     xmms_controller(const int intsession);
     ~xmms_controller();
-  
+
     int get_playlist_length();
     int get_playlist_pos();
-  
+
     int get_song_length(); ///< Returns the current song length in seconds
     int get_song_length_ms(); ///< Returns the current song length in milliseconds
-  
+
     int get_song_pos(); ///< Returns the current song pos in seconds
     int get_song_pos_ms(); ///< Returns the current song pos in milliseconds
-  
+    void set_song_pos_ms(const int intpos); ///< Set the current song pos in milliseconds
+
     string get_song_time_str(); ///< Return something like: 20:00.00
     string get_song_title(); ///< Returns the current strong name
     string get_song_file_path();  ///< Returns the path and filename of the current songj
-  
+
     string get_playlist_file(const int intpos); ///< Fetch the filename of an arbitrary playlist entry
     void playlist_delete(const int intpos); ///< Remove an entry from the playlist
-  
+
     int getvol(); ///< Retrieve XMMS's curent volume
     void hide_windows(); ///< Hide all the displayed xmms-shell windows
     void play();
@@ -49,7 +50,7 @@ namespace xmms_controller {
     bool paused();
     void stop();
     bool stopped();
-  
+
     bool getrepeat();
     void setrepeat(bool blnRepeat);
     bool getshuffle();
@@ -63,26 +64,26 @@ namespace xmms_controller {
     // Fetch & set the current session number:
     int get_session();
     void set_session(const int intsession);
-  
+
     // XMMS process-management:
     bool running(); ///< Is the XMMS process running?
-    void set_pid(const int pid); ///< Set the PID  
+    void set_pid(const int pid); ///< Set the PID
     void kill();    ///< Kill the session (if the PID is known)
   private:
     int intsession; ///< Which session this controller will talk to.
     int intpid;     ///< PID of the XMMS session
   };
-  
+
   // Management of multiple XMMS sessions:
-  
-  /// Client code can refer to individual XMMS sessions via this vector 
+
+  /// Client code can refer to individual XMMS sessions via this vector
   extern vector <xmms_controller> xmms;
-  
+
   /// Set the number of XMMS sessions used
   void set_num_xmms_sessions(const int max);
-  
+
   /// Start extra XMMS sessions if too few are running, and kill excess sessions
-  /// if too many are running. 
+  /// if too many are running.
   void ensure_correct_num_xmms_sessions_running();
 }
 
