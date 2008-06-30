@@ -29,10 +29,13 @@ void programming_element::reset() {
   music_bed.already_handled.blnstop = false;
   promo.lngtz_slot = -1;
   promo.blnforced_time = false;
+  // Additional info, provided by media maintenance:
+  // - General info
   media_info.blnloaded = false;
   media_info.intlength_ms = -1;
-  media_info.intend_silence_start_ms = -1;
   media_info.blndynamically_compressed = false;
+  // - Ending info
+  media_info.intend_silence_start_ms = -1;
   media_info.intend_quiet_start_ms = -1;
   media_info.blnends_with_fade = false;
 }
@@ -67,13 +70,14 @@ void programming_element::load_media_info(pg_connection & db) {
     return;
   }
   // We found information, so load it:
+  // - General info
   media_info.intlength_ms = strtoi(rs.field("intlength_ms", "-1"));
-  media_info.intend_silence_start_ms = strtoi(rs.field("intend_silence_start_ms", "-1"));
-  media_info.intlength_ms = strtoi(rs.field("intlength_ms", "-1"));
-  media_info.intend_silence_start_ms = strtoi(rs.field("intend_silence_start_ms", "-1"));
   media_info.blndynamically_compressed = strtobool(rs.field("blndynamically_compressed", "f"));
+  // - MP3 ending info
+  media_info.intend_silence_start_ms = strtoi(rs.field("intend_silence_start_ms", "-1"));
   media_info.intend_quiet_start_ms = strtoi(rs.field("intend_quiet_start_ms", "-1"));
   media_info.blnends_with_fade = strtobool(rs.field("blnends_with_fade", "f"));
+  // All fields loaded successfully, so record as loaded:
   media_info.blnloaded = true;
 
   // Log a warning at this point if the mp3 is a song and not dynamically compressed;

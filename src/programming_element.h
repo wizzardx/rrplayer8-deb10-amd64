@@ -55,15 +55,22 @@ public:
   // Extra information about the MP3, stored in tblinstore_media, by the
   // rrmedia-maintenance service:
   struct media_info {
+    // General information
     bool blnloaded; // Has this info been loaded?
     int intlength_ms; // Length of the item in ms
-    int intend_silence_start_ms; // Where the silence at the end of the item starts, in ms
-    bool blndynamically_compressed; // Was the item's range dynamically compressed?
+    bool blndynamically_compressed; // Was the item's range dynamically
+                                    // compressed?
                                     // - If not then we can't make reasonable
                                     //   volume-related guesses about the end
                                     //   of the song
-    int intend_quiet_start_ms; // When does the end of the song start to go quiet/fade?
-    bool blnends_with_fade; // Does the item end with a drawn-out fade? (otherwise, it ends suddenly)
+
+    // MP3 end:
+    int intend_silence_start_ms; // Where the silence at the end of the item
+                                 // starts, in ms
+    int intend_quiet_start_ms; // When does the end of the song start to go
+                               // quiet/fade?
+    bool blnends_with_fade; // Does the item end with a drawn-out fade?
+                            // (otherwise, it ends suddenly)
   } media_info;
   void load_media_info(pg_connection & db);
 };
