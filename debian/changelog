@@ -1,3 +1,10 @@
+rrplayer-fc (7.42) unstable; urgency=low
+
+  * Jump to audible start of items
+    (audible = loud enough to be heard over a low quality PA system).
+
+ -- David Purdy <david@radioretail.co.za>  Mon, 30 Jun 2008 12:32:28 +0200
+
 rrplayer-fc (7.41) unstable; urgency=low
 
   * Fixed problems with the delay between promo batches 
