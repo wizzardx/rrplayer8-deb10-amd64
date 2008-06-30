@@ -1072,16 +1072,16 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
 
     // For songs we check the end more closely (if we have the info):
     if (run_data.current_item.cat == SCAT_MUSIC &&
-        run_data.current_item.end.blnloaded) {
+        run_data.current_item.media_info.blnloaded) {
       // Ending information is available, so we might end the song early.
       // Check that XMMS's end matches the end recorded in the DB fairly closely:
-      int intdiff = abs(intxmms_song_length_ms - run_data.current_item.end.intlength_ms);
+      int intdiff = abs(intxmms_song_length_ms - run_data.current_item.media_info.intlength_ms);
       if (intdiff > 500) {
-        log_debug("XMMS says that " + run_data.current_item.strmedia + " is " + itostr(intxmms_song_length_ms) + " ms long, but the DB says it is " + itostr(run_data.current_item.end.intlength_ms) + " ms. I might not end the song at the correct time!");
+        log_debug("XMMS says that " + run_data.current_item.strmedia + " is " + itostr(intxmms_song_length_ms) + " ms long, but the DB says it is " + itostr(run_data.current_item.media_info.intlength_ms) + " ms. I might not end the song at the correct time!");
       }
 
       // Log a warning if the item is dynamically compressed:
-      if (!run_data.current_item.end.blndynamically_compressed) {
+      if (!run_data.current_item.media_info.blndynamically_compressed) {
         // Not dynamically range compressed
         log_debug("It looks like " + run_data.current_item.strmedia + " is not dynamically range compressed, so I can't tell if it ends suddenly");
       }
@@ -1089,22 +1089,22 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
       // If the song becomes silent towards the end, then assume that the
       // item ends there (until we decide it's okay to use the quiet end
       // instead)
-      if (run_data.current_item.end.intend_silence_start_ms != -1 &&
-          run_data.current_item.end.intend_silence_start_ms < intend_ms) {
+      if (run_data.current_item.media_info.intend_silence_start_ms != -1 &&
+          run_data.current_item.media_info.intend_silence_start_ms < intend_ms) {
         stritem_ends_descr = "Item goes silent";
-        intend_ms = run_data.current_item.end.intend_silence_start_ms;
+        intend_ms = run_data.current_item.media_info.intend_silence_start_ms;
       }
 
       // Now check if we end when the song starts getting quiet
       // - Does the song fade out gradually?
-      if (run_data.current_item.end.blnends_with_fade) {
+      if (run_data.current_item.media_info.blnends_with_fade) {
         // In this case we stop the song when it starts getting quiet.
-        if (run_data.current_item.end.intend_quiet_start_ms != -1 &&
-            run_data.current_item.end.intend_quiet_start_ms < intend_ms) {
+        if (run_data.current_item.media_info.intend_quiet_start_ms != -1 &&
+            run_data.current_item.media_info.intend_quiet_start_ms < intend_ms) {
           // We have a quiet start, and it is sooner than the ends we know
           // about so far.
           stritem_ends_descr = "Item goes quiet";
-          intend_ms = run_data.current_item.end.intend_quiet_start_ms;
+          intend_ms = run_data.current_item.media_info.intend_quiet_start_ms;
         }
         else {
           // The item fades out (according to rrmedia-maintenance), but we

@@ -29,30 +29,30 @@ void programming_element::reset() {
   music_bed.already_handled.blnstop = false;
   promo.lngtz_slot = -1;
   promo.blnforced_time = false;
-  end.blnloaded = false;
-  end.intlength_ms = -1;
-  end.intend_silence_start_ms = -1;
-  end.blndynamically_compressed = false;
-  end.intend_quiet_start_ms = -1;
-  end.blnends_with_fade = false;
+  media_info.blnloaded = false;
+  media_info.intlength_ms = -1;
+  media_info.intend_silence_start_ms = -1;
+  media_info.blndynamically_compressed = false;
+  media_info.intend_quiet_start_ms = -1;
+  media_info.blnends_with_fade = false;
 }
 
 // Load information about the mp3 end from the database (tblinstore_media)
-void programming_element::load_end(pg_connection & db) {
+void programming_element::load_media_info(pg_connection & db) {
   // Some basic checks:
-  if (end.blnloaded) {
-    log_warning("Ending info for " + strmedia + " already loaded");
+  if (media_info.blnloaded) {
+    log_warning("Media information for " + strmedia + " already loaded");
     return;
   }
   if (strmedia == "LineIn") {
-    log_warning("Not loading ending details for " + strmedia);
+    log_warning("Not loading media information for " + strmedia);
     return;
   }
   if (lcase(right(strmedia, 4)) != ".mp3") {
-    log_warning("Not loading ending details for non-mp3 " + strmedia);
+    log_warning("Not loading media informatin for non-mp3 " + strmedia);
     return;
   }
-  // Look for ending info in tblinstore_media:
+  // Look for media info in tblinstore_media:
   // - Split the file into dirname and basename:
   string strdirname, strbasename;
   break_down_file_path(strmedia, strdirname, strbasename);
@@ -67,17 +67,17 @@ void programming_element::load_end(pg_connection & db) {
     return;
   }
   // We found information, so load it:
-  end.intlength_ms = strtoi(rs.field("intlength_ms", "-1"));
-  end.intend_silence_start_ms = strtoi(rs.field("intend_silence_start_ms", "-1"));
-  end.intlength_ms = strtoi(rs.field("intlength_ms", "-1"));
-  end.intend_silence_start_ms = strtoi(rs.field("intend_silence_start_ms", "-1"));
-  end.blndynamically_compressed = strtobool(rs.field("blndynamically_compressed", "f"));
-  end.intend_quiet_start_ms = strtoi(rs.field("intend_quiet_start_ms", "-1"));
-  end.blnends_with_fade = strtobool(rs.field("blnends_with_fade", "f"));
-  end.blnloaded = true;
+  media_info.intlength_ms = strtoi(rs.field("intlength_ms", "-1"));
+  media_info.intend_silence_start_ms = strtoi(rs.field("intend_silence_start_ms", "-1"));
+  media_info.intlength_ms = strtoi(rs.field("intlength_ms", "-1"));
+  media_info.intend_silence_start_ms = strtoi(rs.field("intend_silence_start_ms", "-1"));
+  media_info.blndynamically_compressed = strtobool(rs.field("blndynamically_compressed", "f"));
+  media_info.intend_quiet_start_ms = strtoi(rs.field("intend_quiet_start_ms", "-1"));
+  media_info.blnends_with_fade = strtobool(rs.field("blnends_with_fade", "f"));
+  media_info.blnloaded = true;
 
   // Log a warning at this point if the mp3 is a song and not dynamically compressed;
-  if (cat == SCAT_MUSIC && !end.blndynamically_compressed) {
+  if (cat == SCAT_MUSIC && !media_info.blndynamically_compressed) {
     log_warning("Song " + strmedia + " is not dynamically range compressed! I can't tell if it gradually fades out.");
   }
 }

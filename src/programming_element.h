@@ -52,8 +52,9 @@ public:
     bool blnforced_time; // Was this promo scheduled to play at a specific time?
   } promo;
 
-  // Extra information about the end of the mp3:
-  struct end {
+  // Extra information about the MP3, stored in tblinstore_media, by the
+  // rrmedia-maintenance service:
+  struct media_info {
     bool blnloaded; // Has this info been loaded?
     int intlength_ms; // Length of the item in ms
     int intend_silence_start_ms; // Where the silence at the end of the item starts, in ms
@@ -63,8 +64,8 @@ public:
                                     //   of the song
     int intend_quiet_start_ms; // When does the end of the song start to go quiet/fade?
     bool blnends_with_fade; // Does the item end with a drawn-out fade? (otherwise, it ends suddenly)
-  } end;
-  void load_end(pg_connection & db);
+  } media_info;
+  void load_media_info(pg_connection & db);
 };
 
 /// A list of programming elements (eg: an announcement batch)

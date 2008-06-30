@@ -366,10 +366,10 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   // Prepare to return it:
   pe = *next_item;
 
-  // If it is a song then load additional mp3 ending details from tblinstore_media,
-  // if available:
+  // If it is a song then load additional additional media info from the
+  // database (tblinstore_media). of available:
   if (pe.cat == SCAT_MUSIC) {
-    pe.load_end(db);
+    pe.load_media_info(db);
   }
 
   // And now we've definitely returned the "first" item from the list if we hadn't
@@ -411,7 +411,7 @@ bool segment::get_next_item_will_revert(string & strreason) {
       }
     }
   }
-  
+
   // Not going to revert
   return false;
 }
