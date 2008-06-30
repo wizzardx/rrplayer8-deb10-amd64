@@ -549,6 +549,18 @@ void player::playback_transition(playback_events_info & playback_events) {
             // Start it playing now.
             xmmsc::xmms[intsession].play();
 
+            // - If the item becomes audible late (eg, music with silence at
+            //   start), then jump to that position now. We do this
+            //   immediately starting playback, because XMMS does not support
+            //   setting the song position sooner.
+            if (run_data.next_item.media_info.blnloaded &&
+                run_data.next_item.media_info.intbegin_quiet_stop_ms > 0) {
+              log_message("New item becomes audible at " +
+                  itostr(run_data.next_item.media_info.intbegin_quiet_stop_ms) +
+                  " ms, so jumping to that position");
+              xmmsc::xmms[intsession].set_song_pos_ms(run_data.next_item.media_info.intbegin_quiet_stop_ms);
+            }
+
             // Create a text file listing the new xmms session number. This is used by
             // the rrxmms-status tool.
             {
