@@ -64,13 +64,24 @@ public:
                                     //   volume-related guesses about the end
                                     //   of the song
 
+    // MP3 beginning:
+    int intbegin_silence_stop_ms; // Where the silence at the beginning of the
+                                  // item ends, in ms
+    int intbegin_quiet_stop_ms;   // When does the beginning of the song
+                                  // become audible?
+    bool blnbegins_with_fade;     // Does the item begin with a drawn-out
+                                  // fade-in? (otherwise, it begins suddenly)
+                                  // This is *after* the item becomes audible.
+
     // MP3 end:
     int intend_silence_start_ms; // Where the silence at the end of the item
                                  // starts, in ms
     int intend_quiet_start_ms; // When does the end of the song start to go
-                               // quiet/fade?
+                               // (inaudibly) quiet/fade?
     bool blnends_with_fade; // Does the item end with a drawn-out fade?
                             // (otherwise, it ends suddenly)
+                            // This is *before* the item becomes inaudibly
+                            // soft.
   } media_info;
   void load_media_info(pg_connection & db);
 };

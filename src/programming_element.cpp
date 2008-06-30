@@ -34,6 +34,10 @@ void programming_element::reset() {
   media_info.blnloaded = false;
   media_info.intlength_ms = -1;
   media_info.blndynamically_compressed = false;
+  // - MP3 beginning info
+  media_info.intbegin_silence_stop_ms = -1;
+  media_info.intbegin_quiet_stop_ms = -1;
+  media_info.blnbegins_with_fade = false;
   // - Ending info
   media_info.intend_silence_start_ms = -1;
   media_info.intend_quiet_start_ms = -1;
@@ -61,7 +65,8 @@ void programming_element::load_media_info(pg_connection & db) {
   break_down_file_path(strmedia, strdirname, strbasename);
   // - Query:
   pg_result rs = db.exec("SELECT intlength_ms, intend_silence_start_ms, "
-    "blndynamically_compressed, intend_quiet_start_ms, blnends_with_fade "
+    "blndynamically_compressed, intend_quiet_start_ms, blnends_with_fade, "
+    "intbegin_silence_stop_ms, intbegin_quiet_stop_ms, blnbegins_with_fade "
     "FROM tblinstore_media JOIN tblinstore_media_dir USING "
     "(lnginstore_media_dir) WHERE strdir = " + psql_str(strdirname) + " AND "
     "strfile = " + psql_str(strbasename) + " AND intlength_ms IS NOT NULL");
@@ -73,6 +78,10 @@ void programming_element::load_media_info(pg_connection & db) {
   // - General info
   media_info.intlength_ms = strtoi(rs.field("intlength_ms", "-1"));
   media_info.blndynamically_compressed = strtobool(rs.field("blndynamically_compressed", "f"));
+  // - MP3 beginning info
+  media_info.intbegin_silence_stop_ms = strtoi(rs.field("intbegin_silence_stop_ms", "-1"));
+  media_info.intbegin_quiet_stop_ms = strtoi(rs.field("intbegin_quiet_stop_ms", "-1"));
+  media_info.blnbegins_with_fade = strtobool(rs.field("blnbegins_with_fade", "f"));
   // - MP3 ending info
   media_info.intend_silence_start_ms = strtoi(rs.field("intend_silence_start_ms", "-1"));
   media_info.intend_quiet_start_ms = strtoi(rs.field("intend_quiet_start_ms", "-1"));
