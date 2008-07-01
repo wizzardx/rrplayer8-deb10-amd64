@@ -856,7 +856,7 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
       log_line("Current item is going to end " + itostr(intdiff) + "s after the current segment end. Increasing segment delay factor to " + itostr(intnew_segment_delay) + "s (+" + itostr(intnew_segment_delay - run_data.intsegment_delay) + "s)");
       run_data.intsegment_delay = intnew_segment_delay;
     }
-    // Otherwise, is the item going to end 10 or less seconds before the next segment starts? 
+    // Otherwise, is the item going to end 10 or less seconds before the next segment starts?
     else if (intdiff >= -10 && intdiff < 0) {
       // Predict if fetching the next item from the current segment will cause the
       // playback to revert (ie, start playing music instead of links etc)
@@ -1113,7 +1113,7 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
   {
     static long lngprev_fc = -1;
     string strmsg = "Format Clock (id: " + itostr(run_data.current_segment.fc.lngfc) + "): \"" + run_data.current_segment.fc.strname + "\"";
-    
+
     if (lngprev_fc != run_data.current_segment.fc.lngfc) {
       log_message("Changed to a new " + strmsg);
       lngprev_fc = run_data.current_segment.fc.lngfc;
@@ -1159,6 +1159,8 @@ void player::get_next_item_not_recent_music(programming_element & next_item, con
   int intattempts_left = run_data.current_segment.programming_elements.size() * 2;
   if (intattempts_left < 100) intattempts_left = 100;
 
+  int intnum_skipped_songs = 0; // Number of songs skipped by our logic
+
   while (!blnok && intattempts_left > 0) {
     // When was the current playlist previously updated?
     datetime dtmprev_playlist_update = run_data.current_segment.dtmpel_updated;
@@ -1190,14 +1192,23 @@ void player::get_next_item_not_recent_music(programming_element & next_item, con
 
     // If the item is not ok to use, then log that it was skipped:
     if (!blnok) {
+      intnum_skipped_songs++;
       string strdescr = "<ERROR>";
       try {
         strdescr = mp3tags.get_mp3_description(next_item.strmedia);
       } catch_exceptions;
-      log_message("Skipping song, it was played recently: \"" + next_item.strmedia + "\" - \"" + strdescr + "\"");
+      log_debug("Skipping song, it was played recently: \"" + next_item.strmedia + "\" - \"" + strdescr + "\"");
       // If this check failed then go to the next attempt:
       if (!blnok) --intattempts_left;
     }
+  }
+
+  // Log how many songs were skipped to the main (non-debugged) log, if
+  // we skipped any:
+  if (intnum_skipped_songs > 0) {
+    log_message("Skipped " + itostr(intnum_skipped_songs) +
+                " songs while finding songs that haven't played recently. See"
+                " debug log for more info.");
   }
 
   // Did we find an item which isn't a recently-played song?
