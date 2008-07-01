@@ -1,3 +1,13 @@
+rrplayer-fc (7.42.1) unstable; urgency=low
+
+  * Logging updates
+    - Move skipped songs to the debug log, and log a summary to the main log
+      instead.
+    - Log more info before checking if we should jump into items (to skip
+      inaudible song starts).
+
+ -- David Purdy <david@radioretail.co.za>  Tue, 01 Jul 2008 10:15:48 +0200
+
 rrplayer-fc (7.42) unstable; urgency=low
 
   * Jump to audible start of items
