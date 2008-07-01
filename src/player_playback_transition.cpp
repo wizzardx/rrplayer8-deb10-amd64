@@ -553,6 +553,12 @@ void player::playback_transition(playback_events_info & playback_events) {
             //   start), then jump to that position now. We do this
             //   immediately starting playback, because XMMS does not support
             //   setting the song position sooner.
+            log_debug("About to check if we should jump past inaudible song beginning:");
+            log_debug(" - Next item loaded: " +
+                      booltostr(run_data.next_item.media_info.blnloaded));
+            log_debug(" - Beginning quiet stops at " +
+                      itostr(run_data.next_item.media_info.intbegin_quiet_stop_ms) +
+                      " ms");
             if (run_data.next_item.media_info.blnloaded &&
                 run_data.next_item.media_info.intbegin_quiet_stop_ms > 0) {
               log_message("New item becomes audible at " +
@@ -560,6 +566,7 @@ void player::playback_transition(playback_events_info & playback_events) {
                   " ms, so jumping to that position");
               xmmsc::xmms[intsession].set_song_pos_ms(run_data.next_item.media_info.intbegin_quiet_stop_ms);
             }
+            else log_debug("Didn't jump past song beginning");
 
             // Create a text file listing the new xmms session number. This is used by
             // the rrxmms-status tool.
