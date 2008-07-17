@@ -363,7 +363,16 @@ void segment::get_next_item(programming_element & pe, pg_connection & db, const 
   // Check: Do we have a "next" item to return?
   if (next_item == programming_elements.end()) LOGIC_ERROR; // This should never happen...
 
-  // Prepare to return it:
+  // Enable playlist repetition if the item is LineIn or Silence:
+  // (This is so we don't hit problems while checking for the next item while
+  // silence or LineIn are playing)
+  if (!blnrepeat &&
+     (next_item->strmedia == "LineIn" || next_item->cat == SCAT_SILENCE)) {
+    log_warning("Segment was scheduled as not allowing playlist repetition, but the next item is LineIn or Silence! Overriding setting and allowing playlist repetition.");
+    blnrepeat = true;
+  }
+
+  // Prepare to return the next item:
   pe = *next_item;
 
   // If it is a song then load additional additional media info from the

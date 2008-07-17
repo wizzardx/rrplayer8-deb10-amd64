@@ -956,7 +956,7 @@ void player::check_playback_status() {
 
   // Starup/stop XMMS sessions:
   xmmsc::ensure_correct_num_xmms_sessions_running();
-  
+
   for (int intsession=0; intsession < intmax_xmms; intsession++) {
     // Find out what the session should be playing now, if anything:
     string strplaying = ""; // Stays "" if nothing should be playing, but gets set if something should be.
@@ -1201,6 +1201,7 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
   if (run_data.current_item.blnloaded &&
       (run_data.current_item.strmedia == "LineIn" ||
        run_data.current_item.cat == SCAT_SILENCE)) {
+    log_debug("Busy playing LineIn or Silence and don't have next item yet. Checking now");
     // Is the next item loaded?
     if (!run_data.next_item.blnloaded) {
       // So check if there is another item to be played:
