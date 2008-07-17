@@ -1,0 +1,8 @@
+* Expire cached data periodically
+ - This is so that it gets reloaded from db/disk
+ - Includes cached pel collection and 'last music playlist'
+
+* should confirm that xmms song pos is changing
+  See this TODO for details:
+     /home/david/doc/todo/soon/Gerhard: rrplayer-fc - check that xmms song position
+        changes
