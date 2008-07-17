@@ -1,3 +1,9 @@
+rrplayer-fc (7.42.3) unstable; urgency=low
+
+  * Allow repetition for LineIn and Silence segments
+
+ -- David Purdy <david@radioretail.co.za>  Thu, 17 Jul 2008 17:16:18 +0200
+
 rrplayer-fc (7.42.2) unstable; urgency=low
 
   * Don't log warnings when not loading media info for non-mp3 items
