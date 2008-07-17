@@ -52,11 +52,11 @@ void programming_element::load_media_info(pg_connection & db) {
     return;
   }
   if (strmedia == "LineIn") {
-    log_warning("Not loading media information for " + strmedia);
+    log_debug("Not loading media information for " + strmedia);
     return;
   }
   if (lcase(right(strmedia, 4)) != ".mp3") {
-    log_warning("Not loading media informatin for non-mp3 " + strmedia);
+    log_debug("Not loading media information for non-mp3 " + strmedia);
     return;
   }
   // Look for media info in tblinstore_media:
