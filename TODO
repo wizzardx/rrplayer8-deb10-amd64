@@ -1,8 +1,78 @@
+* Setup automated unit tests
+    -> Wanted by me
+    - Start using BDD with all new player updates
+
+* Fix transition problems with items that end too soon
+  -> Wanted by Gerhard and Nadia
+  - eg: LineIn that ends at end of segment, and next item wants to crossfade
+        but can't, so playback starts too soon.
+        - Fix this by making linein's end later (seg end + crossfade length?
+  - eg: MP3s that end too soon, and next item wants to crossfade
+    - Fix this by logging a warning and not cross-fading after all.
+
+* Split LineIn into a separate format clock category
+  -> Wanted by Gerhard (and originally VJ)
+  - rrschedule-db:
+    - Add a LineIn segment type
+    - Update version number
+  - rrplayer-fc:
+    - Update rrschedule-db version dependency
+    - Do the splitting
+      - Remove from Music segment handling?
+      - Allow LineIn to also be used in music segments?
+
+* Enable forced-time segments
+    -> Wanted by Gerhard and Riaan L. Nadia too?
+    - rrschedule-db:
+        - Add a blnforced_time setting to segments (default: FALSE, and NOT
+          NULL?)
+        - Add to segment cats: blnforced_time_interrupt_leeway - FALSE for
+          music, and TRUE for everything else. Default to TRUE
+        - Update version number
+    - rrplayer-fc:
+        - Update rrschedule-db version dependency
+        - Refactor logic related to 'force time promo' (use same logic for it
+          and 'force time segments')
+        - Regularly (every 30s/60s?) check for the next forced-time ad/music
+            - Also needs to be accurate to the second
+            (eg: forced time ads/segment at 00:30:15 needs to start then, not
+            00:30:00 or 00:31:00)
+            - Also make sure that LineIn and Silence work this way
+
+            - If there is something, then schedule the interrupt for that time:
+            - If there is leeway (for the upcoming segment type (promo for
+                forced-time-ads) at that time, ie time for the ad to finish,
+                then don't schedule the interrupt.
+            - When the 'current format clock time' to point to the start of the
+              segment (not just current time), even if the previous item had
+               some leeway.
+            - this will skip segments that were before.
+            - Also update regular 'get the next item' logic to get
+              'forced time' segments before regular segments.
+                - ie, similar to normal segments, when switching over (ie,
+                  don't miss out small segments).
+            - End of hour is allowed to interrupt forced-time segments (and
+              promos)
+
+* Check 192.168.0.31 for rrplayer-fc errors, and fix them
+
 * Expire cached data periodically
+ -> Wanted by Gerhard
  - This is so that it gets reloaded from db/disk
  - Includes cached pel collection and 'last music playlist'
 
 * should confirm that xmms song pos is changing
+  -> Wanted by Gerhard
   See this TODO for details:
      /home/david/doc/todo/soon/Gerhard: rrplayer-fc - check that xmms song position
         changes
+
+* Use more fine-grained times internally, instead of seconds?
+  -> Wanted by me
+  - Research Boost date & time types & funcs.
+
+* Replace XMMS with another MP3-playback backend
+  -> Wanted by Gerhard, Nadia, and myself
+  - We need to support extra gain, for stores with very soft sound cards.
+  - We need to support CD audio.
+  - Add unit tests to confirm these requirements
