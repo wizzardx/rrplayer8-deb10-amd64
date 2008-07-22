@@ -1,0 +1,16 @@
+Automated tests for rrplayer-fc
+
+Tests are currently in cxxtest[1] format.
+
+To build and run the tests, run 'make'
+
+The Makefile automatically detects and includes any new .h (test suite) files
+(test suites) in the built test runner.
+
+How to install cxxtest on Debian:
+
+ cd /tmp/
+ wget http://downloads.sourceforge.net/cxxtest/cxxtest-3.10.1-1.noarch.rpm
+ fakeroot alien cxxtest-3.10.1-1.noarch.rpm
+ sudo dpkg -i cxxtest_3.10.1-2_all.deb
+
