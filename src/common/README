@@ -1,7 +1,40 @@
-cpp_common library, version 1.0.13
+cpp_common library, version 1.1
 
 C++ libraries developed by David Purdy.
 
 Originally apps symlinked to these files, but now with separate per-project
 git checkouts, apps can each get their own copy of this set of libraries and
 not waste space in a central repository.
+
+HOW TO USE:
+
+* Create your project in KDevelop (eg: command-line hello world example)
+
+* In Automake Manager, add a new 'common' sub-project under src
+
+* Add a new target to 'common'
+    - Primary 'Library', Prefix 'noinst', File name 'common'
+
+* Update your binary target's options, and link the src/common/libcommon.a
+  convenience library.
+
+* Copy and paste all the files (but not dirs and hidden files) from the
+  cpp_common dir to your project's new "common" subdir.
+
+* From your project, use one of the libs, eg:
+
+    #include "common/mp3_tags.h"
+
+    // And in main()
+    mp3_tags tags;
+
+* Try to compile. When that fails, start Existing Files to libcommon.a, eg:
+    - dir_list.cpp
+    - exception.cpp
+    - file.cpp
+    - logging.cpp
+    - mp3_tags.cpp
+    - my_string.cpp
+    - my_time.cpp
+    - string_splitter.cpp
+    - system.cpp
