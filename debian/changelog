@@ -1,3 +1,9 @@
+rrplayer-fc (7.42.4) unstable; urgency=low
+
+  * Use ID3v2 tags when available
+
+ -- David Purdy <david@radioretail.co.za>  Thu, 24 Jul 2008 15:44:08 +0200
+
 rrplayer-fc (7.42.3) unstable; urgency=low
 
   * Allow repetition for LineIn and Silence segments
