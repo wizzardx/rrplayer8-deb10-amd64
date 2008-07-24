@@ -5,29 +5,3 @@ Format Clocks and special item transition effects.
 
 The Player controls sound output at the stores, by manipulating Linux sound
 backends like XMMS and aumix.
-
-AUTOMATED UNIT TESTS
-
-The player now has automated unit tests [1].
-
-The unit tests source code (tests.cpp) is dynamically generated during the
-build process [2].
-
-The tests are in cxxtest [3] format.
-
-INSTALLING CXXTEST
-
-Since cxxtest is not in Debian's repo, here are the steps to build and
-install a .deb file:
-
- cd /tmp/
- wget http://downloads.sourceforge.net/cxxtest/cxxtest-3.10.1-1.noarch.rpm
- fakeroot alien cxxtest-3.10.1-1.noarch.rpm
- sudo dpkg -i cxxtest_3.10.1-2_all.deb
-
-[1] The unit tests are still a work in progress.
-
-[2] See src/Makefile.am for details. See also the generated tests.cpp file
-    found under the build dir.
-
-[3] http://cxxtest.sourceforge.net/
