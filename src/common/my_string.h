@@ -5,6 +5,7 @@
 #define MY_STRING_H
 
 #include <string>
+#include <vector>
 
 // hash_fun.h moves around, so use conditional compilation logic to find the
 // correct location (borrowed from this bug report:
@@ -70,6 +71,8 @@ string wrap_lines(const string & str, const int min_width, const string & next_l
 string pad_left(const string & str, const char chpad, const int intfinal_length);
 string pad_right(const string & str, const char chpad, const int intfinal_length);
 string add_dashes(const string & strcode, const int intevery=4, const char chdash='-');
+string format_string_with_vector(const string & str, const vector<string> vec,
+                                 const string & replace_marker);
 
 // Quoted strings, eg: ["The dog said \"Woof\""]
 

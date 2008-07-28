@@ -162,6 +162,11 @@ pg_result pg_connection::exec(const string & strsql) { // An exception is thrown
   }
 }
 
+pg_result pg_connection::exec(const string & strsql,
+                              const vector<string> params) {
+  return exec(format_string_with_vector(strsql, params, "?"));
+}
+
 void pg_connection::call_on_connect_error(void(*func)()) {
   // Set a pointer to a callback function to be called if a connection error occurs...
   client_conn_err_code = func;
@@ -414,6 +419,11 @@ pg_transaction::~pg_transaction() {
 // Executing queries:
 pg_result pg_transaction::exec(const string & strquery) {
   return connection.exec(strquery);
+}
+
+pg_result pg_transaction::exec(const string & strquery,
+                               const vector<string> params) {
+  return exec(format_string_with_vector(strquery, params, "?"));
 }
 
 // Committing the transaction:

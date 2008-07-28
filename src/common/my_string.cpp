@@ -439,6 +439,59 @@ string add_dashes(const string & strcode, const int intevery, const char chdash)
   return strret;
 }
 
+/// Replace a marker in a string (eg: %s or ?) with strings found in the
+/// provided string vector.
+
+string format_string_with_vector(const string & str, const vector<string> vec,
+                                 const string & replace_marker) {
+  int str_pos = 0;
+  int vec_pos = 0;
+
+  // Replacement marker needs to have at least 1 character:
+  if (replace_marker.length() == 0) {
+    my_throw("Empty replacement marker string!");
+  }
+
+  string ret;
+  while (str_pos < str.length()) {
+    // Is this character the start of a replacement marker?
+    char ch = str[str_pos];
+    bool was_replaced = false;
+    if (ch == replace_marker[0]) {
+      // Yes. Is there a replacement marker here?
+      if (substr(str, str_pos, replace_marker.length()) == replace_marker) {
+        // Yes, so replace it with a string from the vector
+        if (vec_pos >= vec.size()) {
+          my_throw("Not enough replacement strings!");
+        }
+        ret += vec[vec_pos];
+        vec_pos += 1;
+        str_pos += replace_marker.length() - 1;
+        was_replaced = true;
+      }
+    }
+    // If there was no replacement, then append the current character.
+    if (!was_replaced) {
+      ret += ch;
+    }
+
+    // Go to the next character
+    ++str_pos;
+  }
+
+  // Did we use up all the replacement strings?
+  if (vec_pos < vec.size()) {
+    int unused = vec.size() - vec_pos;
+    if (unused == 1)
+      my_throw("1 unused replacement string!");
+    else
+      my_throw(itostr(unused) + " unused replacement strings!");
+  }
+
+  // Return the output string
+  return ret;
+}
+
 // Quoted strings, eg: ["The dog said \"Woof\""]
 
 bool is_quoted_string(const string & str, const char chquote, bool & blnquote_error) {

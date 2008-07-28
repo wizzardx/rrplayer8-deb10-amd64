@@ -38,6 +38,7 @@ class pg_result; // Forward declaration
 class pg_conn_exec {
 public:
   virtual pg_result exec(const string & strquery)=0;
+  virtual pg_result exec(const string & strquery, const vector<string> params)=0;
   virtual ~pg_conn_exec() {};
 };
 
@@ -69,6 +70,7 @@ public:
 
   /// And for executing queries through the connection:
   virtual pg_result exec(const string & strquery);
+  virtual pg_result exec(const string & strquery, const vector<string> params);
 
   /// Allow the client code to specify a calback function to be run when connection errors
   /// are detected. Sometimes the database will be down for a long time...
@@ -171,6 +173,7 @@ public:
 
   /// Execute a query
   virtual pg_result exec(const string & strquery);
+  virtual pg_result exec(const string & strquery, const vector<string> params);
 
   /// Commit the transaction:
   void commit();
