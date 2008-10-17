@@ -14,10 +14,4 @@ player_LDADD = $(top_builddir)/src/common/libcommon.a /usr/lib/libxmms.so \
 	/usr/lib/libglib.so /usr/lib/libpqxx.so
 noinst_HEADERS = player_run_data.h player_constants.h player_config.h \
 	player_util.h
-noinst_PROGRAMS = tests
-tests_SOURCES = tests.cpp
-
-TESTS = test_cxxtest.h
-tests.cpp: $(TESTS)
-	cxxtestgen.pl -o $@ --error-printer $^
 
