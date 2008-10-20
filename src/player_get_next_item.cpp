@@ -1135,12 +1135,21 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
 
   // Now fetch the next item to play, from the segment. Make sure it isn't a
   // song which was played recently:
-  get_next_item_not_recent_music(next_item, intstarts_ms);
+  get_next_ok_music_item(next_item, intstarts_ms);
 }
 
-void player::get_next_item_not_recent_music(programming_element & next_item, const int intstarts_ms) {
-  // This function stops songs from playing too soon after each other.
-  // eg: segment changes from music to non-music and back to music.
+void player::get_next_ok_music_item(programming_element & next_item, const int intstarts_ms) {
+  // This function stops inappropriate songs from being played from the
+  // playlist.
+  //
+  // It works by skipping songs which:
+  //
+  //  1) Have played recently
+  //     (eg: segment changes from music to non-music and back to music)
+  //
+  // (That's all for now, more conditions to be added later)
+  //
+
   bool blnok           = false; // Set to true when we find an item which isn't a recently-played song
 
   // Count the music items in the current playlist:
