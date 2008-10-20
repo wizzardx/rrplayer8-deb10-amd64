@@ -33,7 +33,14 @@
       <envvars/>
       <runarguments>
         <player/>
+        <tests/>
       </runarguments>
+      <debugarguments>
+        <tests/>
+      </debugarguments>
+      <cwd>
+        <tests>/home/david/dev/instore/common/playback/rrplayer-fc/debug/./src</tests>
+      </cwd>
     </run>
     <configurations>
       <optimized>
