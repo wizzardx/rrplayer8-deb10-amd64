@@ -91,10 +91,8 @@
 
     Sub-TODOs for this task (updated as I work through the code):
 
-        - Make player::get_next_ok_music_item() unit testable
-
         - Add unit tests to confirm that the current behaviour of
-          player::get_next_ok_music_item() is correct:
+          get_next_ok_music_item() is correct:
 
             - For longer playlists (>=50 items), the method should attempt
               up to (playlist length * 2) times to find an ok music item.

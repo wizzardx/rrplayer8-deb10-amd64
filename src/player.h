@@ -123,9 +123,8 @@ private:
     void get_next_item_promo(programming_element & next_item, const int intstarts_ms, const bool blnwould_interrupt_song); // Populate argument with the next promo if there are promos waiting.
     void get_next_item_format_clock(programming_element & next_item, const int intstarts_ms); // Use Format Clocks to determine an item to be played.
 
-  // Functions called by get_next_item_format_clock:
+    // Functions called by get_next_item_format_clock:
     long get_fc_segment(const long lngfc, const string & strsql_time);
-    void get_next_ok_music_item(programming_element & item, const int intstarts_ms);
 
   // Fetch timing info about events that will take place during playback of the current item
   // (music bed starts, music bed ends, item ends).
@@ -201,5 +200,18 @@ private:
 extern player * pplayer; // A pointer to the currently-running player instance. Automatically maintained
                          // by the current player instance. It gets set to NULL when there is no player object.
                          // Use this for callback functions, etc.
+
+
+// Utility functions, split off from the player class to make them more
+// easily unit testable.
+
+// Functions called by player::get_next_item_format_clock:
+
+// This function stops inappropriate songs from being played from the
+// playlist.
+void get_next_ok_music_item(
+     programming_element & next_item, const int intstarts_ms,
+     music_history & music_history, mp3_tags & mp3tags, pg_connection & db,
+     player_config & config, player_run_data & run_data);
 
 #endif

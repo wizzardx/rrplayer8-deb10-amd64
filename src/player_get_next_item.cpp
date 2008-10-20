@@ -1135,10 +1135,27 @@ void player::get_next_item_format_clock(programming_element & next_item, const i
 
   // Now fetch the next item to play, from the segment. Make sure it isn't a
   // song which was played recently:
-  get_next_ok_music_item(next_item, intstarts_ms);
+  get_next_ok_music_item(next_item, intstarts_ms, m_music_history, mp3tags,
+                         db, config, run_data);
 }
 
-void player::get_next_ok_music_item(programming_element & next_item, const int intstarts_ms) {
+void get_next_ok_music_item(
+
+  // Returned programming element
+  programming_element & next_item,
+
+  // How long until the next item starts
+  const int intstarts_ms,
+
+  // Objects containing data required for this function. These are members
+  // of the 'player' class that can no longer be reached directly since
+  // this function is no longer a method.
+  music_history & music_history,
+  mp3_tags & mp3tags,
+  pg_connection & db,
+  player_config & config,
+  player_run_data & run_data) {
+
   // This function stops inappropriate songs from being played from the
   // playlist.
   //
@@ -1179,7 +1196,7 @@ void player::get_next_ok_music_item(programming_element & next_item, const int i
     const bool blnasap = (intstarts_ms - now() <= 5); // Starts 5 or less seconds from now..
 
     // Fetch the next item:
-    run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config, mp3tags, m_music_history, blnasap);
+    run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config, mp3tags, music_history, blnasap);
 
     // If the segment playlist was just updated, then re-calculate the mimum
     // allowed number of songs before a song can repeat.
@@ -1197,7 +1214,7 @@ void player::get_next_ok_music_item(programming_element & next_item, const int i
     }
 
     // Is the item ok to use?
-    blnok = next_item.cat != SCAT_MUSIC || !m_music_history.song_played_recently(next_item.strmedia, intmin_songs_before_song_repeat);
+    blnok = next_item.cat != SCAT_MUSIC || !music_history.song_played_recently(next_item.strmedia, intmin_songs_before_song_repeat);
 
     // If the item is not ok to use, then log that it was skipped:
     if (!blnok) {
@@ -1224,7 +1241,7 @@ void player::get_next_ok_music_item(programming_element & next_item, const int i
   if (!blnok) {
     // No. Our logic has failed for some reason so reset it.
     log_warning("Forced to clear the in-memory (not database) music history!");
-    m_music_history.clear();
+    music_history.clear();
     my_throw("I was unable to find a song which has not been played recently!");
   }
 }
