@@ -7,8 +7,9 @@ tests_SOURCES = categories.h music_history.cpp music_history.h player.cpp \
 	player_types.h player_util.cpp player_util.h programming_element.cpp \
 	programming_element.h segment.cpp segment.h tests.cpp
 
-TESTS = test_cxxtest.h
+TESTS = test_cxxtest.h test_player_get_next_item.h
 tests.cpp: $(TESTS)
 	cxxtestgen.pl -o $@ --error-printer $^
 
 tests_LDADD = $(top_builddir)/src/common/libcommon.a -lxmms -lpqxx
+noinst_HEADERS = test_player_get_next_item.h
