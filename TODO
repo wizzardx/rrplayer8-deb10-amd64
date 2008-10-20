@@ -89,6 +89,51 @@
                 remaining in the current playlist then the current song's
                 artist is not ok.
 
+    Sub-TODOs for this task (updated as I work through the code):
+
+        - Make player::get_next_ok_music_item() unit testable
+
+        - Add unit tests to confirm that the current behaviour of
+          player::get_next_ok_music_item() is correct:
+
+            - For longer playlists (>=50 items), the method should attempt
+              up to (playlist length * 2) times to find an ok music item.
+
+            - For shorter playlists (< 50 items), the method should attempt
+              up to 100 times to find an OK music item.
+
+            - Should use 'get the next item ASAP' logic (cache) if there are
+              less than 5 seconds remaining until the next item needs to start
+              playing.
+
+            - Should work correctly if the underlying playlist changes while
+              checking items.
+
+            - Should return any non-music item that is returned while
+              scanning items.
+
+            - Should return any item that hasn't played recently.
+
+            - Should log a debug message for skipped songs
+
+            - Should log an info message for total number of skipped items.
+
+            - Should fail as expected if an ok item couldn't be found
+                (log a warning, clear the music history, and raise an
+                 exception)
+
+        - Add (failing) unit test:
+
+            - Should not cause artist repetitions
+
+              (Use test data with a lot of recently-played items, which would
+               currently cause the logic to skip to the first non-recent item,
+               but with a recent artist)
+
+        - Add code to make the new unit test succeed.
+
+            (See improvements to Step 2, earlier in this section)
+
 
 * Fix transition problems with items that end too soon
 
