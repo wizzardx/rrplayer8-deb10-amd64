@@ -211,7 +211,7 @@ extern player * pplayer; // A pointer to the currently-running player instance. 
 // playlist.
 void get_next_ok_music_item(
      programming_element & next_item, const int intstarts_ms,
-     music_history & music_history, mp3_tags & mp3tags, pg_connection & db,
+     music_history & music_history, mp3_tags & mp3tags, pg_conn_exec & db,
      player_config & config, player_run_data & run_data);
 
 #endif

@@ -83,7 +83,7 @@ public:
                             // This is *before* the item becomes inaudibly
                             // soft.
   } media_info;
-  void load_media_info(pg_connection & db);
+  void load_media_info(pg_conn_exec & db);
 };
 
 /// A list of programming elements (eg: an announcement batch)

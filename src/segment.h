@@ -19,7 +19,7 @@
 // The sections in the pie chart earlier are all segments.
 
 // Forward declarations:
-class pg_connection;
+class pg_conn_execection;
 class programming_element;
 
 class segment {
@@ -28,10 +28,10 @@ public:
   ~segment(); // Destructor
   void reset(); // Reset all segment info
   void load_from_db(pg_connection & db, const long lngfc_seg, const datetime dtmtime, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
-  void load_music_profile(pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
+  void load_music_profile(pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
 
   /// Advance to the next item (if necessary) and then return it.
-  void get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
+  void get_next_item(programming_element & pe, pg_conn_exec & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
 
   /// Check if fetching the next item will cause playback to revert
   bool get_next_item_will_revert(string & strreason);
@@ -118,15 +118,15 @@ private:
                         ///< to limit the number of items played in a segment.
 
   // Functions which are used to operate on the above:
-  void generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnshuffle, const bool blnasap); // strsource is a playlist, directory, etc.
+  void generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnshuffle, const bool blnasap); // strsource is a playlist, directory, etc.
 
   // Function called by load_from_db: Prepare a list of programming elements to use, based on the segment parameters.
-  void load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
+  void load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
 
   // If there is a problem with playing category items, we revert to alternate category. If there is also a problem
   // with the alternate category, we attempt to revert to the currently-scheduled music profile. If there are still problems
   // we throw an exception. This function is called to revert from the current playback status to the next lower.
-  void revert_down(pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
+  void revert_down(pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
 
   // Functions called by load_from_db:
   seg_category parse_category_string(const string & strcat);
@@ -135,15 +135,15 @@ private:
 
   // A recursive function used to load m3u files that contain directories, and directories which contain m3us:
   // Also applies special logic to format clock sub-category directories
-  void recursive_add_to_string_list(std::vector <std::string> & file_list, const string & strsource, const int intrecursion_level, pg_connection & db, const player_config & config);
+  void recursive_add_to_string_list(std::vector <std::string> & file_list, const string & strsource, const int intrecursion_level, pg_conn_exec & db, const player_config & config);
 
   /// Check for an active music profile, add contents to the string vect. Defaults to default music if there is a problem
-  void add_music_profile_to_string_list(vector <string> & file_list, const int intrecursion_level, pg_connection & db, const player_config & config);
+  void add_music_profile_to_string_list(vector <string> & file_list, const int intrecursion_level, pg_conn_exec & db, const player_config & config);
 
   // Cached list of music bed items to use during this segment:
   vector <string> music_bed_media;
   vector <string>::const_iterator music_bed_media_it;
-  void list_music_bed_media(pg_connection & db); // Setup the music_bed_media list (and shuffle)
+  void list_music_bed_media(pg_conn_exec & db); // Setup the music_bed_media list (and shuffle)
   string get_music_bed_media();
 };
 

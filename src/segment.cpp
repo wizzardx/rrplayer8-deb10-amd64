@@ -296,7 +296,7 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
   // This is used to help ensure that the segment does in fact play it's full length.
 }
 
-void segment::load_music_profile(pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap) {
+void segment::load_music_profile(pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap) {
   // Segment-specific info
   cat.cat     = SCAT_MUSIC;
   cat.strname = "Music";
@@ -320,7 +320,7 @@ void segment::load_music_profile(pg_connection & db, const player_config & confi
   dtmpel_updated = now();
 }
 
-void segment::get_next_item(programming_element & pe, pg_connection & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap) {
+void segment::get_next_item(programming_element & pe, pg_conn_exec & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap) {
   // Check if the segment is loaded:
   // NB: Changes to this function must be mirrored in get_next_item_will_revert()
 
@@ -605,7 +605,7 @@ void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags,
   if (intproblems > 0) log_warning("Had " + itostr(intproblems) + " problems while alternating playlist artists. See debug log for more info.");
 }
 
-void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnshuffle, const bool blnasap) {
+void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnshuffle, const bool blnasap) {
   // Process a directory or M3U file and generate a list of media to play during this segment.
   // blnasap is set to TRUE if we need a playlist ASAP (ie, use a previously-cached playlist).
   // - Otherwise we do the full logic
@@ -810,7 +810,7 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
 }
 
 // Function called by load_from_db: Prepare a list of programming elements to use, based on the segment parameters.
-void segment::load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap) {
+void segment::load_pe_list(programming_element_list & pel, const struct cat & cat, const struct sub_cat & sub_cat, pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap) {
   // Clear out the current program element list:
   pel.clear();
   bool blnshuffle_pel = false; // Set to true if we are shuffle pel at the end of the function
@@ -882,7 +882,7 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
   }
 }
 
-void segment::revert_down(pg_connection & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap) {
+void segment::revert_down(pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap) {
   // If there is a problem with playing category items, we revert to alternate category. If there is also a problem
   // with the alternate category, we attempt to revert to a music profile. If there are still problems
   // we throw an exception. This function is called to revert from the current playback status to the next lower.
@@ -1008,7 +1008,7 @@ void segment::load_sub_cat_struct(struct sub_cat & sub_cat, const string strsub_
 
 // A recursive function used to load m3u files that contain directories, and directories which contain m3us:
 // Also applies special logic to format clock sub-category directories
-void segment::recursive_add_to_string_list(vector <string> & file_list, const string & strsource, const int intrecursion_level, pg_connection & db, const player_config & config) {
+void segment::recursive_add_to_string_list(vector <string> & file_list, const string & strsource, const int intrecursion_level, pg_conn_exec & db, const player_config & config) {
   // Call a recursive function to load directories, m3us, etc. Directories can contain M3U files
   // And M3U files can list directories. Go down to a maximum of 3 levels of recursion. Also, if
   // we encounter a directory, we check if it is one of the format clock-subdirectories. If it is, then
@@ -1281,7 +1281,7 @@ bool check_short_weekday(const string & strShortWeekDay, int & intWeekDay) {
   return blnresult;
 }
 
-void segment::add_music_profile_to_string_list(vector <string> & file_list, const int intrecursion_level, pg_connection & db, const player_config & config) {
+void segment::add_music_profile_to_string_list(vector <string> & file_list, const int intrecursion_level, pg_conn_exec & db, const player_config & config) {
   // Check the database for a music profile that wants to play now.
   // If a music profile can't be found then load default music instead.
   // -> Logic originally from non-format clocks player, player::CheckMusicProfile()
@@ -1571,7 +1571,7 @@ void segment::add_music_profile_to_string_list(vector <string> & file_list, cons
   write_liveinfo_setting(db, "Music profile", (strProfileName=="") ? "Default profile" : strProfileName);
 }
 
-void segment::list_music_bed_media(pg_connection & db) {
+void segment::list_music_bed_media(pg_conn_exec & db) {
   // populate music_bed_media (lists the music media to play in this segment)
   music_bed_media.clear();
   string strsql = "SELECT strfile, strdir FROM tblfc_media INNER JOIN tlkfc_sub_cat ON tblfc_media.lngsub_cat = tlkfc_sub_cat.lngfc_sub_cat WHERE lngsub_cat = " + music_bed.strsub_cat;

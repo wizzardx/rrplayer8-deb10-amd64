@@ -45,7 +45,7 @@ void programming_element::reset() {
 }
 
 // Load information about the mp3 end from the database (tblinstore_media)
-void programming_element::load_media_info(pg_connection & db) {
+void programming_element::load_media_info(pg_conn_exec & db) {
   // Some basic checks:
   if (media_info.blnloaded) {
     log_warning("Media information for " + strmedia + " already loaded");

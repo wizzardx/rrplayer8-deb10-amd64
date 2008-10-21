@@ -7,8 +7,8 @@
 #include <string>
 
 // Forward declarations:
-class pg_connection;
+class pg_conn_exec;
 
-void write_liveinfo_setting(pg_connection & db, const std::string & strname, const std::string & strvalue);
+void write_liveinfo_setting(pg_conn_exec & db, const std::string & strname, const std::string & strvalue);
 
 #endif

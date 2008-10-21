@@ -1152,7 +1152,7 @@ void get_next_ok_music_item(
   // this function is no longer a method.
   music_history & music_history,
   mp3_tags & mp3tags,
-  pg_connection & db,
+  pg_conn_exec & db,
   player_config & config,
   player_run_data & run_data) {
 

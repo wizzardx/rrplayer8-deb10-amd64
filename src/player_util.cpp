@@ -2,7 +2,7 @@
 #include "player_util.h"
 #include "common/psql.h"
 
-void write_liveinfo_setting(pg_connection & db, const string & strname, const string & strvalue) {
+void write_liveinfo_setting(pg_conn_exec & db, const string & strname, const string & strvalue) {
   // There is a tblLiveInfo table in the DB that stores the same information as
   // the liveinfo.chk file. This procedure is used to update one of these settings
   string strSQL;
