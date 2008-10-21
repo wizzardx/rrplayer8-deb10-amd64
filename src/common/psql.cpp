@@ -163,7 +163,7 @@ pg_result pg_connection::exec(const string & strsql) { // An exception is thrown
 }
 
 pg_result pg_connection::exec(const string & strsql,
-                              const vector<string> params) {
+                              const pg_params & params) {
   return exec(format_string_with_vector(strsql, params, "?"));
 }
 
@@ -422,7 +422,7 @@ pg_result pg_transaction::exec(const string & strquery) {
 }
 
 pg_result pg_transaction::exec(const string & strquery,
-                               const vector<string> params) {
+                               const pg_params & params) {
   return exec(format_string_with_vector(strquery, params, "?"));
 }
 

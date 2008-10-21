@@ -252,49 +252,53 @@ tblmp3_info_map::const_iterator mp3_tags::get_mp3_info_item(const string & strFi
 
   // MP3 info is not in memory, attempt to load it via mp3info:
 
-  // Check if mp3info and extract are installed:
+  // Check if mp3info is installed
   if (!file_exists("/usr/bin/mp3info")) my_throw("mp3info not installed!");
-  if (!file_exists("/usr/bin/extract")) my_throw("extract not installed!");
 
-  // Fetch mp3 length in seconds, using mp3info:
-  int intLength = -1;
-  {
-    // - Generate the command
-    string strCmd="/usr/bin/mp3info -p \"%S\\n\" " + string_to_unix_filename(strFilePath);
-    string stroutput;
-    system_capture_out(strCmd, stroutput);
-    if (!isint(stroutput)) {
-      my_throw("Problem retrieving length of '" + strFilePath + "'");
-    }
-    intLength = strtoi(stroutput);
-  }
+  // - Generate the command
+  string strCmd="/usr/bin/mp3info -p \"Artist:%a\\nAlbum:%l\\nTrack:%t\\nLength:%S\\n\" " + string_to_unix_filename(strFilePath) + "";
 
-  // Fetch tag details using extract
+  // - Run the command
+  string stroutput;
+  system_capture_out(strCmd, stroutput);
+
+  // Process the output:
+  string_splitter mp3info_split(stroutput, "\n");
+
+  // Should be 4 or 5 lines (4=no problem, 5=warning, no ID3 1.x tag).
+  if (mp3info_split.size() != 4 && mp3info_split.size() != 5) my_throw("Detected in the mp3info output! Invalid line count. Output follows:\n" + stroutput);
+
+  // Variables to be extracted:
   string strArtist, strAlbum, strTrackName;
-  {
-    // - Generate the command
-    string strCmd="/usr/bin/extract " + string_to_unix_filename(strFilePath);
+  int intLength = -1;
 
-    // - Run the command
-    string stroutput;
-    system_capture_out(strCmd, stroutput);
-
-    // Process the output:
-    string_splitter line_split(stroutput, "\n");
-    while (line_split) {
-      string strline = line_split;
-
-      // Lines are in this format: <field> - <info>
-      // - Extract the details
-      unsigned dash_pos = strline.find("-", 0);
-      if (dash_pos == strline.npos) my_throw("Unexpected 'extract' output!");
-
-      string param = trim(substr(strline, 0, dash_pos - 1));
-      string value = trim(substr(strline, dash_pos + 2));
-
-      if (param == "artist") strArtist = value;
-      if (param == "album") strAlbum = value;
-      if (param == "title") strTrackName = value;
+  // Now parse the lines:
+  while (mp3info_split) {
+    string strline = mp3info_split;
+    // Ignore lines which end with "does not have an ID3 1.x tag"
+    string strerror_end = "does not have an ID3 1.x tag.";
+    if (right(strline, strerror_end.length()) != strerror_end) {
+      // Fetch the part before and after the colon:
+      string_splitter line_split(strline, ":");
+      string strfield = line_split;
+      string strvalue = substr(strline, strfield.length() + 1);
+      // Check which field we have:
+      if (strfield == "Artist") {
+        strArtist = strvalue;
+      }
+      else if (strfield == "Album") {
+        strAlbum = strvalue;
+      }
+      else if (strfield == "Track") {
+        strTrackName = strvalue;
+      }
+      else if (strfield == "Length") {
+        intLength = -1;
+        try {
+          intLength = strtoi(strvalue);
+        } catch_exceptions;
+      }
+      else log_warning("Found an unknown field in the mp3info output! " + strfield);
     }
   }
 

@@ -33,12 +33,27 @@ using namespace std;
 
 class pg_result; // Forward declaration
 
+// Utilities for running parameterized queries.
+
+typedef vector<string> pg_params; // For running parameterized queries.
+
+// Convenience macros for creating pg_params:
+
+#define ARGS_TO_VEC(TYPE, args...) ({ \
+    TYPE arg_array[] = {args}; \
+    int elems = sizeof(arg_array) / sizeof(arg_array[0]); \
+    vector<TYPE> vec(arg_array, arg_array + elems); \
+    vec; \
+})
+
+#define ARGS_TO_PG_PARAMS(args...) ARGS_TO_VEC(string, args)
+
 // Abstract base class for pg_connection and pg_transaction. Used to allow passing objects of either
 // type to functions that only need to call the "exec" method:
 class pg_conn_exec {
 public:
   virtual pg_result exec(const string & strquery)=0;
-  virtual pg_result exec(const string & strquery, const vector<string> params)=0;
+  virtual pg_result exec(const string & strquery, const pg_params & params)=0;
   virtual ~pg_conn_exec() {};
 };
 
@@ -70,7 +85,7 @@ public:
 
   /// And for executing queries through the connection:
   virtual pg_result exec(const string & strquery);
-  virtual pg_result exec(const string & strquery, const vector<string> params);
+  virtual pg_result exec(const string & strquery, const pg_params & params);
 
   /// Allow the client code to specify a calback function to be run when connection errors
   /// are detected. Sometimes the database will be down for a long time...
@@ -173,7 +188,7 @@ public:
 
   /// Execute a query
   virtual pg_result exec(const string & strquery);
-  virtual pg_result exec(const string & strquery, const vector<string> params);
+  virtual pg_result exec(const string & strquery, const pg_params & params);
 
   /// Commit the transaction:
   void commit();

@@ -126,7 +126,7 @@ void rr_log_file(const log_info & LI, const string & strlog_file, const string &
   }
 
   // Log all messages including debug to the debugging log file:
-  if (strlog_file != "") {
+  if (strdebug_log_file != "") {
     append_file_str(strdebug_log_file, strmessage);
     rotate_logfile(strdebug_log_file); // Rotate the logfile also
   }
