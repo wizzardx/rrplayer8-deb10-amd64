@@ -308,16 +308,12 @@ void segment::load_music_profile(pg_conn_exec & db, const player_config & config
   blnmusic_bed   = false; // Music profiles don't have underlying music.
 
   // Load the current music profile into the list of programming elements:
-  generate_playlist(programming_elements, "MusicProfile", SCAT_MUSIC, db, config, mp3tags, musichistory, true, blnasap); // Also shuffles the list
-
-  // And setup the variables used to track which is the next item to be returned...
-  next_item = programming_elements.begin(); // The next item to be returned when requested...
+  programming_element_list pel;
+  generate_playlist(pel, "MusicProfile", SCAT_MUSIC, db, config, mp3tags, musichistory, true, blnasap); // Also shuffles the list
+  set_pel(pel);
 
   // And at the end:
   blnloaded = true; // Our segment is now loaded.
-
-  // Programming element list was updated in this function
-  dtmpel_updated = now();
 }
 
 void segment::get_next_item(programming_element & pe, pg_conn_exec & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap) {
@@ -603,6 +599,14 @@ void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags,
 
   // Log a warning if we had problems alternating artists:
   if (intproblems > 0) log_warning("Had " + itostr(intproblems) + " problems while alternating playlist artists. See debug log for more info.");
+}
+
+void segment::set_pel(const programming_element_list & pel) {
+  // Replace the programming elements list with a new list. Also does some
+  // internal book-keeping to keep the internal segment state valid
+  programming_elements = pel;
+  next_item = programming_elements.begin();
+  dtmpel_updated = now();
 }
 
 void segment::generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnshuffle, const bool blnasap) {

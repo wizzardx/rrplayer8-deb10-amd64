@@ -103,9 +103,13 @@ public:
   int intlength; // Length (seconds) that this segment is meant to play for. Calculated after "load_from_db" is called
   datetime dtmstart; // Time when this segment actually starts playing back (we try to keep our segment length constant, regardless of actual start time).
 
-  /// List of items to play during this segment. 
+  /// List of items to play during this segment.
   programming_element_list programming_elements;
   datetime dtmpel_updated; // When was the programming elements list last modified?
+
+  // Replace the programming elements list with a new list. Also does some
+  // internal book-keeping to keep the internal segment state valid
+  void set_pel(const programming_element_list & pel);
 
 private:
   // Information used to retrieve the "next" item:
