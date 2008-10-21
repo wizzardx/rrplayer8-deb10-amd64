@@ -1,0 +1,24 @@
+Automated tests for rrplayer-fc
+
+These are integration tests, and expect a RR instore box-like environment.
+
+SETTING UP FOR TESTS
+
+ - Make sure that pg ident logins will work (check your pg_hba.conf)
+
+ - Create a database user, eg:
+
+    sudo -U postgres psql
+    CREATE USER david;
+
+ - Create a schedule database to test with, eg:
+
+    CREATE DATABASE schedule_test WITH TEMPLATE schedule;
+
+ - Grant permissions required for the tests, eg:
+
+    \c schedule_test
+    GRANT INSERT, SELECT ON tblinstore_media TO david;
+    GRANT UPDATE ON tblinstore_media_lnginstore_media_seq TO david;
+    GRANT INSERT, SELECT ON tblinstore_media_dir TO david;
+    GRANT UPDATE ON tblinstore_media_dir_lnginstore_media_dir_seq TO david;
