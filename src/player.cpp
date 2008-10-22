@@ -97,8 +97,8 @@ void player::run() {
     } while (!done);
   } catch_exceptions;
 
-  // Reset data used during this loop:
-  run_data.init();
+  // Reset playback
+  run_data.reset_playback();
 
   while (true) {
     bool blnsuccess = false; // Set to true at the end of each iteration where no exceptions are trapped
@@ -134,7 +134,7 @@ void player::run() {
     if (!blnsuccess) {
       // Reset playback:
       log_error("Playback reset is now required.");
-      run_data.init();
+      run_data.reset_playback();
     }
   }
 }
@@ -1163,9 +1163,9 @@ void player::get_playback_events_info(playback_events_info & event_info, const i
 
     // Is the current item inside the current playlist?
     bool blnfound = false;
-    programming_element_list::iterator i = run_data.current_segment.programming_elements.begin();
+    programming_element_list::iterator i = run_data.current_segment->programming_elements.begin();
     string strcurrent_item_media = run_data.current_item.strmedia;
-    while (i != run_data.current_segment.programming_elements.end()) {
+    while (i != run_data.current_segment->programming_elements.end()) {
       if (strcurrent_item_media == i->strmedia) {
         blnfound = true;
         break;

@@ -117,8 +117,8 @@ void player::playback_transition(playback_events_info & playback_events) {
 
         // Do both items have the same catagory as the segment?
         bool blnitem_categories_match_segment  =
-               run_data.current_item.cat == run_data.current_segment.cat.cat &&
-               run_data.next_item.cat    == run_data.current_segment.cat.cat;
+               run_data.current_item.cat == run_data.current_segment->cat.cat &&
+               run_data.next_item.cat    == run_data.current_segment->cat.cat;
 
         // Transitioning between LineIn and LineIn?
         bool blnlinein_to_linein_transition =
@@ -149,7 +149,7 @@ void player::playback_transition(playback_events_info & playback_events) {
 
           // OTHERWISE:
           // 6) The current segment allows crossfades AND
-          run_data.current_segment.blncrossfading &&
+          run_data.current_segment->blncrossfading &&
 
           // 7)  The 2 items have the same category segment
           blnitem_categories_match_segment;
@@ -650,7 +650,7 @@ void player::playback_transition(playback_events_info & playback_events) {
           // then don't count them towards # items played (eg, music segment only
           // allows 3 items to play, and MP3s in the playlist have already
           // played recently)
-          run_data.current_segment.item_played();
+          run_data.current_segment->item_played();
         }
         else if (strcmd == "stop_current_item") {
           // This only really applies to XMMS

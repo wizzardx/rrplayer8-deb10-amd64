@@ -157,4 +157,8 @@ private:
   string get_music_bed_media();
 };
 
+// auto_ptr type definition. Conveniance type for code that needs to handle
+// pointers to segment objects.
+typedef auto_ptr<segment> ap_segment;
+
 #endif

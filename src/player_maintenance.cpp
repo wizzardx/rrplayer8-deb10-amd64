@@ -55,7 +55,7 @@ void player::maintenance_operational_check(const datetime dtmcutoff) {
 
   // If the music playlist changed, then the global variable [run_data.blnlog_all_music_to_db] is set. Here is where
   // we actually log all the available music on the machine.
-  if (run_data.blnlog_all_music_to_db && run_data.current_segment.cat.cat == SCAT_MUSIC && dtmcutoff >= now() + 120) {
+  if (run_data.blnlog_all_music_to_db && run_data.current_segment->cat.cat == SCAT_MUSIC && dtmcutoff >= now() + 120) {
     // Log an informative message.
     log_message("Music playlist was updated, writing to database...");
     // Log the playlist to the DB
@@ -143,8 +143,8 @@ void player::maintenance_cache_pels(const datetime dtmcutoff) {
 void player::log_music_playlist_to_db() {
   // Log the contents of the current music playlist to the database
   // - Check that the current segment is loaded and has a music category:
-  if (!run_data.current_segment.blnloaded) my_throw("Current Format Clock segment is not loaded!");
-  if (run_data.current_segment.cat.cat != SCAT_MUSIC) my_throw("Current Segment does not have a MUSIC category");
+  if (!run_data.current_segment->blnloaded) my_throw("Current Format Clock segment is not loaded!");
+  if (run_data.current_segment->cat.cat != SCAT_MUSIC) my_throw("Current Segment does not have a MUSIC category");
 
   // Create a postgresql transaction. We're going to be doing a lot of updates:
   pg_transaction transaction(db);
@@ -156,9 +156,9 @@ void player::log_music_playlist_to_db() {
   transaction.exec(strsql);
 
   // Now proceed through the playlist:
-  programming_element_list::const_iterator pe = run_data.current_segment.programming_elements.begin();
+  programming_element_list::const_iterator pe = run_data.current_segment->programming_elements.begin();
 
-  while (pe != run_data.current_segment.programming_elements.end()) {
+  while (pe != run_data.current_segment->programming_elements.end()) {
     try {
       string strfile = pe->strmedia;
       string strtitle = mp3tags.get_mp3_description(strfile);

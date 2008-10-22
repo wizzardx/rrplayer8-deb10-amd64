@@ -10,14 +10,22 @@
 
 class player_run_data {
 public:
-  void init(); ///< Run this to reset/reinitialize playback status.
+
+  // Constructor
+  player_run_data();
+
+  // Run this to clear out members to sane defaults
+  void clear();
+
+  // Run this to reset/re-initialize playback status.
+  void reset_playback();
 
   /// Programming elements (current item, next item):
   programming_element current_item; ///< Current programming element being played. Includes special events, etc.
   programming_element next_item;    ///< Next programming element to be played.
 
   // The current Format Clock segment:
-  segment current_segment;
+  ap_segment current_segment;
 
   sound_usage xmms_usage[intmax_xmms]; /// What the xmms sessions are being used for
   sound_usage linein_usage; /// What LineIn is being used for.

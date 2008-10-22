@@ -41,11 +41,11 @@ public:
         pe.blnloaded = true;
         programming_element_list pel;
         pel.push_back(pe);
-        run_data.current_segment.set_pel(pel);
+        run_data.current_segment->set_pel(pel);
 
         // Add a single programming element to the segment.
-        run_data.current_segment.programming_elements.push_back(pe);
-        run_data.current_segment.blnloaded = true;
+        run_data.current_segment->programming_elements.push_back(pe);
+        run_data.current_segment->blnloaded = true;
 
         // Setup a database transaction, with testing data
         pg_connection db;
@@ -57,7 +57,7 @@ public:
     // Per-test fixture teardown
     void tearDown() {
         mhistory.clear();
-        run_data.current_segment.reset();
+        run_data.current_segment->reset();
         trans->abort();
         logging.remove_all_loggers();
     }
@@ -80,7 +80,7 @@ public:
         // Put the same programming element into the music history and
         // the segment 100 times:
         programming_element_list pel;
-        run_data.current_segment.reset();
+        run_data.current_segment->reset();
         for (int i = 0; i <= 99; ++i) {
             programming_element pe;
             pe.cat = SCAT_MUSIC;
@@ -89,9 +89,9 @@ public:
             pel.push_back(pe);
             mhistory.song_played_no_db(pe.strmedia, "<song description>");
         }
-        run_data.current_segment.set_pel(pel);
-        run_data.current_segment.blnrepeat = true;
-        run_data.current_segment.blnloaded = true;
+        run_data.current_segment->set_pel(pel);
+        run_data.current_segment->blnrepeat = true;
+        run_data.current_segment->blnloaded = true;
 
         // Add a logger callback function, to suppress the debug and warning
         // messages that will be logged (skipping song and file not found)
@@ -105,7 +105,7 @@ public:
                                    *trans, config, run_data),
             const my_exception &e, e.get_error(), expected_error
         );
-        TS_ASSERT_EQUALS(run_data.current_segment.get_num_fetched(), 200);
+        TS_ASSERT_EQUALS(run_data.current_segment->get_num_fetched(), 200);
     }
 
     // For shorter playlists (< 50 items), the method should attempt
@@ -114,7 +114,7 @@ public:
         // Put the same programming element into the music history and
         // the segment 20 times:
         programming_element_list pel;
-        run_data.current_segment.reset();
+        run_data.current_segment->reset();
         for (int i = 0; i <= 19; ++i) {
             programming_element pe;
             pe.cat = SCAT_MUSIC;
@@ -123,9 +123,9 @@ public:
             pel.push_back(pe);
             mhistory.song_played_no_db(pe.strmedia, "<song description>");
         }
-        run_data.current_segment.set_pel(pel);
-        run_data.current_segment.blnrepeat = true;
-        run_data.current_segment.blnloaded = true;
+        run_data.current_segment->set_pel(pel);
+        run_data.current_segment->blnrepeat = true;
+        run_data.current_segment->blnloaded = true;
 
         // Add a logger callback function, to suppress the debug and warning
         // messages that will be logged (skipping song and file not found)
@@ -139,7 +139,7 @@ public:
                                    *trans, config, run_data),
             const my_exception &e, e.get_error(), expected_error
         );
-        TS_ASSERT_EQUALS(run_data.current_segment.get_num_fetched(), 100);
+        TS_ASSERT_EQUALS(run_data.current_segment->get_num_fetched(), 100);
     }
 
     // Helper methods

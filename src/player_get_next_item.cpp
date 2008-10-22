@@ -73,10 +73,10 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   bool blnfc_seg_changed = false;
   {
     static long lnglast_fc_seg = -1;
-    if (run_data.current_segment.blnloaded &&
-        run_data.current_segment.lngfc_seg != lnglast_fc_seg) {
+    if (run_data.current_segment->blnloaded &&
+        run_data.current_segment->lngfc_seg != lnglast_fc_seg) {
       log_debug(" - Detected: Format Clock segment just changed");
-      lnglast_fc_seg = run_data.current_segment.lngfc_seg;
+      lnglast_fc_seg = run_data.current_segment->lngfc_seg;
       blnfc_seg_changed = true;
     }
   }
@@ -86,7 +86,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
   // then those will be queried for again.
   if (blnfc_seg_changed &&
       !run_data.waiting_promos.empty() &&
-      !run_data.current_segment.blnpromos) {
+      !run_data.current_segment->blnpromos) {
     log_message("Format Clock segment changed, and the new segment does not allow promos (except for 'forced time' promos)");
     log_message("Clearing any non-'forced time' promos from our list");
     programming_element_list::iterator pel_iter = run_data.waiting_promos.begin();
@@ -168,10 +168,10 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
       } \
     }
 
-    CHECK(run_data.current_segment.blnloaded,
+    CHECK(run_data.current_segment->blnloaded,
       "Current segment is loaded",
       "Current segment is not loaded");
-    CHECK(run_data.current_segment.blnpromos,
+    CHECK(run_data.current_segment->blnpromos,
       "Current segment allows promos",
       "Current segment does not allow promos");
     {
@@ -237,11 +237,11 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
         //         earliest.
         datetime dtmhour_start = (dtmplayback_time / (60*60)) * (60*60);
         dtmquery_from = MIN(dtmhour_start, dtmmiss_ads_before);
-        if (run_data.current_segment.blnloaded) {
+        if (run_data.current_segment->blnloaded) {
           // Store the various times in variables, so we can get the earliest time:
-          datetime dtmseg_start = get_datetime_time(run_data.current_segment.dtmstart);
+          datetime dtmseg_start = get_datetime_time(run_data.current_segment->dtmstart);
           // - End of the current segment:
-          datetime dtmseg_end = clamp_time(dtmseg_start + run_data.current_segment.intlength - 1);
+          datetime dtmseg_end = clamp_time(dtmseg_start + run_data.current_segment->intlength - 1);
           // - 10 minutes into the future:
           datetime dtmten_mins = clamp_time(dtmplayback_time+10*60);
           // - End of the hour in which the segment started:
@@ -430,9 +430,9 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
         datetime dtmhour_end = dtmhour_start + (60*60) - 1;
 
         // - Related to the current segment (if it is loaded):
-        if (run_data.current_segment.blnloaded) {
-          datetime dtmseg_start = get_datetime_time(run_data.current_segment.scheduled.dtmstart);
-          datetime dtmseg_end   = get_datetime_time(run_data.current_segment.scheduled.dtmend);
+        if (run_data.current_segment->blnloaded) {
+          datetime dtmseg_start = get_datetime_time(run_data.current_segment->scheduled.dtmstart);
+          datetime dtmseg_end   = get_datetime_time(run_data.current_segment->scheduled.dtmend);
 
           // - Adverts in the current format clock segment
           MOVE_ADS_BETWEEN(dtmseg_start, dtmseg_end, "in this hour and inside the current Format Clock segment");
@@ -835,13 +835,13 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
   // Work out the current delays.
 
   // Do we currently have a segment loaded?
-  if (run_data.current_segment.blnloaded) {
+  if (run_data.current_segment->blnloaded) {
     // We now have the time when the next item will start.
     // Work out if the current item will play past the end of the current segment.
     // This logic works by assuming that the current item ends on the second just before
     // the next item starts. Based on that assumption, does the current item end after
     // the current segment ends? If so, by how many seconds?
-    datetime dtmseg_end = run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1;
+    datetime dtmseg_end = run_data.current_segment->dtmstart + run_data.current_segment->intlength - 1;
 
     // Calculate the difference between the current item end, and the next segment start:
     int intdiff = dtmnext_starts - dtmseg_end - 1; // Take out that extra second here.
@@ -861,7 +861,7 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
       // Predict if fetching the next item from the current segment will cause the
       // playback to revert (ie, start playing music instead of links etc)
       string strreason;
-      if (run_data.current_segment.get_next_item_will_revert(strreason)) {
+      if (run_data.current_segment->get_next_item_will_revert(strreason)) {
         // Warn about this. We don't currently support skipping ahead to
         // the next segment.
         log_warning("Going to revert, but there are only " + itostr(-intdiff) + "s remaining in this segment.");
@@ -1014,10 +1014,10 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
   // Or, has the current segment expired?
 
   // - 'Segment expired' means that the segment's time has run out.
-  bool blnsegment_expired = dtmnext_starts > (run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1);
+  bool blnsegment_expired = dtmnext_starts > (run_data.current_segment->dtmstart + run_data.current_segment->intlength - 1);
 
-  if (!run_data.current_segment.blnloaded ||
-       lngfc_seg != run_data.current_segment.lngfc_seg ||
+  if (!run_data.current_segment->blnloaded ||
+       lngfc_seg != run_data.current_segment->lngfc_seg ||
        run_data.blnforce_segment_reload ||
        blnsegment_expired) {
 
@@ -1032,26 +1032,26 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
     // Check if we need to get the next item ASAP (ie, use cached playlists if available), otherwise
     // scan directories etc:
     const bool blnasap = (intstarts_ms - now() <= 5); // Starts 5 or less seconds from now..
-    run_data.current_segment.load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags, m_music_history, blnasap);
+    run_data.current_segment->load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags, m_music_history, blnasap);
 
     // Log more info about the segment we just loaded:
-    log_message("Loaded segment " + itostr(run_data.current_segment.intseg_no) +
-      "/" + itostr(run_data.current_segment.fc.segments) +
-      " (" + format_datetime(run_data.current_segment.scheduled.dtmstart, "%T") +
-      " - " + format_datetime(run_data.current_segment.scheduled.dtmend, "%T") +
-      ", " + itostr(run_data.current_segment.scheduled.dtmend - run_data.current_segment.scheduled.dtmstart + 1) +
-      "s, " + run_data.current_segment.cat.strname + ") of Format Clock \"" +
-      run_data.current_segment.fc.strname + "\" (id: " +
-      ltostr(run_data.current_segment.fc.lngfc) + ")");
+    log_message("Loaded segment " + itostr(run_data.current_segment->intseg_no) +
+      "/" + itostr(run_data.current_segment->fc.segments) +
+      " (" + format_datetime(run_data.current_segment->scheduled.dtmstart, "%T") +
+      " - " + format_datetime(run_data.current_segment->scheduled.dtmend, "%T") +
+      ", " + itostr(run_data.current_segment->scheduled.dtmend - run_data.current_segment->scheduled.dtmstart + 1) +
+      "s, " + run_data.current_segment->cat.strname + ") of Format Clock \"" +
+      run_data.current_segment->fc.strname + "\" (id: " +
+      ltostr(run_data.current_segment->fc.lngfc) + ")");
 
     // If this is a user-scheduled music segment, then remember the programming
     // elements (used later for reverting  when we run out of items)
-    if (lngfc_seg != -1 && run_data.current_segment.cat.cat == SCAT_MUSIC) {
-      prev_music_seg_pel = run_data.current_segment.programming_elements;
+    if (lngfc_seg != -1 && run_data.current_segment->cat.cat == SCAT_MUSIC) {
+      prev_music_seg_pel = run_data.current_segment->programming_elements;
     }
 
     // How far into the segment did we query for?
-    int intdiff = dtmdelayed - run_data.current_segment.scheduled.dtmstart;
+    int intdiff = dtmdelayed - run_data.current_segment->scheduled.dtmstart;
 
     // Is our difference negative?
     if (intdiff < 0) LOGIC_ERROR;
@@ -1073,50 +1073,50 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
     }
 
     // Update the new segment's "start" and "length" variables.
-    run_data.current_segment.dtmstart  = dtmnext_starts;
-    run_data.current_segment.intlength = run_data.current_segment.scheduled.dtmend - dtmdelayed + 1;
+    run_data.current_segment->dtmstart  = dtmnext_starts;
+    run_data.current_segment->intlength = run_data.current_segment->scheduled.dtmend - dtmdelayed + 1;
 
     // Reclaim "delayed by" time if this is a music segment. But leave at least 60 seconds.
-    if (run_data.current_segment.cat.cat == SCAT_MUSIC && run_data.current_segment.intlength > 60) {
-      int intnew_length = run_data.current_segment.intlength - run_data.intsegment_delay;
+    if (run_data.current_segment->cat.cat == SCAT_MUSIC && run_data.current_segment->intlength > 60) {
+      int intnew_length = run_data.current_segment->intlength - run_data.intsegment_delay;
       if (intnew_length < 60) {
         intnew_length = 60;
       }
-      int intdiff = run_data.current_segment.intlength - intnew_length;
+      int intdiff = run_data.current_segment->intlength - intnew_length;
       if (intdiff > 0) {
         // Hooray, we get to reclaim some space
         log_line("Reclaiming " + itostr(intdiff) + "s of 'segment delayed' time from the current (music) segment.");
         run_data.intsegment_delay -= intdiff;
-        run_data.current_segment.intlength -= intdiff;
+        run_data.current_segment->intlength -= intdiff;
       }
     }
 
     // Now log some basic details about the new segment.
-    log_line(run_data.current_segment.cat.strname + " segment will play between "
-      + format_datetime(run_data.current_segment.dtmstart, "%T") + " and "
-      + format_datetime(run_data.current_segment.dtmstart
-      + run_data.current_segment.intlength - 1, "%T")
-      + " (" + itostr(run_data.current_segment.intlength) + "s)");
+    log_line(run_data.current_segment->cat.strname + " segment will play between "
+      + format_datetime(run_data.current_segment->dtmstart, "%T") + " and "
+      + format_datetime(run_data.current_segment->dtmstart
+      + run_data.current_segment->intlength - 1, "%T")
+      + " (" + itostr(run_data.current_segment->intlength) + "s)");
 
     // If this is a music playlist then log it to the database:
-    if (run_data.current_segment.cat.cat == SCAT_MUSIC) {
+    if (run_data.current_segment->cat.cat == SCAT_MUSIC) {
       // Log the XMMS playlist, and the system's available music later:
       run_data.blnlog_all_music_to_db = true;
     }
   }
   else {
     // Segment has not changed. Just log the current segment and end time.
-    log_message("No segment change. " + run_data.current_segment.cat.strname + " segment (id: " + itostr(run_data.current_segment.lngfc_seg) + ") will end at " + format_datetime(run_data.current_segment.dtmstart + run_data.current_segment.intlength - 1, "%T"));
+    log_message("No segment change. " + run_data.current_segment->cat.strname + " segment (id: " + itostr(run_data.current_segment->lngfc_seg) + ") will end at " + format_datetime(run_data.current_segment->dtmstart + run_data.current_segment->intlength - 1, "%T"));
   }
 
   // Also log the current Format Clock (and whether it changed):
   {
     static long lngprev_fc = -1;
-    string strmsg = "Format Clock (id: " + itostr(run_data.current_segment.fc.lngfc) + "): \"" + run_data.current_segment.fc.strname + "\"";
+    string strmsg = "Format Clock (id: " + itostr(run_data.current_segment->fc.lngfc) + "): \"" + run_data.current_segment->fc.strname + "\"";
 
-    if (lngprev_fc != run_data.current_segment.fc.lngfc) {
+    if (lngprev_fc != run_data.current_segment->fc.lngfc) {
       log_message("Changed to a new " + strmsg);
-      lngprev_fc = run_data.current_segment.fc.lngfc;
+      lngprev_fc = run_data.current_segment->fc.lngfc;
     }
     else {
       log_message("Still playing " + strmsg);
@@ -1170,7 +1170,7 @@ void get_next_ok_music_item(
   bool blnok           = false; // Set to true when we find an item which isn't a recently-played song
 
   // Count the music items in the current playlist:
-  int intnum_music_items = run_data.current_segment.count_items_from_catagory(SCAT_MUSIC);
+  int intnum_music_items = run_data.current_segment->count_items_from_catagory(SCAT_MUSIC);
 
   // Determine the minimum number of music items that should elapse before
   // a song can repeat
@@ -1182,21 +1182,21 @@ void get_next_ok_music_item(
   // an item which hasn't been played recently. Using * 2 because it is possible for the
   // playlist to change during this process (eg, a music segment with repeating disabled,
   // and the system reverts to a music profile instead
-  int intattempts_left = run_data.current_segment.programming_elements.size() * 2;
+  int intattempts_left = run_data.current_segment->programming_elements.size() * 2;
   if (intattempts_left < 100) intattempts_left = 100;
 
   int intnum_skipped_songs = 0; // Number of songs skipped by our logic
 
   while (!blnok && intattempts_left > 0) {
     // When was the current playlist previously updated?
-    datetime dtmprev_playlist_update = run_data.current_segment.dtmpel_updated;
+    datetime dtmprev_playlist_update = run_data.current_segment->dtmpel_updated;
 
     // Check if we need to get the next item ASAP (ie, use cached playlists if available), otherwise
     // scan directories etc:
     const bool blnasap = (intstarts_ms - now() <= 5); // Starts 5 or less seconds from now..
 
     // Fetch the next item:
-    run_data.current_segment.get_next_item(next_item, db, intstarts_ms, config, mp3tags, music_history, blnasap);
+    run_data.current_segment->get_next_item(next_item, db, intstarts_ms, config, mp3tags, music_history, blnasap);
 
     // If the segment playlist was just updated, then re-calculate the mimum
     // allowed number of songs before a song can repeat.
@@ -1206,10 +1206,10 @@ void get_next_ok_music_item(
     //       reverting, the next song could be a repetition of a very recent
     //       song (from just before the news segment). This is why we need to
     //       re-calculate the min # songs.
-    if (run_data.current_segment.dtmpel_updated != dtmprev_playlist_update) {
+    if (run_data.current_segment->dtmpel_updated != dtmprev_playlist_update) {
       log_message("Playlist was updated during song repetition-prevention logic. Recallibrating.");
       // Reload the # music items & recalculate the min # songs before a song is allowed to repeat:
-      intnum_music_items = run_data.current_segment.count_items_from_catagory(SCAT_MUSIC);
+      intnum_music_items = run_data.current_segment->count_items_from_catagory(SCAT_MUSIC);
       intmin_songs_before_song_repeat = (intnum_music_items * intprevent_song_repeat_factor) / 100;
     }
 

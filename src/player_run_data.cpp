@@ -7,16 +7,55 @@
 
 namespace xmmsc = xmms_controller;
 
-void player_run_data::init() {
+// Constructor
+player_run_data::player_run_data() {
+  clear();
+}
+
+// Clear members to default values
+void player_run_data::clear() {
+    // Reset Current format clock segment
+    current_segment = ap_segment(new segment);
+
+    // Programming elements (current item, next item):
+    current_item.reset();
+    next_item.reset();
+
+    // Reset XMMS usage tracking info
+    for (int intsession = 0; intsession < intmax_xmms; intsession++) {
+        // Setup tracking, so we know which XMMS are currently being used for
+        // what:
+        xmms_usage[intsession] = SU_UNUSED; // XMMS session is not used
+    }
+
+    // Reset line-in tracking info
+    linein_usage = SU_UNUSED;
+
+    // Segments are currently delayed by this number of seconds.
+    intsegment_delay = 0;
+
+    // List of promos waiting to play. Populated by get_next_item_promo
+    waiting_promos.clear();
+
+    // Set when an item from a promo batch plays
+    dtmlast_promo_batch_item_played = datetime_error;
+
+    // Set to true when the player wants to log all available music (and the
+    // current XMMS playlist) to the database.
+    blnlog_all_music_to_db = false;
+
+    // Set to true when the player wants to reload the current segment (eg, a
+    // RPLS command was found)
+    blnforce_segment_reload = false;
+}
+
+
+void player_run_data::reset_playback() {
   // Run this function to reset/reinitialize playback status.
   log_message("Resetting playback.");
 
-  // Programming elements (current item, next item):
-  current_item.reset();
-  next_item.reset();
-
-  // The current Format Clock segment:
-  current_segment.reset();
+  // Reset members to default values
+  clear();
 
   // Now setup xmms sessions and tracking info:
   for (int intsession = 0; intsession < intmax_xmms; intsession++) {
@@ -35,24 +74,10 @@ void player_run_data::init() {
       // check_playback_status() will be called and it will throw an exception.
       log_error("XMMS session " + itostr(intsession) + " is not running!");
     }
-
-    // Setup tracking, so we know which XMMS are currently being used for what:
-    xmms_usage[intsession] = SU_UNUSED; // XMMS session is not currently being used.
   }
 
   // Also reset the linein volume:
-  linein_usage = SU_UNUSED;
   linein_setvol(0);
-
-  intsegment_delay = 0; // Segments are currently delayed by this number of seconds.
-
-  waiting_promos.clear(); // List of promos waiting to play. Populated by get_next_item_promo
-
-  dtmlast_promo_batch_item_played = datetime_error; // Set when an item from a promo batch plays
-
-  blnlog_all_music_to_db = false; // Set to true when the player wants to log all available music (and the current XMMS playlist) to the database.
-
-  blnforce_segment_reload = false; // Set to true when the player wants to reload the current segment (eg, a RPLS command was found)
 
   // Set the PCM volume to 90% - we use software mixing not hardware!
   string strout;
