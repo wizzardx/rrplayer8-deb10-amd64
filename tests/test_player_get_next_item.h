@@ -108,6 +108,40 @@ public:
         TS_ASSERT_EQUALS(run_data.current_segment.get_num_fetched(), 200);
     }
 
+    // For shorter playlists (< 50 items), the method should attempt
+    // up to 100 times to find an OK music item.
+    void test_should_attempt_correct_number_of_times_for_short_playlists() {
+        // Put the same programming element into the music history and
+        // the segment 20 times:
+        programming_element_list pel;
+        run_data.current_segment.reset();
+        for (int i = 0; i <= 19; ++i) {
+            programming_element pe;
+            pe.cat = SCAT_MUSIC;
+            pe.strmedia = "/dir/to/music/mp3s/test.mp3";
+            pe.blnloaded = true;
+            pel.push_back(pe);
+            mhistory.song_played_no_db(pe.strmedia, "<song description>");
+        }
+        run_data.current_segment.set_pel(pel);
+        run_data.current_segment.blnrepeat = true;
+        run_data.current_segment.blnloaded = true;
+
+        // Add a logger callback function, to suppress the debug and warning
+        // messages that will be logged (skipping song and file not found)
+        logging.add_logger(_null_logger);
+
+        // Test get_next_ok_music_item()
+        string expected_error = "I was unable to find a song which has "
+                                "not been played recently!";
+        TS_ASSERT_THROWS_EQUALS (
+            get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                                   *trans, config, run_data),
+            const my_exception &e, e.get_error(), expected_error
+        );
+        TS_ASSERT_EQUALS(run_data.current_segment.get_num_fetched(), 100);
+    }
+
     // Helper methods
 
     // Setup testing db data

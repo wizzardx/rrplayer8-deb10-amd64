@@ -94,9 +94,6 @@
         - Add unit tests to confirm that the current behaviour of
           get_next_ok_music_item() is correct:
 
-            - For shorter playlists (< 50 items), the method should attempt
-              up to 100 times to find an OK music item.
-
             - Should use 'get the next item ASAP' logic (cache) if there are
               less than 5 seconds remaining until the next item needs to start
               playing.
