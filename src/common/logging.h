@@ -53,6 +53,9 @@ public:
   /// Client apps pass "callback" functions to this class.
   void add_logger(void(*func)(const log_info&));
 
+  /// Remove all previously-added logger functions
+  void remove_all_loggers();
+
   /// Don't call this yourself, reather use log_message, log_warning, etc.
   void log(const log_type LT, const string & strdesc, const string & strfile, const string & strfunc, const int & intline);
 

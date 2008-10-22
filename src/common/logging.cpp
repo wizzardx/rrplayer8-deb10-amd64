@@ -24,6 +24,11 @@ void clogging::add_logger(void(*func)(const log_info&)) {
   callbacks.push_front(func);
 }
 
+// Remove all previously-added loggers
+void clogging::remove_all_loggers() {
+  callbacks.clear();
+}
+
 void clogging::log(const log_type LT, const string & strdesc, const string & strfile, const string & strfunc, const int & intline) {
   // Setup the structure with logging info:
   log_info L = {LT, strdesc, get_short_filename(strfile), strfunc, intline};
