@@ -94,9 +94,6 @@
         - Add unit tests to confirm that the current behaviour of
           get_next_ok_music_item() is correct:
 
-            - For longer playlists (>=50 items), the method should attempt
-              up to (playlist length * 2) times to find an ok music item.
-
             - For shorter playlists (< 50 items), the method should attempt
               up to 100 times to find an OK music item.
 

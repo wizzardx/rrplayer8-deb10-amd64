@@ -6,17 +6,18 @@
 #include <cxxtest/TestSuite.h>
 
 #include "player.h"
+#include "common/exception.h"
 #include "common/my_string.h"
 
-// Helper types
-
-typedef auto_ptr<pg_transaction> ap_pg_transaction;
+// Utility functions
 
 // Tests for get_next_ok_music_item()
 
-class TestGetNextOkMusicItem : public CxxTest::TestSuite
-{
+class TestGetNextOkMusicItem : public CxxTest::TestSuite {
 public:
+    // Helper type definitions
+    typedef auto_ptr<pg_transaction> ap_pg_transaction;
+
     // Main objects passed to get_next_ok_music_item()
     int intstarts_ms;
     programming_element next_item;
@@ -30,15 +31,19 @@ public:
     ap_pg_transaction trans;
 
     // Per-test fixture setup
-    void setUp()
-    {
+    void setUp() {
         // Setup objects to be passed to get_next_ok_music_item()
         intstarts_ms = 5000;
+        // Create a programming element object
         programming_element pe;
         pe.cat = SCAT_MUSIC;
         pe.strmedia = "/dir/to/music/mp3s/test.mp3";
         pe.blnloaded = true;
-        run_data.current_segment.programming_elements.clear();
+        programming_element_list pel;
+        pel.push_back(pe);
+        run_data.current_segment.set_pel(pel);
+
+        // Add a single programming element to the segment.
         run_data.current_segment.programming_elements.push_back(pe);
         run_data.current_segment.blnloaded = true;
 
@@ -50,14 +55,15 @@ public:
     }
 
     // Per-test fixture teardown
-    void tearDown()
-    {
+    void tearDown() {
+        mhistory.clear();
+        run_data.current_segment.reset();
         trans->abort();
+        logging.remove_all_loggers();
     }
 
     // A basic "smoke test" for get_next_ok_music_item()
-    void test_should_work()
-    {
+    void test_should_work() {
         // Run the tested function
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
                                *trans, config, run_data);
@@ -68,9 +74,44 @@ public:
         TS_ASSERT_EQUALS(next_item.strmedia, "/dir/to/music/mp3s/test.mp3");
     }
 
+    // For longer playlists (>=50 items), the method should attempt
+    // up to (playlist length * 2) times to find an ok music item.
+    void test_should_attempt_correct_number_of_times_for_long_playlists() {
+        // Put the same programming element into the music history and
+        // the segment 100 times:
+        programming_element_list pel;
+        run_data.current_segment.reset();
+        for (int i = 0; i <= 99; ++i) {
+            programming_element pe;
+            pe.cat = SCAT_MUSIC;
+            pe.strmedia = "/dir/to/music/mp3s/test.mp3";
+            pe.blnloaded = true;
+            pel.push_back(pe);
+            mhistory.song_played_no_db(pe.strmedia, "<song description>");
+        }
+        run_data.current_segment.set_pel(pel);
+        run_data.current_segment.blnrepeat = true;
+        run_data.current_segment.blnloaded = true;
+
+        // Add a logger callback function, to suppress the debug and warning
+        // messages that will be logged (skipping song and file not found)
+        logging.add_logger(_null_logger);
+
+        // Test get_next_ok_music_item()
+        string expected_error = "I was unable to find a song which has "
+                                "not been played recently!";
+        TS_ASSERT_THROWS_EQUALS (
+            get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                                   *trans, config, run_data),
+            const my_exception &e, e.get_error(), expected_error
+        );
+        TS_ASSERT_EQUALS(run_data.current_segment.get_num_fetched(), 200);
+    }
+
     // Helper methods
-    void _setup_test_db_data(pg_conn_exec & db)
-    {
+
+    // Setup testing db data
+    void _setup_test_db_data(pg_conn_exec & db) {
         // Insert a new record into tblinstore_media_dir
         string sql = "SELECT nextval('tblinstore_media_dir_lnginstore_media_"
                      "dir_seq')";
@@ -90,5 +131,7 @@ public:
                                    "60000", psql_bool(true));
         db.exec(sql, params);
     }
-};
 
+    // Logging function that does nothing. Used to suppress logger output
+    static void _null_logger(const log_info & LI) {}
+};
