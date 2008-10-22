@@ -92,7 +92,7 @@ void segment::reset() {
   // Information used to retrieve the "next" item:
   programming_elements.clear();
   next_item = programming_elements.begin();
-  blnfirst_fetched = false;
+  intnum_fetched = 0;
   intnum_played = 0;
 
   // Programming element list was updated in this function
@@ -322,7 +322,8 @@ void segment::get_next_item(programming_element & pe, pg_conn_exec & db, const i
 
   if (!blnloaded) LOGIC_ERROR;
 
-  // Have we already fetched the maximum allowed number of items for this segment?
+  // Have the maximum allowed number of items for this segment already been
+  // played?
   if (intnum_played >= intmax_items) {
     // We've feched the maximum number of allowed items. Tell the user & revert down.
     log_message("Have already played the maximum allowed number of items for this segment (" + itostr(intmax_items) + ")");
@@ -330,7 +331,7 @@ void segment::get_next_item(programming_element & pe, pg_conn_exec & db, const i
   }
   else {
     // Has the first item already been retrieved?
-    if (blnfirst_fetched) {
+    if (intnum_fetched >= 1) {
       // First item has already been fetched. Go to the next item
       // (ie, we don't progress to the next item until the 2nd item is being retrieved).
 
@@ -377,9 +378,8 @@ void segment::get_next_item(programming_element & pe, pg_conn_exec & db, const i
     pe.load_media_info(db);
   }
 
-  // And now we've definitely returned the "first" item from the list if we hadn't
-  // already:
-  blnfirst_fetched = true; // Next time we will advance to the next item.
+  // Record that 1 more item has been fetched.
+  ++intnum_fetched; // Next time we will advance to the next item.
 }
 
 bool segment::get_next_item_will_revert(string & strreason) {
@@ -398,7 +398,7 @@ bool segment::get_next_item_will_revert(string & strreason) {
   }
   else {
     // Has the first item already been retrieved?
-    if (blnfirst_fetched) {
+    if (intnum_fetched >= 1) {
       // First item has already been fetched. Go to the next item
       // (ie, we don't progress to the next item until the 2nd item is being retrieved).
 

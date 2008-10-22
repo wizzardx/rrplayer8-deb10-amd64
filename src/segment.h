@@ -115,11 +115,17 @@ private:
   // Information used to retrieve the "next" item:
   programming_element_list::iterator next_item; ///< A pointer to the next item to be returned (if valid etc) by get_next_item
 
-  bool blnfirst_fetched; ///< Set to true when the first item is fetched. Helps
-                         ///< logic for navigating the segment items.
+  int intnum_fetched; ///< Counts the number of items fetched from the segment.
+                      ///< (number of items
+public:
+  // Accessor for intnum_fetched
+  int get_num_fetched() { return intnum_fetched; }
 
-  int intnum_played;    ///< Number of items played so far. Used with intmax_items
-                        ///< to limit the number of items played in a segment.
+private:
+
+  int intnum_played;    ///< Number of items played so far. Used with
+                        ///< intmax_items to limit the number of items played
+                        ///< in a segment.
 
   // Functions which are used to operate on the above:
   void generate_playlist(programming_element_list & pel, const string & strsource, const seg_category pel_cat, pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnshuffle, const bool blnasap); // strsource is a playlist, directory, etc.
