@@ -98,6 +98,10 @@
               less than 5 seconds remaining until the next item needs to start
               playing.
 
+            - Should not use 'get the next item ASAP' logic (cache) if there
+              are more than 5 seconds remaining until the next item needs to
+              start playing.
+
             - Should work correctly if the underlying playlist changes while
               checking items.
 
