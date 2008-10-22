@@ -20,7 +20,7 @@
   </general>
   <kdevautoproject>
     <general>
-      <activetarget>src/player</activetarget>
+      <activetarget>tests/tests</activetarget>
       <useconfiguration>debug</useconfiguration>
     </general>
     <run>
