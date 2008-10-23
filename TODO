@@ -94,8 +94,6 @@
         - Add unit tests to confirm that the current behaviour of
           get_next_ok_music_item() is correct:
 
-            - Should log an info message for total number of skipped items.
-
             - Should fail as expected if an ok item couldn't be found
                 (log a warning, clear the music history, and raise an
                  exception)

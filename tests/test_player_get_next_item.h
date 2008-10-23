@@ -535,4 +535,61 @@ public:
         }
         TS_ASSERT_EQUALS(logged_count, 49);
     }
+
+    // Should log an info message for total number of skipped items.
+    void test_should_log_info_message_for_total_skipped_songs() {
+        using namespace test_player_get_next_item;
+        // Add the same MP3 49 times to the playlist and history,
+        // followed by an MP3 which isn't in the history
+        programming_element_list pel;
+        run_data.current_segment->reset();
+        for (int i = 0; i <= 49; ++i) {
+            programming_element pe;
+            pe.cat = SCAT_PROMOS;
+            pe.strmedia = "/dir/to/announcement/mp3s/ann.mp3";
+            pe.blnloaded = true;
+            pe.cat = SCAT_MUSIC;
+
+            if (i == 49) {
+                // The 50th item is not in the music history
+                pe.strmedia = "/dir/to/music/mp3s/new.mp3";
+            }
+            else {
+                // All other items are in the (recent) music history
+                pe.strmedia = "/dir/to/music/mp3s/old.mp3";
+                mhistory.song_played_no_db(pe.strmedia, "<song description>");
+            }
+            // Add to the playlist:
+            pel.push_back(pe);
+        }
+        run_data.current_segment->set_pel(pel);
+        run_data.current_segment->blnrepeat = true;
+        run_data.current_segment->blnloaded = true;
+
+        // Add a logger callback function which keeps track of the logged
+        // messages in the call log
+        logging.add_logger(log_logger);
+
+        // Get the next ok music item:
+        get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                               *trans, config, run_data);
+
+        // Check the retrieved item
+        TS_ASSERT_EQUALS(next_item.strmedia,
+                         "/dir/to/music/mp3s/new.mp3");
+
+        // Look for the expected logged message
+        int logged_count = 0;
+        string expected_args = "MESSAGE, 'Skipped 49 songs while finding "
+                               "songs that haven't played recently. See "
+                               "debug log for more info.'";
+        call_list::const_iterator it = calls.begin();
+        while (it != calls.end()) {
+            if (it->args == expected_args) {
+                ++logged_count;
+            }
+            ++it;
+        }
+        TS_ASSERT_EQUALS(logged_count, 1);
+    }
 };
