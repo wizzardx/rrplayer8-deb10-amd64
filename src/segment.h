@@ -31,7 +31,7 @@ public:
   void load_music_profile(pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
 
   /// Advance to the next item (if necessary) and then return it.
-  void get_next_item(programming_element & pe, pg_conn_exec & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
+  virtual void get_next_item(programming_element & pe, pg_conn_exec & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory, const bool blnasap);
 
   /// Check if fetching the next item will cause playback to revert
   bool get_next_item_will_revert(string & strreason);

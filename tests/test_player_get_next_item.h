@@ -18,6 +18,39 @@ public:
     // Helper type definitions
     typedef auto_ptr<pg_transaction> ap_pg_transaction;
 
+    // Helper classes
+
+    // A version of the segment class with updated methods to assist the
+    // tests.
+    class patched_segment : public segment {
+
+    public:
+
+        // How many times get_next_item() has been called with the blnasap
+        // argument set to true
+        int get_next_item_blnasap_count;
+
+        // Constructor
+        patched_segment() {
+            get_next_item_blnasap_count = 0;
+        }
+
+        // Version of get_next_item() that logs information about the
+        // arguments
+        virtual void get_next_item(programming_element & pe, pg_conn_exec & db,
+                                   const int intstarts_ms,
+                                   const player_config & config,
+                                   mp3_tags & mp3tags,
+                                   const music_history & musichistory,
+                                   const bool blnasap) {
+            if (blnasap) {
+                get_next_item_blnasap_count += 1;
+            }
+            segment::get_next_item(pe, db, intstarts_ms, config, mp3tags,
+                                   musichistory, blnasap);
+        }
+    };
+
     // Main objects passed to get_next_ok_music_item()
     int intstarts_ms;
     programming_element next_item;
@@ -30,10 +63,19 @@ public:
     player_run_data run_data;
     ap_pg_transaction trans;
 
+    // A pointer to the mock segment we setup in the constructor:
+    patched_segment * ppatched_segment;
+
     // Per-test fixture setup
     void setUp() {
         // Setup objects to be passed to get_next_ok_music_item()
         intstarts_ms = 5000;
+
+        // Replace run_data.current_segment with a mocked version which
+        // provides more information for testing
+        ppatched_segment = new patched_segment();
+        run_data.current_segment = ap_segment(ppatched_segment);
+
         // Create a programming element object
         programming_element pe;
         pe.cat = SCAT_MUSIC;
@@ -140,6 +182,42 @@ public:
             const my_exception &e, e.get_error(), expected_error
         );
         TS_ASSERT_EQUALS(run_data.current_segment->get_num_fetched(), 100);
+    }
+
+    // Should use 'get the next item ASAP' logic (cache) if there are less than
+    // 5 seconds remaining until the next item needs to start playing.
+    void test_should_use_asap_logic_when_less_than_5_seconds() {
+        // Run the tested function
+        intstarts_ms = 4999;
+        get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                               *trans, config, run_data);
+
+        // Check the output of the tested function
+        TS_ASSERT(next_item.blnloaded);
+        TS_ASSERT_EQUALS(next_item.cat, SCAT_MUSIC);
+        TS_ASSERT_EQUALS(next_item.strmedia, "/dir/to/music/mp3s/test.mp3");
+
+        // Check that segment::get_next_item() was called once with
+        // blnasap set to True:
+        TS_ASSERT_EQUALS(ppatched_segment->get_next_item_blnasap_count, 1);
+    }
+
+    // Should not use 'get the next item ASAP' logic (cache) if there are more
+    // than 5 seconds remaining until the next item needs to start playing.
+    void test_should_not_use_asap_logic_when_more_than_5_seconds() {
+        // Run the tested function
+        intstarts_ms = 5000;
+        get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                               *trans, config, run_data);
+
+        // Check the output of the tested function
+        TS_ASSERT(next_item.blnloaded);
+        TS_ASSERT_EQUALS(next_item.cat, SCAT_MUSIC);
+        TS_ASSERT_EQUALS(next_item.strmedia, "/dir/to/music/mp3s/test.mp3");
+
+        // Check that segment::get_next_item() was not called with blnasap set
+        // to true.
+        TS_ASSERT_EQUALS(ppatched_segment->get_next_item_blnasap_count, 0);
     }
 
     // Helper methods
