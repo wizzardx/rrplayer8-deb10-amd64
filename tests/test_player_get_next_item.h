@@ -18,7 +18,8 @@ namespace test_player_get_next_item {
     public:
         string func; // Name of the function
         string args; // String describing the arguments.
-        call(const string & func, const string & args) : func(func), args(args) {}
+        call(const string & func, const string & args="") :
+            func(func), args(args) {}
 
         // Return a user-friendly string representation of the object
         string str() {
@@ -112,6 +113,7 @@ namespace test_player_get_next_item {
         }
 
         virtual void clear() {
+            calls.push_back(call("music_history::clear"));
             music_history::clear();
         }
     };
@@ -386,14 +388,17 @@ public:
         //  - patched segment::get_next_item puts 60 items in the playlist.
         //  - Player uses 75% of the playlist length as a limit for
         //    repetition.
-        TS_ASSERT_EQUALS(calls.size(), 100);
         string expected_args = "/dir/to/music/mp3s/test.mp3, 45";
+        int call_count = 0;
         call_list::iterator it = calls.begin();
         while(it != calls.end()) {
-            call c = *it;
-            TS_ASSERT_EQUALS(c.args, expected_args);
+            if (it->func == "song_played_recently") {
+                TS_ASSERT_EQUALS(it->args, expected_args);
+                ++call_count;
+            }
             ++it;
         }
+        TS_ASSERT_EQUALS(call_count, 100);
     }
 
     // Should return any non-music item that is returned while scanning items.
@@ -591,5 +596,60 @@ public:
             ++it;
         }
         TS_ASSERT_EQUALS(logged_count, 1);
+    }
+
+    // Should fail as expected if an ok item couldn't be found (log a warning,
+    // clear the music history, and raise an exception)
+    void test_should_fail_as_expected_for_no_ok_music_items() {
+        using namespace test_player_get_next_item;
+        // Put the same programming element into the music history and
+        // the segment 20 times:
+        programming_element_list pel;
+        run_data.current_segment->reset();
+        for (int i = 0; i <= 19; ++i) {
+            programming_element pe;
+            pe.cat = SCAT_MUSIC;
+            pe.strmedia = "/dir/to/music/mp3s/test.mp3";
+            pe.blnloaded = true;
+            pel.push_back(pe);
+            mhistory.song_played_no_db(pe.strmedia, "<song description>");
+        }
+        run_data.current_segment->set_pel(pel);
+        run_data.current_segment->blnrepeat = true;
+        run_data.current_segment->blnloaded = true;
+
+        // Add a logger callback function which keeps track of the logged
+        // messages in the call log
+        logging.add_logger(log_logger);
+
+        // Test get_next_ok_music_item()
+        string expected_error = "I was unable to find a song which has "
+                                "not been played recently!";
+        TS_ASSERT_THROWS_EQUALS (
+            get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                                   *trans, config, run_data),
+            const my_exception &e, e.get_error(), expected_error
+        );
+        TS_ASSERT_EQUALS(run_data.current_segment->get_num_fetched(), 100);
+
+        // Check for the expected logged warning, and that the music history
+        // was closed
+        int logged_count = 0;
+        bool music_history_cleared = false;
+        string expected_args = "WARNING, 'Forced to clear the in-memory (not "
+                               "database) music history!'";
+        call_list::const_iterator it = calls.begin();
+
+        while (it != calls.end()) {
+            if (it->args == expected_args) {
+                ++logged_count;
+            }
+            if (it->func == "music_history::clear") {
+                music_history_cleared = true;
+            }
+            ++it;
+        }
+        TS_ASSERT_EQUALS(logged_count, 1);
+        TS_ASSERT(music_history_cleared);
     }
 };

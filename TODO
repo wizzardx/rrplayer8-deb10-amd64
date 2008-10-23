@@ -91,13 +91,6 @@
 
     Sub-TODOs for this task (updated as I work through the code):
 
-        - Add unit tests to confirm that the current behaviour of
-          get_next_ok_music_item() is correct:
-
-            - Should fail as expected if an ok item couldn't be found
-                (log a warning, clear the music history, and raise an
-                 exception)
-
         - Add (failing) unit test:
 
             - Should not cause artist repetitions
