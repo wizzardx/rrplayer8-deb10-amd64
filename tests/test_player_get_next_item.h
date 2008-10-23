@@ -33,8 +33,8 @@ namespace test_player_get_next_item {
     };
 
 
-    typedef vector<call> calls_list;
-    calls_list calls;
+    typedef vector<call> call_list;
+    call_list calls;
 
     // Patched classes
 
@@ -141,7 +141,15 @@ namespace test_player_get_next_item {
 
     // Logging function that discards logged messages. Used to suppress
     // logged messages
-    static void null_logger(const log_info & LI) {}
+    void null_logger(const log_info & LI) {}
+
+    // Logging callback function which adds the logging call to the
+    // call log
+    void log_logger(const log_info & LI) {
+        string args = format_log(LI, "%TYPE, '%MESSAGE'");
+        calls.push_back(call("log_logger", args));
+    }
+
 }
 
 // Tests for get_next_ok_music_item()
@@ -380,7 +388,7 @@ public:
         //    repetition.
         TS_ASSERT_EQUALS(calls.size(), 100);
         string expected_args = "/dir/to/music/mp3s/test.mp3, 45";
-        calls_list::iterator it = calls.begin();
+        call_list::iterator it = calls.begin();
         while(it != calls.end()) {
             call c = *it;
             TS_ASSERT_EQUALS(c.args, expected_args);
@@ -471,4 +479,60 @@ public:
                          "/dir/to/music/mp3s/new.mp3");
     }
 
+    // Should log a debug message for skipped songs
+    void test_should_log_debug_message_for_skipped_songs() {
+        using namespace test_player_get_next_item;
+        // Add the same MP3 49 times to the playlist and history,
+        // followed by an MP3 which isn't in the history
+        programming_element_list pel;
+        run_data.current_segment->reset();
+        for (int i = 0; i <= 49; ++i) {
+            programming_element pe;
+            pe.cat = SCAT_PROMOS;
+            pe.strmedia = "/dir/to/announcement/mp3s/ann.mp3";
+            pe.blnloaded = true;
+            pe.cat = SCAT_MUSIC;
+
+            if (i == 49) {
+                // The 50th item is not in the music history
+                pe.strmedia = "/dir/to/music/mp3s/new.mp3";
+            }
+            else {
+                // All other items are in the (recent) music history
+                pe.strmedia = "/dir/to/music/mp3s/old.mp3";
+                mhistory.song_played_no_db(pe.strmedia, "<song description>");
+            }
+            // Add to the playlist:
+            pel.push_back(pe);
+        }
+        run_data.current_segment->set_pel(pel);
+        run_data.current_segment->blnrepeat = true;
+        run_data.current_segment->blnloaded = true;
+
+        // Add a logger callback function which keeps track of the logged
+        // messages in the call log
+        logging.add_logger(log_logger);
+
+        // Get the next ok music item:
+        get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                               *trans, config, run_data);
+
+        // Check the retrieved item
+        TS_ASSERT_EQUALS(next_item.strmedia,
+                         "/dir/to/music/mp3s/new.mp3");
+
+        // Check the logged messages
+        int logged_count = 0;
+        string expected_args = "DEBUG, 'Skipping song, it was played "
+                               "recently: \"/dir/to/music/mp3s/old.mp3\" - "
+                               "\"<ERROR>\"'";
+        call_list::const_iterator it = calls.begin();
+        while (it != calls.end()) {
+            if (it->args == expected_args) {
+                ++logged_count;
+            }
+            ++it;
+        }
+        TS_ASSERT_EQUALS(logged_count, 49);
+    }
 };
