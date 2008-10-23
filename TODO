@@ -94,9 +94,6 @@
         - Add unit tests to confirm that the current behaviour of
           get_next_ok_music_item() is correct:
 
-            - Should work correctly if the underlying playlist changes while
-              checking items.
-
             - Should return any non-music item that is returned while
               scanning items.
 

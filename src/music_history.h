@@ -24,10 +24,10 @@ class music_history
    void song_played_no_db(const std::string & strfile, const std::string & strdescr);
 
    /// Did this song play within the most recent X songs?
-   bool song_played_recently(const std::string & strfile, const int count);
+   virtual bool song_played_recently(const std::string & strfile, const int count);
 
    /// Clear the in-memory music history (not the database table)
-   void clear();
+   virtual void clear();
 
    /// Fetch a read-only copy of the music history list
    /// (newer entries are at the front of the queue)
