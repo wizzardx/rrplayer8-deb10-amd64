@@ -388,4 +388,45 @@ public:
             ++it;
         }
     }
+
+    // Should return any non-music item that is returned while scanning items.
+    void test_should_return_any_non_music_item() {
+        using namespace test_player_get_next_item;
+        // Add 100 elements to the playlist and history. Most of them are music
+        // except for the 50th one
+        programming_element_list pel;
+        run_data.current_segment->reset();
+        for (int i = 0; i <= 99; ++i) {
+            programming_element pe;
+            if (i == 49) {
+                // The 50th item is non-music
+                pe.cat = SCAT_PROMOS;
+                pe.strmedia = "/dir/to/announcement/mp3s/ann.mp3";
+            }
+            else {
+                // All others are music
+                pe.cat = SCAT_MUSIC;
+                pe.strmedia = "/dir/to/music/mp3s/test.mp3";
+            }
+            pe.blnloaded = true;
+            pel.push_back(pe);
+            mhistory.song_played_no_db(pe.strmedia, "<song description>");
+        }
+        run_data.current_segment->set_pel(pel);
+        run_data.current_segment->blnrepeat = true;
+        run_data.current_segment->blnloaded = true;
+
+        // Add a logger callback function, to suppress the debug and warning
+        // messages that will be logged (skipping song and file not found)
+        logging.add_logger(null_logger);
+
+        // Get the next ok music item:
+        get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                               *trans, config, run_data);
+
+        TS_ASSERT_EQUALS(next_item.strmedia,
+                         "/dir/to/announcement/mp3s/ann.mp3");
+        TS_ASSERT_EQUALS(next_item.cat, SCAT_PROMOS);
+
+    }
 };
