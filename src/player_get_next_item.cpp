@@ -1213,20 +1213,72 @@ void get_next_ok_music_item(
       intmin_songs_before_song_repeat = (intnum_music_items * intprevent_song_repeat_factor) / 100;
     }
 
-    // Is the item ok to use?
-    blnok = next_item.cat != SCAT_MUSIC || !music_history.song_played_recently(next_item.strmedia, intmin_songs_before_song_repeat);
-
-    // If the item is not ok to use, then log that it was skipped:
+    // Item is automatically ok if it is non-music
+    // (eg: we music segment ran out of items and reverted to sweepers)
     if (!blnok) {
+        if (next_item.cat != SCAT_MUSIC) {
+            log_message("Found non-music item " + next_item.strmedia +
+                        ", using it");
+            blnok = true;
+        }
+    }
+
+    // Check if the item should be skipped
+    bool blnskip = false;
+    string strskip_reason = "";
+
+    if (!blnok) {
+        // Was the song played recently?
+        if (!blnskip) {
+            if (music_history.song_played_recently(
+                next_item.strmedia,
+                intmin_songs_before_song_repeat)) {
+                // Song was played recently
+                blnskip = true;
+                strskip_reason = "it was played recently";
+            }
+        }
+
+        // Otherwise, was the artist played recently?
+        if (!blnskip) {
+            // Get the song artist
+            string artist = mp3tags.get_mp3_artist(next_item.strmedia);
+
+            // How many unique artists are there remaining in the current
+            // music playlist? (current = without reverting, but possibly
+            //                  with playlist looping, if allowed by the
+            //                  segment)
+            int num_artists = run_data.current_segment->
+                count_remaining_playlist_artists(mp3tags);
+
+            // Did a song by this artist play recently?
+            if (music_history.artist_song_played_recently(
+                artist, num_artists-1, mp3tags)) {
+                blnskip = true;
+                strskip_reason = "a song by the same artist (" + artist +
+                                 ") was played recently";
+            }
+        }
+    }
+
+    // Skip?
+    if (blnskip) {
       intnum_skipped_songs++;
       string strdescr = "<ERROR>";
       try {
         strdescr = mp3tags.get_mp3_description(next_item.strmedia);
       } catch_exceptions;
-      log_debug("Skipping song, it was played recently: \"" + next_item.strmedia + "\" - \"" + strdescr + "\"");
-      // If this check failed then go to the next attempt:
-      if (!blnok) --intattempts_left;
+      log_debug("Skipping song, " + strskip_reason + ": \"" +
+                next_item.strmedia + "\" - \"" + strdescr + "\"");
     }
+
+    // If we didn't skip the song, then it is ok:
+    if (!blnskip) {
+        blnok = true;
+    }
+
+    // One less attempt remaining:
+    --intattempts_left;
   }
 
   // Log how many songs were skipped to the main (non-debugged) log, if

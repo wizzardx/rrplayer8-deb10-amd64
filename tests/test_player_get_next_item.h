@@ -9,9 +9,10 @@
 #include "common/exception.h"
 #include "common/my_string.h"
 
+#include <tr1/unordered_set>
+
 // Namespace containing utilities used by the tests in this header
 namespace test_player_get_next_item {
-
 
     // Storage for logging calls to patched methods
     class call {
@@ -33,12 +34,10 @@ namespace test_player_get_next_item {
         }
     };
 
-
     typedef vector<call> call_list;
     call_list calls;
 
     // Patched classes
-
 
     // A version of the segment class with updated methods to assist the
     // tests.
@@ -96,10 +95,15 @@ namespace test_player_get_next_item {
         }
     };
 
-
     // Patched music history class, for easier testing
     class patched_music_history: public music_history {
     public:
+
+        // When this vector is set, it is used by
+        // patched_music_history::song_played_recently(), instead of calling
+        // music_history::song_played_recently()
+        typedef tr1::unordered_set <string> string_set;
+        string_set recently_played;
 
         virtual bool song_played_recently(const std::string & strfile,
                                           const int count) {
@@ -108,13 +112,52 @@ namespace test_player_get_next_item {
             // Save the song_played_recently() arguments
             calls.push_back(call("song_played_recently",
                             strfile + ", " + itostr(count)));
-            // Call the parent classes method
-            return music_history::song_played_recently(strfile, count);
+
+            // Was patched_music_history::recently_played populated by a
+            // test?
+            if (recently_played.size() != 0) {
+                // Yes. Return true if the song is listed in the vector
+                string_set::const_iterator it = recently_played.find(strfile);
+                return it != recently_played.end();
+            }
+            else {
+                // No. Use the ancestor's method
+                return music_history::song_played_recently(strfile, count);
+            }
         }
 
         virtual void clear() {
             calls.push_back(call("music_history::clear"));
+            recently_played.clear();
             music_history::clear();
+        }
+    };
+
+    // "Patched" version of the mp3_tags class, to allow easier testing of
+    // get_next_ok_music_item().
+    class patched_mp3_tags : public mp3_tags {
+    public:
+        typedef map <const string, string> string_to_string_map;
+        string_to_string_map mock_mp3_artists;
+
+        // Clear members to initial values
+        void clear() {
+            mock_mp3_artists.clear();
+        }
+
+        // Replacement for get_mp3_description(), to make tests easier
+        virtual string get_mp3_description(const string & strFilePath) {
+            return "<MP3 Description>";
+        }
+
+        // Replacement for get_mp3_artist(), to make tests easier
+        virtual string get_mp3_artist(const string & strFilePath) {
+            string_to_string_map::const_iterator it =
+                mock_mp3_artists.find(strFilePath);
+            if (it == mock_mp3_artists.end()) {
+                my_throw("No artist for " + strFilePath + " found in mock");
+            }
+            return it->second;
         }
     };
 
@@ -151,7 +194,6 @@ namespace test_player_get_next_item {
         string args = format_log(LI, "%TYPE, '%MESSAGE'");
         calls.push_back(call("log_logger", args));
     }
-
 }
 
 // Tests for get_next_ok_music_item()
@@ -168,7 +210,7 @@ public:
     // Other objects passed to get_next_ok_music_item(), providing data it
     // needs to operate
     test_player_get_next_item::patched_music_history mhistory;
-    mp3_tags mp3tags;
+    test_player_get_next_item::patched_mp3_tags mp3tags;
     player_config config;
     player_run_data run_data;
     ap_pg_transaction trans;
@@ -199,6 +241,9 @@ public:
         pel.push_back(pe);
         run_data.current_segment->set_pel(pel);
 
+        // Add an artist for the test item
+        mp3tags.mock_mp3_artists[pe.strmedia] = "<Test Artist>";
+
         // Add a single programming element to the segment.
         run_data.current_segment->programming_elements.push_back(pe);
         run_data.current_segment->blnloaded = true;
@@ -213,6 +258,7 @@ public:
     // Per-test fixture teardown
     void tearDown() {
         mhistory.clear();
+        mp3tags.clear();
         run_data.current_segment->reset();
         trans->abort();
         logging.remove_all_loggers();
@@ -471,6 +517,12 @@ public:
         run_data.current_segment->blnrepeat = true;
         run_data.current_segment->blnloaded = true;
 
+        // Add artists for the MP3s
+        mp3tags.mock_mp3_artists["/dir/to/music/mp3s/old.mp3"] =
+            "<Test Artist>";
+        mp3tags.mock_mp3_artists["/dir/to/music/mp3s/new.mp3"] =
+            "<Test Artist>";
+
         // Add a logger callback function, to suppress the debug and warning
         // messages that will be logged (skipping song and file not found)
         logging.add_logger(null_logger);
@@ -514,6 +566,12 @@ public:
         run_data.current_segment->blnrepeat = true;
         run_data.current_segment->blnloaded = true;
 
+        // Add artists for the MP3s
+        mp3tags.mock_mp3_artists["/dir/to/music/mp3s/old.mp3"] =
+            "<Test Artist>";
+        mp3tags.mock_mp3_artists["/dir/to/music/mp3s/new.mp3"] =
+            "<Test Artist>";
+
         // Add a logger callback function which keeps track of the logged
         // messages in the call log
         logging.add_logger(log_logger);
@@ -530,7 +588,7 @@ public:
         int logged_count = 0;
         string expected_args = "DEBUG, 'Skipping song, it was played "
                                "recently: \"/dir/to/music/mp3s/old.mp3\" - "
-                               "\"<ERROR>\"'";
+                               "\"<MP3 Description>\"'";
         call_list::const_iterator it = calls.begin();
         while (it != calls.end()) {
             if (it->args == expected_args) {
@@ -570,6 +628,12 @@ public:
         run_data.current_segment->set_pel(pel);
         run_data.current_segment->blnrepeat = true;
         run_data.current_segment->blnloaded = true;
+
+        // Add artists for the MP3s
+        mp3tags.mock_mp3_artists["/dir/to/music/mp3s/old.mp3"] =
+            "<Test Artist>";
+        mp3tags.mock_mp3_artists["/dir/to/music/mp3s/new.mp3"] =
+            "<Test Artist>";
 
         // Add a logger callback function which keeps track of the logged
         // messages in the call log
@@ -651,5 +715,101 @@ public:
         }
         TS_ASSERT_EQUALS(logged_count, 1);
         TS_ASSERT(music_history_cleared);
+    }
+
+    // Should not repeat artists too soon, even when the music playlist
+    // has a lot of song repetition (which, in older versions of the Player
+    // could cause repetition as recent songs are dropped.
+    void test_should_alternate_artists_properly_when_heavy_song_repetition() {
+        // Create a music playlist and history like this:
+        //
+        // 0123456789 (Song number)
+        // ABCABCABCA (Artists A, B, and C)
+        // RR.RR..... (Where R is recently played, and "." is not)
+        //
+        // Originally we would get this sequence of artists:
+        //     CCABCA (songs: 2, 5, 6, 7, 8, 9)
+        // This is incorrect because artist C plays twice in succession.
+        // Instead, the sequence should be:
+        //     CABCA (songs: 2, 6, 7, 8, 9) (song 5 is also skipped)
+        using namespace test_player_get_next_item;
+        // Put 10 songs into the playlist
+        programming_element_list pel;
+        run_data.current_segment->reset();
+        for (int i = 0; i <= 10; ++i) {
+            programming_element pe;
+            pe.cat = SCAT_MUSIC;
+            pe.strmedia = "/dir/to/music/mp3s/" + itostr(i) + ".mp3";
+            pe.blnloaded = true;
+            pel.push_back(pe);
+            mhistory.song_played_no_db(pe.strmedia,
+                                       "<song #" + itostr(i) + ">");
+        }
+        run_data.current_segment->set_pel(pel);
+        run_data.current_segment->blnrepeat = true;
+        run_data.current_segment->blnloaded = true;
+
+        // Put songs 0, 1, 3 and 4 in the recently-played songs list
+        mhistory.recently_played.insert("/dir/to/music/mp3s/0.mp3");
+        mhistory.recently_played.insert("/dir/to/music/mp3s/1.mp3");
+        mhistory.recently_played.insert("/dir/to/music/mp3s/3.mp3");
+        mhistory.recently_played.insert("/dir/to/music/mp3s/4.mp3");
+
+        // Setup artists for the songs (alternate A, B, and C)
+        for (int i=0; i <= 10; i++) {
+            string mp3 = "/dir/to/music/mp3s/" + itostr(i) + ".mp3";
+            string artist = "<Unknown>";
+            switch (i % 3) {
+                case 0: artist = "<Artist A>"; break;
+                case 1: artist = "<Artist B>"; break;
+                case 2: artist = "<Artist C>"; break;
+            }
+            mp3tags.mock_mp3_artists[mp3] = artist;
+        }
+
+        // Add a logger callback function, to suppress the debug and warning
+        // messages that will be logged (skipping song and file not found)
+        logging.add_logger(null_logger);
+
+        // Get a song (should be 2.mp3)
+        get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                               *trans, config, run_data);
+        TS_ASSERT_EQUALS(next_item.strmedia,
+                         "/dir/to/music/mp3s/2.mp3");
+        // Pretend that song 2 just played (so that it's song artist goes
+        // into the song history)
+        mhistory.song_played_no_db("/dir/to/music/mp3s/2.mp3", "<desc>");
+
+        // Get the next song (should be 6.mp3)
+        get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                               *trans, config, run_data);
+        TS_ASSERT_EQUALS(next_item.strmedia,
+                         "/dir/to/music/mp3s/6.mp3");
+        // Pretend that the song played:
+        mhistory.song_played_no_db("/dir/to/music/mp3s/6.mp3", "<desc>");
+
+        // Get the next song (should be 7.mp3)
+        get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                               *trans, config, run_data);
+        TS_ASSERT_EQUALS(next_item.strmedia,
+                         "/dir/to/music/mp3s/7.mp3");
+        // Pretend that the song played:
+        mhistory.song_played_no_db("/dir/to/music/mp3s/7.mp3", "<desc>");
+
+        // Get the next song (should be 8.mp3)
+        get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                               *trans, config, run_data);
+        TS_ASSERT_EQUALS(next_item.strmedia,
+                         "/dir/to/music/mp3s/8.mp3");
+        // Pretend that the song played:
+        mhistory.song_played_no_db("/dir/to/music/mp3s/8.mp3", "<desc>");
+
+        // Get the next song (should be 9.mp3)
+        get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
+                               *trans, config, run_data);
+        TS_ASSERT_EQUALS(next_item.strmedia,
+                         "/dir/to/music/mp3s/9.mp3");
+        // Pretend that the song played:
+        mhistory.song_played_no_db("/dir/to/music/mp3s/9.mp3", "<desc>");
     }
 };
