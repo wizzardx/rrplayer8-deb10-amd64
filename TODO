@@ -103,10 +103,6 @@
 
             (See improvements to Step 2, earlier in this section)
 
-
-* Add a test for music_history::artist_song_played_recently()
-
-
 * Fix 'next_item' segment logic.
 
  'next_item' sometimes points to the previous item. See the "have we already

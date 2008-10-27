@@ -51,6 +51,25 @@ bool music_history::song_played_recently(const string & strfile, const int count
   return found;
 }
 
+/// Did a song by the specified artist play within the most recent X songs?
+bool music_history::artist_song_played_recently(const std::string & strartist,
+                                                const int count,
+                                                mp3_tags & mp3tags) {
+  typeof(m_history.begin()) i = m_history.begin();
+  int c = 0; // How many items we have iterated over;
+  bool found = false; // Set to true if we find the song
+  while (i != m_history.end() && c < count) {
+    string item_artist = mp3tags.get_mp3_artist(*i);
+    if (item_artist == strartist) {
+      found = true;
+      break;
+    }
+    i++; c++;
+  }
+  return found;
+}
+
+
 void music_history::clear() {
   // Clear the in-memory history (not the database table)
   m_history.clear();

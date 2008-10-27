@@ -2,6 +2,8 @@
 #ifndef MUSIC_HISTORY_DP20060525_H
 #define MUSIC_HISTORY_DP20060525_H
 
+#include "common/mp3_tags.h"
+
 #include <list>
 #include <string>
 
@@ -25,6 +27,9 @@ class music_history
 
    /// Did this song play within the most recent X songs?
    virtual bool song_played_recently(const std::string & strfile, const int count);
+
+   /// Did a song by the specified artist play within the most recent X songs?
+   virtual bool artist_song_played_recently(const std::string & strartist, const int count, mp3_tags & mp3tags);
 
    /// Clear the in-memory music history (not the database table)
    virtual void clear();
