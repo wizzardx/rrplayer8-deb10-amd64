@@ -48,12 +48,16 @@ typedef vector<string> pg_params; // For running parameterized queries.
 
 #define ARGS_TO_PG_PARAMS(args...) ARGS_TO_VEC(string, args)
 
+// Autopointer type declaration
+class pg_result; // Forward declaration
+typedef auto_ptr<pg_result> ap_pg_result;
+
 // Abstract base class for pg_connection and pg_transaction. Used to allow passing objects of either
 // type to functions that only need to call the "exec" method:
 class pg_conn_exec {
 public:
-  virtual pg_result exec(const string & strquery)=0;
-  virtual pg_result exec(const string & strquery, const pg_params & params)=0;
+  virtual ap_pg_result exec(const string & strquery)=0;
+  virtual ap_pg_result exec(const string & strquery, const pg_params & params)=0;
   virtual ~pg_conn_exec() {};
 };
 
@@ -84,8 +88,8 @@ public:
   bool isopen();
 
   /// And for executing queries through the connection:
-  virtual pg_result exec(const string & strquery);
-  virtual pg_result exec(const string & strquery, const pg_params & params);
+  virtual ap_pg_result exec(const string & strquery);
+  virtual ap_pg_result exec(const string & strquery, const pg_params & params);
 
   /// Allow the client code to specify a calback function to be run when connection errors
   /// are detected. Sometimes the database will be down for a long time...
@@ -187,8 +191,8 @@ public:
   virtual ~pg_transaction();
 
   /// Execute a query
-  virtual pg_result exec(const string & strquery);
-  virtual pg_result exec(const string & strquery, const pg_params & params);
+  virtual ap_pg_result exec(const string & strquery);
+  virtual ap_pg_result exec(const string & strquery, const pg_params & params);
 
   /// Commit the transaction:
   void commit();

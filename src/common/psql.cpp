@@ -105,7 +105,7 @@ bool pg_connection::isopen() {
 }
 
 // Execute a query and return a result:
-pg_result pg_connection::exec(const string & strsql) { // An exception is thrown if there is a SQL execution error
+ap_pg_result pg_connection::exec(const string & strsql) { // An exception is thrown if there is a SQL execution error
   lngnum_exec_calls++; // Increment the counter
 
   // If the number of calls to this function (in this object) is a multiple of 100,
@@ -134,9 +134,9 @@ pg_result pg_connection::exec(const string & strsql) { // An exception is thrown
 
   // Attempt to execute the query
   try {
-    pg_result RS(ptransaction->exec(strsql));
-    RS.strsql=strsql; // Also store the SQL that generated the recordset...
-    return RS;
+    ap_pg_result rs(new pg_result(ptransaction->exec(strsql)));
+    rs->strsql = strsql; // Also store the SQL that generated the recordset...
+    return rs;
   } catch (const exception & e) {
     // Fetch the error, tidy it up and remove "ERROR: " from the start.
     string strError = e.what();
@@ -162,8 +162,8 @@ pg_result pg_connection::exec(const string & strsql) { // An exception is thrown
   }
 }
 
-pg_result pg_connection::exec(const string & strsql,
-                              const pg_params & params) {
+ap_pg_result pg_connection::exec(const string & strsql,
+                                 const pg_params & params) {
   return exec(format_string_with_vector(strsql, params, "?"));
 }
 
@@ -417,12 +417,12 @@ pg_transaction::~pg_transaction() {
 }
 
 // Executing queries:
-pg_result pg_transaction::exec(const string & strquery) {
+ap_pg_result pg_transaction::exec(const string & strquery) {
   return connection.exec(strquery);
 }
 
-pg_result pg_transaction::exec(const string & strquery,
-                               const pg_params & params) {
+ap_pg_result pg_transaction::exec(const string & strquery,
+                                  const pg_params & params) {
   return exec(format_string_with_vector(strquery, params, "?"));
 }
 
@@ -637,6 +637,6 @@ string time_to_psql(const datetime dtmtime) {
 
 // Some postgresql-specific utility functions:
 bool pg_table_exists(pg_conn_exec & conn, const string & table_name, const string & schema_name) {
-  pg_result rs = conn.exec("SELECT tablename FROM pg_tables WHERE tablename = " + psql_str(lcase(table_name)) + " AND schemaname = " + psql_str(lcase(schema_name)));
-  return rs.size() != 0;
+  ap_pg_result rs = conn.exec("SELECT tablename FROM pg_tables WHERE tablename = " + psql_str(lcase(table_name)) + " AND schemaname = " + psql_str(lcase(schema_name)));
+  return rs->size() != 0;
 }

@@ -6,11 +6,11 @@
 void music_history::load(pg_connection & db)
 {
   // Load the most recent music history entries from the schedule database:
-  pg_result rs = db.exec("SELECT strfile FROM tblmusichistory WHERE strfile IS NOT NULL ORDER BY lngplayedmp3 DESC LIMIT " + itostr(max_history_length));
+  ap_pg_result rs = db.exec("SELECT strfile FROM tblmusichistory WHERE strfile IS NOT NULL ORDER BY lngplayedmp3 DESC LIMIT " + itostr(max_history_length));
 
-  while (rs) {
-    m_history.push_back(rs.field("strfile"));
-    rs++;
+  while (*rs) {
+    m_history.push_back(rs->field("strfile"));
+    (*rs)++;
   }
 
   tidy(); // Clear out old history entries.

@@ -169,7 +169,7 @@ public:
         // Insert a new record into tblinstore_media_dir
         string sql = "SELECT nextval('tblinstore_media_dir_lnginstore_media_"
                      "dir_seq')";
-        long lnginstore_media_dir = strtoi(db.exec(sql).field("nextval"));
+        long lnginstore_media_dir = strtoi(db.exec(sql)->field("nextval"));
         sql = "INSERT INTO tblinstore_media_dir (lnginstore_media_dir, strdir)"
               " VALUES (?, ?)";
         pg_params params = ARGS_TO_PG_PARAMS(ltostr(lnginstore_media_dir),

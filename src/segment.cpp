@@ -157,28 +157,28 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
         "WHERE lngfc_seg = " + ltostr(lngfc_seg);
 
       // Fetch results
-      pg_result rs = db.exec(strsql);
+      ap_pg_result rs = db.exec(strsql);
 
       // Check rowcount:
-      if (rs.size() != 1) my_throw("Error! " + itostr(rs.size()) + " results were returned here instead of 1!");
+      if (rs->size() != 1) my_throw("Error! " + itostr(rs->size()) + " results were returned here instead of 1!");
 
       // Now load object fields of the resultset:
 
       // Information about the format clock:
-      fc.lngfc   = strtol(rs.field("lngfc"));
-      fc.strname = rs.field("strfc_name");
+      fc.lngfc   = strtol(rs->field("lngfc"));
+      fc.strname = rs->field("strfc_name");
 
       // Category
-      cat.lngcat  = strtol(rs.field("lngcat"));
-      cat.strname = rs.field("strcat_name");
+      cat.lngcat  = strtol(rs->field("lngcat"));
+      cat.strname = rs->field("strcat_name");
       cat.cat     = parse_category_string(cat.strname);
 
       // Sub-category
-      load_sub_cat_struct(sub_cat, rs.field("strsub_cat"), db, cat, lngfc_seg, "Sub-category", "strsub_cat");
+      load_sub_cat_struct(sub_cat, rs->field("strsub_cat"), db, cat, lngfc_seg, "Sub-category", "strsub_cat");
 
       // Alternative category
-      alt_cat.lngcat  = strtol(rs.field("lngalt_cat", "-1"));
-      alt_cat.strname = rs.field("stralt_cat_name", "");
+      alt_cat.lngcat  = strtol(rs->field("lngalt_cat", "-1"));
+      alt_cat.strname = rs->field("stralt_cat_name", "");
       if (alt_cat.strname == "") {
         // Alternative category wasn't defined
         alt_cat.cat = SCAT_UNKNOWN;
@@ -189,33 +189,33 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
 
         // Alternative sub-category:
         // Do we have an alternative sub-category?
-        string stralt_sub_cat=rs.field("stralt_sub_cat", "");
+        string stralt_sub_cat=rs->field("stralt_sub_cat", "");
         if (stralt_sub_cat == "") my_throw("Alternative category defined but not the alternative sub-category!");
 
-        load_sub_cat_struct(alt_sub_cat, rs.field("stralt_sub_cat", ""), db, alt_cat, lngfc_seg, "Alternative sub-category", "stralt_sub_cat");
+        load_sub_cat_struct(alt_sub_cat, rs->field("stralt_sub_cat", ""), db, alt_cat, lngfc_seg, "Alternative sub-category", "stralt_sub_cat");
       }
 
       // Segment-specific info
-      sequence            = parse_sequence_string(rs.field("strseq"));  // Random, Sequential, Specific
-      strspecific_media   = ensure_last_char(rs.field("strspecific_media_dir", ""), '/') + rs.field("strspecific_media", "");        // Media to play if the user chose Specific
+      sequence            = parse_sequence_string(rs->field("strseq"));  // Random, Sequential, Specific
+      strspecific_media   = ensure_last_char(rs->field("strspecific_media_dir", ""), '/') + rs->field("strspecific_media", "");        // Media to play if the user chose Specific
 
-      blnpromos           = strtobool(rs.field("ysnpromos"));          // Promos allowed in this segment?
-      blnmusic_bed        = strtobool(rs.field("ysnmusic_bed"));       // Does this segment have a music bed?
+      blnpromos           = strtobool(rs->field("ysnpromos"));          // Promos allowed in this segment?
+      blnmusic_bed        = strtobool(rs->field("ysnmusic_bed"));       // Does this segment have a music bed?
 
       // Information about the music bed.
-      music_bed.strsub_cat = rs.field("lngmusic_bed_sub_cat", "-1");
-      music_bed.strname    = rs.field("strmusic_bed_name", "");
-      music_bed.strdir     = rs.field("strmusic_bed_dir", "");
+      music_bed.strsub_cat = rs->field("lngmusic_bed_sub_cat", "-1");
+      music_bed.strname    = rs->field("strmusic_bed_name", "");
+      music_bed.strdir     = rs->field("strmusic_bed_dir", "");
 
       // Don't allow music beds to play with Music segments:
       if (blnmusic_bed && cat.cat == SCAT_MUSIC) my_throw("Music segments aren't allowed to have music beds!");
 
-      blncrossfading = strtobool(rs.field("ysncrossfade")); // Crossfade music & announcements in this segment?
-      blnmax_age   = !(rs.field_is_null("intmax_age"));   // Does this segment limit the maximum age of sub-category media played?
-      intmax_age   = strtoi(rs.field("intmax_age", "-1"));      // If so, this is the maximum age.
-      blnpremature = strtobool(rs.field("ysnpremature"));   // Ignore the "Relevant from" setting of sub-category media
-      blnrepeat    = strtobool(rs.field("ysnrepeat"));   // Repeat sub-category media in this segment?
-      intmax_items = strtoi(rs.field("intmax_items", itostr(INT_MAX).c_str()));
+      blncrossfading = strtobool(rs->field("ysncrossfade")); // Crossfade music & announcements in this segment?
+      blnmax_age   = !(rs->field_is_null("intmax_age"));   // Does this segment limit the maximum age of sub-category media played?
+      intmax_age   = strtoi(rs->field("intmax_age", "-1"));      // If so, this is the maximum age.
+      blnpremature = strtobool(rs->field("ysnpremature"));   // Ignore the "Relevant from" setting of sub-category media
+      blnrepeat    = strtobool(rs->field("ysnrepeat"));   // Repeat sub-category media in this segment?
+      intmax_items = strtoi(rs->field("intmax_items", itostr(INT_MAX).c_str()));
 
       // Try to load the list of programming elements:
       playback_state = PBS_CATEGORY; // If this fails, we go to alternate segment, default music, etc.
@@ -235,8 +235,8 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
 
       // Calculate scheduled.dtmstart and scheduled.dtmend  (full date & time, not just minute and second).
       {
-        datetime dtmstart = parse_time_string(rs.field("dtmstart"));
-        datetime dtmend   = parse_time_string(rs.field("dtmend"));
+        datetime dtmstart = parse_time_string(rs->field("dtmstart"));
+        datetime dtmend   = parse_time_string(rs->field("dtmend"));
 
         // Fetch the full version of "dtmstart"
         {
@@ -259,15 +259,15 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
 
       // Work out which segment this is out of all the segments (eg #5 of 10):
       {
-        pg_result rs = db.exec("SELECT lngfc_seg FROM tblfc_seg WHERE lngfc = " + ltostr(fc.lngfc) + " ORDER BY dtmstart");
-        fc.segments = rs.size();
+        ap_pg_result rs = db.exec("SELECT lngfc_seg FROM tblfc_seg WHERE lngfc = " + ltostr(fc.lngfc) + " ORDER BY dtmstart");
+        fc.segments = rs->size();
         intseg_no = -1;
         int i=1;
-        while (rs && intseg_no == -1) {
-          if (strtol(rs.field("lngfc_seg")) == lngfc_seg) {
+        while ((*rs) && intseg_no == -1) {
+          if (strtol(rs->field("lngfc_seg")) == lngfc_seg) {
             intseg_no = i;
           }
-          rs++;
+          (*rs)++;
           i++;
         }
         if (intseg_no == -1) log_warning("Unable to check which segment number this is!");
@@ -682,20 +682,20 @@ void segment::generate_playlist(programming_element_list & pel, const string & s
   {
     filter_monitor fm(file_list, "disabled");
     string strsql = "SELECT strmessage FROM tblplayeroutput WHERE strmsgdesc = " + psql_str("disabled");
-    pg_result rs = db.exec(strsql);
+    ap_pg_result rs = db.exec(strsql);
     // Now load all the "disabled" mp3s into memory, use this list for a more efficient "playlist culling"
     // process
     tr1::unordered_set<string> disabled_mp3s;
 
-    while (rs) {
+    while (*rs) {
       try {
         vector <string> substrings;
-        string_splitter split(rs.field("strmessage", ""), "||");
+        string_splitter split(rs->field("strmessage", ""), "||");
         string strdisabled_mp3 = split;
         if (strdisabled_mp3 != "")
           disabled_mp3s.insert(strdisabled_mp3); // Inserting the same key twice has no effect, don't check...
       } catch_exceptions;
-      rs++;
+      (*rs)++;
     }
 
     // We've loaded all the "disabled" mp3 paths. Now remove them from the playlist.
@@ -869,9 +869,9 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
       if (isint(sub_cat.strsub_cat)) {
         // strsub_cat is numeric. Fetch the sub-category's sub-directory.
         string strsql = "SELECT strdir FROM tlkfc_sub_cat WHERE lngfc_sub_cat = " + sub_cat.strsub_cat;
-        pg_result rs = db.exec(strsql);
-        if (rs.size() == 0) my_throw("This segment lists it's sub-category (lngfc_sub_cat) as " + sub_cat.strsub_cat + ", but I could not find any matching tlkfc_sub_cat records.");
-        strsource = rs.field("strdir");
+        ap_pg_result rs = db.exec(strsql);
+        if (rs->size() == 0) my_throw("This segment lists it's sub-category (lngfc_sub_cat) as " + sub_cat.strsub_cat + ", but I could not find any matching tlkfc_sub_cat records.");
+        strsource = rs->field("strdir");
         if (!dir_exists(strsource)) my_throw("The sub-category directory's is missing: " + strsource);
       }
       else {
@@ -1003,14 +1003,14 @@ void segment::load_sub_cat_struct(struct sub_cat & sub_cat, const string strsub_
 
     // Fetch category details:
     string strsql = "SELECT strname, strdir FROM tlkfc_sub_cat WHERE lngfc_sub_cat = " + strsub_cat + " AND lngfc_cat = " + ltostr(cat.lngcat);
-    pg_result rs = db.exec(strsql);
+    ap_pg_result rs = db.exec(strsql);
 
     // Check # of returned rows:
-    if (rs.size() != 1) my_throw("Found " + itostr(rs.size()) + " " + strdescr + " records for segment " + ltostr(lngfc_seg) + ", expected 1!");
+    if (rs->size() != 1) my_throw("Found " + itostr(rs->size()) + " " + strdescr + " records for segment " + ltostr(lngfc_seg) + ", expected 1!");
 
     // Fetch the category name and directory:
-    sub_cat.strname = rs.field("strname");
-    sub_cat.strdir  = rs.field("strdir");
+    sub_cat.strname = rs->field("strname");
+    sub_cat.strdir  = rs->field("strdir");
   }
   else {
     // strsub_cat lists a sub-directory or m3u file:
@@ -1085,26 +1085,26 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
     // One of the format clock sub-category directories?
     string strdir = ensure_last_char(strsource, '/');
     string strsql = "SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE strdir = " + psql_str(strdir);
-    pg_result rs = db.exec(strsql);
-    if (rs.size() > 0) {
-      long lngfc_sub_cat = strtol(rs.field("lngfc_sub_cat"));
+    ap_pg_result rs = db.exec(strsql);
+    if (rs->size() > 0) {
+      long lngfc_sub_cat = strtol(rs->field("lngfc_sub_cat"));
 
       // A format clock sub-category directory. Fetch relevant MP3s from the database:
       strsql = strrelevant_fc_media_sql;
       strsql += " AND lngsub_cat = " + ltostr(lngfc_sub_cat) + " ORDER BY strfile";
-      pg_result rs = db.exec(strsql);
+      ap_pg_result rs = db.exec(strsql);
 
       // Did we get anything?
-      if (rs.size() == 0) {
+      if (rs->size() == 0) {
         // No:
         log_warning("Database does not list any usable format clock sub-category media under this directory: " + strdir);
       }
       else {
         // Yes. Process records:
         int intadded=0; // Number if items we've added to the file list
-        while (rs) {
+        while (*rs) {
           // Fetch the file from the database:
-          string strfile = rs.field("strfile", "");
+          string strfile = rs->field("strfile", "");
           // Exists on the harddrive?
           if (file_exists(strdir + strfile)) {
             // Yes. Add it.
@@ -1115,7 +1115,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
             // No. Log a warning:
             log_warning("File listed in the database, but not found on disk: " + strdir + strfile);
           }
-          rs++;
+          (*rs)++;
         }
         // Did we add any entries?
         if (intadded <= 0) {
@@ -1192,20 +1192,20 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
 
         // Grab the tblf_sub_cat record for this MP3:
         string strsql = "SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE strdir = " + psql_str(source_dir);
-        pg_result rs = db.exec(strsql);
-        if (!rs) {
+        ap_pg_result rs = db.exec(strsql);
+        if (!*rs) {
           log_warning("Skipping Format Clock media \"" + strsource + "\". Reason: Could not find directory \"" + source_dir + "\" in table tlkfc_sub_cat");
           blnusemp3 = false;
         }
         else {
           // Got the sub-category primary key, now fetch a record for the format clock
           // item (but only if it is valid):
-          long lngfc_sub_cat = strtoi(rs.field("lngfc_sub_cat"));
+          long lngfc_sub_cat = strtoi(rs->field("lngfc_sub_cat"));
           string strsql = strrelevant_fc_media_sql;
           strsql += " AND lngsub_cat = " + ltostr(lngfc_sub_cat);
           strsql += " AND strfile = " + psql_str(source_file);
-          pg_result rs = db.exec(strsql);
-          if (!rs) {
+          ap_pg_result rs = db.exec(strsql);
+          if (!*rs) {
             // Record not found in the db.
             // - So we don't include it in the playlist:
             blnusemp3 = false;
@@ -1213,8 +1213,8 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
             //   in the playlist (either not listed, or not relevant):
             string strreason = "";
             string strsql = "SELECT strfile FROM tblfc_media WHERE lngsub_cat = " + itostr(lngfc_sub_cat) + " AND strfile = " + psql_str(source_file);
-            pg_result rs = db.exec(strsql);
-            if (rs) {
+            ap_pg_result rs = db.exec(strsql);
+            if (*rs) {
               // Record exists. ie the reason for skipping is because it is not relevant at the moment
               strreason = "Media is not relevant at this time";
             }
@@ -1313,20 +1313,20 @@ void segment::add_music_profile_to_string_list(vector <string> & file_list, cons
     bool blnprofile_found = false; // Set to true when a matching music profile is found
 
     string strSQL = "SELECT * FROM tblMusicProfiles WHERE bitEnabled = '1' ORDER BY lngprofile DESC";
-    pg_result rs = db.exec(strSQL);
+    ap_pg_result rs = db.exec(strSQL);
 
-    while (rs && !blnprofile_found) {
+    while (*rs && !blnprofile_found) {
       // Set some flags for this iteration:
       bool blnskip_profile = false; // Set to true if for some reason this profile must be skipped (error, not applicable, etc)
 
       // Get the details
-      strProfileName        = rs.field("strProfileName", "");
-      string strStartDay    = rs.field("strStartDay", "");
-      datetime dtmStartTime = parse_psql_time(rs.field("dtmStartTime", "0001-01-01 00:00:00"));
-      string strEndDay      = rs.field("strEndDay", "");
-      datetime dtmEndTime   = parse_psql_time(rs.field("dtmEndTime",   "0001-01-01 23:59:59"));
-      string strMusic       = rs.field("strMusic", "");
-      long lngprofile       = strtol(rs.field("lngprofile", "-1"));
+      strProfileName        = rs->field("strProfileName", "");
+      string strStartDay    = rs->field("strStartDay", "");
+      datetime dtmStartTime = parse_psql_time(rs->field("dtmStartTime", "0001-01-01 00:00:00"));
+      string strEndDay      = rs->field("strEndDay", "");
+      datetime dtmEndTime   = parse_psql_time(rs->field("dtmEndTime",   "0001-01-01 23:59:59"));
+      string strMusic       = rs->field("strMusic", "");
+      long lngprofile       = strtol(rs->field("lngprofile", "-1"));
 
       int intStartWeekDay    = -1;
       int intEndWeekDay      = -1;
@@ -1477,7 +1477,7 @@ void segment::add_music_profile_to_string_list(vector <string> & file_list, cons
           } // if (!blnskip_profile)
         } // if (blnDayCorrect)
       } // if (!blnskip_profile)
-      rs++;
+      (*rs)++;
     } // while ((!RS.eof()) && (!blnprofile_found))
   }
 
@@ -1496,16 +1496,16 @@ void segment::add_music_profile_to_string_list(vector <string> & file_list, cons
     string psqlApproxTime  = time_to_psql(dtmApproxTime);
 
     string strsql = "SELECT lngtimezone FROM tlktimezone WHERE dtmtzfrom <= " + psqlApproxTime + " AND " + psqlApproxTime + " <= dtmtzto";
-    pg_result rs = db.exec(strsql);
+    ap_pg_result rs = db.exec(strsql);
 
-    if (rs.size() != 1) {
+    if (rs->size() != 1) {
       // Expected 1 record to be found!
-      log_error("Error with tlktimezone table data. This query produced " +itostr(rs.size()) + " records where 1 was expected: " + strsql);
+      log_error("Error with tlktimezone table data. This query produced " +itostr(rs->size()) + " records where 1 was expected: " + strsql);
       lngtimezone = -1;
     } // if (RS.recordcount() != 1)
     else {
       // 1 record was found.
-      lngtimezone = strtol(rs.field("lngtimezone"));
+      lngtimezone = strtol(rs->field("lngtimezone"));
     } // else
 
     // Now search for the most recently-added profile that was scheduled to play on this date & hour(timezone):
@@ -1521,11 +1521,11 @@ void segment::add_music_profile_to_string_list(vector <string> & file_list, cons
     rs = db.exec(strsql);
 
     // Was a tblmusicprofiles record retrieved for this date & hour(timezone)?
-    if (rs) {
+    if (*rs) {
       // A tblmusicprofiles record was retrieved for this hour.
-      long lngprofile = strtol(rs.field("lngprofile","-1"));
-      strProfileName  = rs.field("strprofilename", "");
-      string strMusic = rs.field("strmusic", "");
+      long lngprofile = strtol(rs->field("lngprofile","-1"));
+      strProfileName  = rs->field("strprofilename", "");
+      string strMusic = rs->field("strmusic", "");
 
       // Compare this profile with the highest lngprofile found so far (ie, any retrieved from Check #1)
       if (lngprofile > lngprofile_highest) {
@@ -1588,18 +1588,18 @@ void segment::list_music_bed_media(pg_conn_exec & db) {
   // populate music_bed_media (lists the music media to play in this segment)
   music_bed_media.clear();
   string strsql = "SELECT strfile, strdir FROM tblfc_media INNER JOIN tlkfc_sub_cat ON tblfc_media.lngsub_cat = tlkfc_sub_cat.lngfc_sub_cat WHERE lngsub_cat = " + music_bed.strsub_cat;
-  pg_result rs = db.exec(strsql);
-  if (rs.size() == 0) my_throw("Could not find music bed media in the database (lngsub_cat=" + music_bed.strsub_cat + ")!");
+  ap_pg_result rs = db.exec(strsql);
+  if (rs->size() == 0) my_throw("Could not find music bed media in the database (lngsub_cat=" + music_bed.strsub_cat + ")!");
 
-  while(rs) {
-    string strfile = ensure_last_char(rs.field("strdir"), '/') + rs.field("strfile");
+  while(*rs) {
+    string strfile = ensure_last_char(rs->field("strdir"), '/') + rs->field("strfile");
     if (!file_exists(strfile)) {
       log_warning("Music bed media listed in database but not found on disk: " + strfile);
     }
     else {
       music_bed_media.push_back(strfile);
     }
-    rs++;
+    (*rs)++;
   }
 
   // Check if we have any music bed files:

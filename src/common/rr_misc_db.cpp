@@ -12,8 +12,8 @@ static string strdefs_table="tbldefs"; // Used by load_tbldefs and save_tbldefs
 string load_tbldefs(pg_conn_exec & db, const string & strsetting, const string & strdefault, const string & strtype, const string & strdesc) {
   // Load a value of a specific setting from the database
   // Simplified version (from VB) - load the setting from the table, don't check the type
-  pg_result rs = db.exec("SELECT strdatatype, strdef_val, strdef_descr FROM " + strdefs_table + " WHERE strdef = " + psql_str(strsetting));
-  if (rs.empty()) {
+  ap_pg_result rs = db.exec("SELECT strdatatype, strdef_val, strdef_descr FROM " + strdefs_table + " WHERE strdef = " + psql_str(strsetting));
+  if (rs->empty()) {
     // The setting was not found in the database, add it there, and return
     // the default setting value to the caller
     // - But don't save empty values to the database!
@@ -25,9 +25,9 @@ string load_tbldefs(pg_conn_exec & db, const string & strsetting, const string &
   } else {
     // The setting was found in the database - check it's type and then load
     // it or use the default value if the entry was incorrect
-    string strdb_type  = rs.field("strdatatype", ""); // Data type of the setting read in from the database
-    string strdb_value = rs.field("strdef_val", "");  // Value of the setting read in from the database
-    string strdb_desc  = rs.field("strdef_descr", "");
+    string strdb_type  = rs->field("strdatatype", ""); // Data type of the setting read in from the database
+    string strdb_value = rs->field("strdef_val", "");  // Value of the setting read in from the database
+    string strdb_desc  = rs->field("strdef_descr", "");
 
     // If the description has changed, then save it:
     if (strdesc != "" && strdesc != strdb_desc) {
@@ -78,9 +78,9 @@ string load_tbldefs(pg_conn_exec & db, const string & strsetting, const string &
 void save_tbldefs(pg_conn_exec & db, const string & strsetting, const string & strtype, const string & strvalue, const string & strdesc) {
   // Simplified version (from VB) - save the setting to the table as a string, but don't check the type
   string strsql = "SELECT lngdef FROM " + strdefs_table + " WHERE strdef = " + psql_str(strsetting);
-  pg_result rs = db.exec(strsql);
+  ap_pg_result rs = db.exec(strsql);
 
-  if (!rs.empty()) {
+  if (!rs->empty()) {
     // The setting already exists in the database, update it
     strsql = "UPDATE " + strdefs_table + " SET strdatatype = " + psql_str(strtype) + ", strdef_val = " + psql_str(strvalue);
     if (strdesc != "") {
@@ -108,18 +108,18 @@ void set_tbldefs_table(const string & strtable) { // eg: Use tblschedmon_defs in
 }
 
 long get_lng_from_db_func(const string & strindex, pg_conn_exec & T, const string & strsql_select, const string & strsql_insert, const string & strsql_update) {
-  pg_result rs = T.exec(strsql_select);
-  int intrecords = rs.size();
+  ap_pg_result rs = T.exec(strsql_select);
+  int intrecords = rs->size();
   if (intrecords > 1) my_throw(itostr(intrecords) + " records returned by the SELECT query!. SQL: " + strsql_select);
   else if (intrecords == 0) {
     T.exec(strsql_insert);
     rs = T.exec(strsql_select);
   }
   else if (intrecords == 1) {
-    pg_result rstest = T.exec(strsql_update);
-    if (rstest.affected_rows() != 1) my_throw("Bad UPDATE query! " + itostr(rstest.affected_rows()) + " rows updated instead of 1. SQL: " + strsql_update);
+    ap_pg_result rstest = T.exec(strsql_update);
+    if (rstest->affected_rows() != 1) my_throw("Bad UPDATE query! " + itostr(rstest->affected_rows()) + " rows updated instead of 1. SQL: " + strsql_update);
   }
   else LOGIC_ERROR;
-  return strtol(rs.field(strindex));
+  return strtol(rs->field(strindex));
 }
 

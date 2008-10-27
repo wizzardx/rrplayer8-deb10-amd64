@@ -337,15 +337,15 @@ void player::load_db_config() {
 
   // Directories
   {
-    pg_result rs = db.exec("SELECT strmp3, stradverts, strannouncements, strspecials, strreceived, strtoday, strprofiles FROM tblapppaths");
-    if (rs.size() != 1) log_error("Invalid number of records (" + itostr(rs.size()) + ") found in tblapppaths!");
-    config.dirs.strmp3           = ensure_last_char(rs.field("strmp3"), '/');
-    config.dirs.stradverts       = ensure_last_char(rs.field("stradverts"), '/');
-    config.dirs.strannouncements = ensure_last_char(rs.field("strannouncements"), '/');
-    config.dirs.strspecials      = ensure_last_char(rs.field("strspecials"), '/');
-    config.dirs.strreceived      = ensure_last_char(rs.field("strreceived"), '/');
-    config.dirs.strtoday         = ensure_last_char(rs.field("strtoday"), '/');
-    config.dirs.strprofiles      = ensure_last_char(rs.field("strprofiles"), '/');
+    ap_pg_result rs = db.exec("SELECT strmp3, stradverts, strannouncements, strspecials, strreceived, strtoday, strprofiles FROM tblapppaths");
+    if (rs->size() != 1) log_error("Invalid number of records (" + itostr(rs->size()) + ") found in tblapppaths!");
+    config.dirs.strmp3           = ensure_last_char(rs->field("strmp3"), '/');
+    config.dirs.stradverts       = ensure_last_char(rs->field("stradverts"), '/');
+    config.dirs.strannouncements = ensure_last_char(rs->field("strannouncements"), '/');
+    config.dirs.strspecials      = ensure_last_char(rs->field("strspecials"), '/');
+    config.dirs.strreceived      = ensure_last_char(rs->field("strreceived"), '/');
+    config.dirs.strtoday         = ensure_last_char(rs->field("strtoday"), '/');
+    config.dirs.strprofiles      = ensure_last_char(rs->field("strprofiles"), '/');
   }
 
   // CHECK:
@@ -391,8 +391,8 @@ void player::load_db_config() {
   if (config.blnformat_clocks_enabled) {
     config.lngdefault_format_clock = strtoi(load_tbldefs(db, "lngDefaultFormatClock", "-1", "lng"));
     // CHECK:
-    pg_result rs = db.exec("SELECT lngfc FROM tblfc WHERE lngfc = " + itostr(config.lngdefault_format_clock));
-    if (rs.size() != 1) log_error("Invalid tbldefs:lngDefaultFormatClock value! Found " + itostr(rs.size()) + " matching Format Clock records!");
+    ap_pg_result rs = db.exec("SELECT lngfc FROM tblfc WHERE lngfc = " + itostr(config.lngdefault_format_clock));
+    if (rs->size() != 1) log_error("Invalid tbldefs:lngDefaultFormatClock value! Found " + itostr(rs->size()) + " matching Format Clock records!");
   }
 
   // Read the crossfade length:
@@ -433,10 +433,10 @@ void player::load_store_status(const bool blnverbose, const bool blnforceload) {
   // Is the store open now?
   {
     string strsql = "SELECT dtmOpeningTime, dtmClosingTime FROM tblStoreHours WHERE intDayNumber = " + itostr(weekday(now()));
-    pg_result rs = db.exec(strsql);
-    if (rs.size() != 1) my_throw("An error with table tblstorehours. Query returned " + itostr(rs.size()) + " rows! (expected 1)");
-    datetime dtmopen  = parse_psql_time(rs.field("dtmopeningtime"));
-    datetime dtmclose = parse_psql_time(rs.field("dtmclosingtime"));
+    ap_pg_result rs = db.exec(strsql);
+    if (rs->size() != 1) my_throw("An error with table tblstorehours. Query returned " + itostr(rs->size()) + " rows! (expected 1)");
+    datetime dtmopen  = parse_psql_time(rs->field("dtmopeningtime"));
+    datetime dtmclose = parse_psql_time(rs->field("dtmclosingtime"));
 
     datetime dtmtime = time();
 
@@ -473,16 +473,16 @@ void player::load_store_status(const bool blnverbose, const bool blnforceload) {
       string strsql = "SELECT * FROM tblVolumeZones WHERE intDayNumber = " +
                       itostr(weekday(now())) + " AND lngTimeZone = " +
                       itostr(hour(now()) + 1);
-      pg_result rs = db.exec(strsql);
-      intadjust_vol = strtoi(rs.field("intvoladj", "0"));
+      ap_pg_result rs = db.exec(strsql);
+      intadjust_vol = strtoi(rs->field("intvoladj", "0"));
     }
     // * Fetch current music & announce volumes from the database, and calculate live settings.
     {
-      pg_result rs=db.exec("SELECT intmusicvolume, intannvolume from tblstore");
-      if (rs.size() != 1) log_error("Invalid number of records (" + itostr(rs.size()) + ") found in tblstore!");
+      ap_pg_result rs=db.exec("SELECT intmusicvolume, intannvolume from tblstore");
+      if (rs->size() != 1) log_error("Invalid number of records (" + itostr(rs->size()) + ") found in tblstore!");
       // Fetch values:
-      store_status.volumes.intmusic    = strtoi(rs.field("intmusicvolume", "45"));
-      store_status.volumes.intannounce = strtoi(rs.field("intannvolume", "90"));
+      store_status.volumes.intmusic    = strtoi(rs->field("intmusicvolume", "45"));
+      store_status.volumes.intannounce = strtoi(rs->field("intannvolume", "90"));
 
       // Adjust values:
       store_status.volumes.intmusic    += intadjust_vol;
@@ -572,14 +572,14 @@ void player::write_liveinfo() {
 
   // Get the store IP address, store code, store name, music volume, announcement volume
   string strSQL = "SELECT * FROM tblStore";
-  pg_result RS = db.exec(strSQL);
+  ap_pg_result RS = db.exec(strSQL);
 
   string strMusicVol, strAnnouncementVol;
   strMusicVol = strAnnouncementVol = "";
 
-  if (RS) {
-    strMusicVol = RS.field("intmusicvolume", "DB error");
-    strAnnouncementVol = RS.field("intannvolume", "DB error");
+  if (*RS) {
+    strMusicVol = RS->field("intmusicvolume", "DB error");
+    strAnnouncementVol = RS->field("intannvolume", "DB error");
   }
 
   // Count the number of announcements to play today
@@ -595,8 +595,8 @@ void player::write_liveinfo() {
   RS = db.exec(strSQL);
 
   string strNumAdsToday;
-  if (RS) {
-    strNumAdsToday = RS.field("Counter");
+  if (*RS) {
+    strNumAdsToday = RS->field("Counter");
   }
   else {
     strNumAdsToday = "0";
@@ -677,12 +677,12 @@ void player::process_waiting_cmds() {
 
     // Run through the waiting player commands
     string strSQL = "SELECT lngWaitingCMD, strCommand, strParams, dtmProcessed, bitComplete, bitError FROM tblwaitingcmd LEFT OUTER JOIN tblcmdtype USING (lngcmdtype) LEFT OUTER JOIN tblapp USING (lngapp) WHERE COALESCE(bitComplete, '0') = '0' AND lower(COALESCE(tblapp.strdescr, 'player')) = 'player'";
-    pg_result rsCMD = db.exec(strSQL);
+    ap_pg_result rsCMD = db.exec(strSQL);
 
-    while(rsCMD) {
-      string strCommand = ucase(rsCMD.field("strCommand", ""));
-      string strParams = rsCMD.field("strParams", "");
-      lngWaitingCMD = strtoi(rsCMD.field("lngWaitingCMD"));
+    while(*rsCMD) {
+      string strCommand = ucase(rsCMD->field("strCommand", ""));
+      string strParams = rsCMD->field("strParams", "");
+      lngWaitingCMD = strtoi(rsCMD->field("lngWaitingCMD"));
 
       log_message("Processing this command: \"" + strCommand + " " + strParams + "\"");
 
@@ -765,15 +765,15 @@ void player::process_waiting_cmds() {
         }
 
         strSQL = "UPDATE tblWaitingCMD SET bitComplete = '1',bitError = '0',dtmProcessed = " +
-                 psql_now + " WHERE lngWaitingCMD = " + rsCMD.field("lngWaitingCMD", "-1");
+                 psql_now + " WHERE lngWaitingCMD = " + rsCMD->field("lngWaitingCMD", "-1");
         db.exec(strSQL);
       }
       catch(const my_exception & E) {
         log_error("Error with this command: " + strCommand + (strParams != "" ? (string(" ") + strParams + string(" ")) : "") + " - " + E.get_error());
-        strSQL = "UPDATE tblWaitingCMD SET bitComplete = '1', bitError = '1', dtmProcessed = " + psql_now + " WHERE lngWaitingCMD = " + rsCMD.field("lngWaitingCMD", "-1");
+        strSQL = "UPDATE tblWaitingCMD SET bitComplete = '1', bitError = '1', dtmProcessed = " + psql_now + " WHERE lngWaitingCMD = " + rsCMD->field("lngWaitingCMD", "-1");
         db.exec(strSQL);
       }
-      rsCMD++;
+      (*rsCMD)++;
     }
   }
   catch(...) {
@@ -788,8 +788,8 @@ void player::correct_waiting_promos() {
   // Is not currently playing back announcements then there should not be any announcements
   // like this. Correct any, and log that there was a correction
   string strsql = "SELECT lngtz_slot FROM tblschedule_tz_slot WHERE bitscheduled = '" + itostr(ADVERT_LISTED_TO_PLAY) + "'";
-  pg_result RS = db.exec(strsql);
-  long lngcorrected = RS.size();
+  ap_pg_result RS = db.exec(strsql);
+  long lngcorrected = RS->size();
 
   // Now run a query to fix all these hanging 'waiting' announcements.
   strsql = "UPDATE tblschedule_tz_slot SET bitscheduled = '" + itostr(ADVERT_SNS_LOADED) + "' WHERE bitscheduled = '" + itostr(ADVERT_LISTED_TO_PLAY) + "'";
@@ -846,7 +846,7 @@ void player::write_errors_for_missed_promos() {
      // Ordering
      " ORDER BY tblSched.strFileName, tblSchedule_TZ_Slot.lngTZ_Slot";
 
-  pg_result RS = db.exec(strSQL);
+  ap_pg_result RS = db.exec(strSQL);
 
   // We need to gather statistics for each missed announcement (first time missed, last time, number)
   // and display summaries of each. The query is sorted by filename to facilitate this also.
@@ -856,10 +856,10 @@ void player::write_errors_for_missed_promos() {
   datetime dtmmissed_first=datetime_error;
   datetime dtmmissed_last=datetime_error;
 
-  while (RS) {
-    string strTZ_Slot = RS.field("lngTZ_Slot");
-    datetime dtmDay  = parse_psql_date(RS.field("dtmDay"));
-    datetime dtmTime = parse_psql_time(RS.field("dtmForcePlayAt", RS.field("dtmStart", " ").c_str()));
+  while (*RS) {
+    string strTZ_Slot = RS->field("lngTZ_Slot");
+    datetime dtmDay  = parse_psql_date(RS->field("dtmDay"));
+    datetime dtmTime = parse_psql_time(RS->field("dtmForcePlayAt", RS->field("dtmStart", " ").c_str()));
     datetime dtmPlayAt = dtmDay + dtmTime - timezone;
 
     // We don't want to generate errors for each individual missed announcement. We
@@ -867,7 +867,7 @@ void player::write_errors_for_missed_promos() {
     // announcement and display a  summary "missed" error.
 
     // - Is this the same file as the last returned, or is this the first file?
-    strmissed_file = RS.field("strFileName", "ERROR");
+    strmissed_file = RS->field("strFileName", "ERROR");
 
     // Does the line list a new mp3?
     if (strmissed_file != strmissed_prev_file) {
@@ -903,7 +903,7 @@ void player::write_errors_for_missed_promos() {
     db.exec(strSQL);
 
     // Now move to the next record.
-    RS++;
+    (*RS)++;
   }
 
   // Now, at the end of the loop, write the details for the last missed announcement that we
@@ -1027,14 +1027,14 @@ void player::check_playback_status() {
 long player::get_fc_segment(const long lngfc, const string & strsql_time) {
   // Fetch the the segment of format clock [lngfc] which is to be used at time [strsql_time]
   string strsql = "SELECT lngfc_seg FROM tblfc_seg WHERE lngfc=" + ltostr(lngfc) + " AND time '" + strsql_time + "' BETWEEN dtmstart AND dtmend ORDER BY lngfc_seg DESC";
-  pg_result rs = db.exec(strsql);
+  ap_pg_result rs = db.exec(strsql);
 
   // Check the number of rows returned:
-  if (rs.size() == 0) my_throw("Could not find a segment in the format clock!");
-  if (rs.size() > 1) log_warning("Found " + itostr(rs.size()) + " matching segments! Invalid Data! Using the newest segment.");
+  if (rs->size() == 0) my_throw("Could not find a segment in the format clock!");
+  if (rs->size() > 1) log_warning("Found " + itostr(rs->size()) + " matching segments! Invalid Data! Using the newest segment.");
 
   // Return the segment:
-  return strtoi(rs.field("lngfc_seg"));
+  return strtoi(rs->field("lngfc_seg"));
 }
 
 void player::get_playback_events_info(playback_events_info & event_info, const int intinterrupt_promo_delay) {

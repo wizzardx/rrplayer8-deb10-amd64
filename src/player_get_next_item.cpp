@@ -307,8 +307,8 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
     // - Player v6.15 - Now the announcement priority code (CA=1,SP=2,AD=3) actually has an effect on the announcement
     // playback priority (ORDER BY tblSched.strPriorityConverted)
     log_debug("Querying database for adverts. SQL: " + strSQL);
-    pg_result RS = db.exec(strSQL);
-    log_debug("Returned rows: " + itostr(RS.size()));
+    ap_pg_result RS = db.exec(strSQL);
+    log_debug("Returned rows: " + itostr(RS->size()));
 
     // Get a list of all the announcements fetched from the db, and re-order them
     // appropriately
@@ -317,19 +317,19 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
       // Get all the announcements from the database
       log_debug("Fetching adverts from database");
       TWaitingAnnouncements db_announcements;
-      while (RS) {
+      while (*RS) {
         TWaitingAnnounce Announce;
-        Announce.dbPos = strtoi(RS.field("lngTZ_Slot", "-1"));
-        Announce.strFileName = lcase(RS.field("strFileName", ""));
-        Announce.strProductCat = RS.field("strProductCat", "");
-        Announce.dtmTime = parse_psql_time(RS.field("dtmForcePlayAt", RS.field("dtmStart", "").c_str()));
-        Announce.blnForcedTime = !RS.field_is_null("dtmForcePlayAt");
-        Announce.strPriority = RS.field("strPriorityOriginal", "");
+        Announce.dbPos = strtoi(RS->field("lngTZ_Slot", "-1"));
+        Announce.strFileName = lcase(RS->field("strFileName", ""));
+        Announce.strProductCat = RS->field("strProductCat", "");
+        Announce.dtmTime = parse_psql_time(RS->field("dtmForcePlayAt", RS->field("dtmStart", "").c_str()));
+        Announce.blnForcedTime = !RS->field_is_null("dtmForcePlayAt");
+        Announce.strPriority = RS->field("strPriorityOriginal", "");
 
         // Get strPlayAtPercent
         {
           // Fetch from the database:
-          string strPlayAtPercent = RS.field("strPlayAtPercent", "");
+          string strPlayAtPercent = RS->field("strPlayAtPercent", "");
           // Parse it further:
           if (isint(strPlayAtPercent)) {
             // Clip the value from 0 to 100
@@ -350,7 +350,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
           Announce.strPlayAtPercent = strPlayAtPercent;
         }
 
-        Announce.strAnnCode = RS.field("strAnnCode", "");
+        Announce.strAnnCode = RS->field("strAnnCode", "");
 
         // Get the path of the announcement (ie the directory):
         {
@@ -373,8 +373,8 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
         }
 
         // Get PAYB details:
-        Announce.strPrerecMediaRef = lcase(RS.field("strprerec_mediaref", ""));
-        Announce.blnCheckPrerecLifespan = (RS.field("bitcheck_prerec_lifespan", "0") == "1");
+        Announce.strPrerecMediaRef = lcase(RS->field("strprerec_mediaref", ""));
+        Announce.blnCheckPrerecLifespan = (RS->field("bitcheck_prerec_lifespan", "0") == "1");
 
         // We now have all the the info for the advert
 
@@ -388,7 +388,7 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
           // No problem, so add it to the list of adverts loaded from the database:
           db_announcements.push_back(Announce);
         }
-        RS++; // Move to the next record
+        (*RS)++; // Move to the next record
       }
 
       // Now re-order the adverts:
@@ -492,18 +492,18 @@ void player::get_next_item_promo(programming_element & item, const int intstarts
           string psql_PrerecMediaRef = psql_str(lcase(reordered_iter->strPrerecMediaRef));
           strSQL = "SELECT intglobalexp, intlifespan FROM tblprerec_item WHERE lower(strmediaref) = " + psql_PrerecMediaRef;
 
-          pg_result rsPrerecItem = db.exec(strSQL);
+          ap_pg_result rsPrerecItem = db.exec(strSQL);
           // Check the results of the query.
-          if (rsPrerecItem.size() != 1) {
+          if (rsPrerecItem->size() != 1) {
             // We expected to find 1 matching record, but a different number was found
-            log_error(itostr(rsPrerecItem.size()) + " prerecorded items match media reference " + reordered_iter->strPrerecMediaRef + ". Cannot play " + reordered_iter->strFileName);
+            log_error(itostr(rsPrerecItem->size()) + " prerecorded items match media reference " + reordered_iter->strPrerecMediaRef + ". Cannot play " + reordered_iter->strFileName);
             blnSkipItem = true;
           }
           else {
             // We found 1 matching record, and found it. Now check the current date against the listed global expiry date, and
             // the current lifespan, of the prerecorded item.
-            int intglobalexp = strtoi(rsPrerecItem.field("intglobalexp", "-1"));
-            int intlifespan = strtoi(rsPrerecItem.field("intlifespan", "-1"));
+            int intglobalexp = strtoi(rsPrerecItem->field("intglobalexp", "-1"));
+            int intlifespan = strtoi(rsPrerecItem->field("intlifespan", "-1"));
 
             // Get today's rr date, as an integer.
             int inttoday_rrdate = get_rrdateint(date());
@@ -952,14 +952,14 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
                                                         "COALESCE(tblfc_sched.dtmend, '9999-12-25') AND "
                       "time '" + strfc_time_with_hour + "' BETWEEN tblfc_sched_day.dtmstart AND tblfc_sched_day.dtmend "
                       "ORDER BY tblfc_sched.lngfc_sched DESC LIMIT 1";
-      pg_result rs = db.exec(strsql);
+      ap_pg_result rs = db.exec(strsql);
 
       // How many results?
-      if (rs.size() <= 0) { // No format clocks scheduled.
+      if (rs->size() <= 0) { // No format clocks scheduled.
         log_warning("No Format Clocks scheduled for this hour. Will revert to the default Format Clock.");
       } else { // User scheduled 1 or more format clocks.
         // We found a user-scheduled format clock. Fetch the segment:
-        lngfc = strtol(rs.field("lngfc"));
+        lngfc = strtol(rs->field("lngfc"));
         try {
           lngfc_seg = get_fc_segment(lngfc, strfc_time_without_hour);
         }
@@ -985,9 +985,9 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
       else {
         // Default clock is set (in tbldefs). See if it exists on the system.
         string strsql = "SELECT lngfc FROM tblfc WHERE lngfc = " + ltostr(config.lngdefault_format_clock);
-        pg_result rs = db.exec(strsql);
+        ap_pg_result rs = db.exec(strsql);
         // Did we find 1 record?
-        if (rs.size() != 1) {
+        if (rs->size() != 1) {
           // Nope
           log_warning("Could not find the Default Format clock! (lngfc=" + ltostr(config.lngdefault_format_clock) +"). I will revert to a music profile.");
         }

@@ -49,7 +49,7 @@ void format_clock_test_data::generate_test_data() {
   {
     // Populate all the format clock segments.
     // Get a recordset ready for general abuse (ignore music bed category and regular music and silence.. regular music is hacked in later...)
-    pg_result rs = db.exec("SELECT lngfc_sub_cat, lngfc_cat FROM tlkfc_sub_cat WHERE lngfc_cat != 8 AND lngfc_cat != 2 AND lngfc_cat != 9");
+    ap_pg_result rs = db.exec("SELECT lngfc_sub_cat, lngfc_cat FROM tlkfc_sub_cat WHERE lngfc_cat != 8 AND lngfc_cat != 2 AND lngfc_cat != 9");
     for (long lngfc=1; lngfc < 6; ++lngfc) {
       // Break the hour up into 5-minute segments, of random category & sub-category:
       int intfrom_min=0;
@@ -69,14 +69,14 @@ void format_clock_test_data::generate_test_data() {
         long lngcat = 0;
         string lngsub_cat = "0";
         {
-          if (rs.size() == 0) LOGIC_ERROR;
-          int intrand = rand() % rs.size();
-          rs.movefirst();
+          if (rs->size() == 0) LOGIC_ERROR;
+          int intrand = rand() % rs->size();
+          rs->movefirst();
           for (int i = 0; i < intrand; i++) {
-            rs++;
+            (*rs)++;
           }
-          lngcat = strtol(rs.field("lngfc_cat"));
-          lngsub_cat = rs.field("lngfc_sub_cat");
+          lngcat = strtol(rs->field("lngfc_cat"));
+          lngsub_cat = rs->field("lngfc_sub_cat");
         }
 
         // Also a 1 in 3 chance that we will override the category & use music...
@@ -96,14 +96,14 @@ void format_clock_test_data::generate_test_data() {
         long lngalt_cat = 0;
         string lngalt_sub_cat = "0";
         {
-          if (rs.size() == 0) LOGIC_ERROR;
-          int intrand= rand() % rs.size();
-          rs.movefirst();
+          if (rs->size() == 0) LOGIC_ERROR;
+          int intrand= rand() % rs->size();
+          rs->movefirst();
           for (int i = 0; i < intrand; i++) {
-            rs++;
+            (*rs)++;
           }
-          lngalt_cat = strtol(rs.field("lngfc_cat"));
-          lngalt_sub_cat = rs.field("lngfc_sub_cat");
+          lngalt_cat = strtol(rs->field("lngfc_cat"));
+          lngalt_sub_cat = rs->field("lngfc_sub_cat");
         }
 
         // Also a 1 in 3 chance that we will override the alternate category & use music...
@@ -125,16 +125,16 @@ void format_clock_test_data::generate_test_data() {
             lngseq = 1;
           else {
             // Not a music segment. Fetch a random format clock item:
-            pg_result rsmedia = db.exec("SELECT lngfc_media FROM tblfc_media WHERE lngcat=" + ltostr(lngcat) + " AND lngsub_cat=" + lngsub_cat);
-            if (rsmedia.size() == 0) {
+            ap_pg_result rsmedia = db.exec("SELECT lngfc_media FROM tblfc_media WHERE lngcat=" + ltostr(lngcat) + " AND lngsub_cat=" + lngsub_cat);
+            if (rsmedia->size() == 0) {
               log_message("SELECT lngfc_media FROM tblfc_media WHERE lngcat=" + ltostr(lngcat) + " AND lngsub_cat=" + lngsub_cat);
               LOGIC_ERROR;
             }
-            int intrand = rand() % rsmedia.size();
-            rsmedia.movefirst();
+            int intrand = rand() % rsmedia->size();
+            rsmedia->movefirst();
 
-            for (int i = 0; i < intrand; i++) rsmedia++;
-            lngspecific_seq_media = rsmedia.field("lngfc_media");
+            for (int i = 0; i < intrand; i++) (*rsmedia)++;
+            lngspecific_seq_media = rsmedia->field("lngfc_media");
           }
         }
 
@@ -148,10 +148,10 @@ void format_clock_test_data::generate_test_data() {
 /*
         if (lngcat != 2) {
           pg_result rs = db.exec("SELECT lngfc_sub_cat FROM tlkfc_sub_cat WHERE lngfc_cat = 8");
-          if (rs.size() == 0) LOGIC_ERROR;
-          int intrand = rand() % rs.size();
+          if (rs->size() == 0) LOGIC_ERROR;
+          int intrand = rand() % rs->size();
           for (int i=0; i<intrand; i++) rs++;
-          lngunderlying_music_sub_cat = rs.field("lngfc_sub_cat");
+          lngunderlying_music_sub_cat = rs->field("lngfc_sub_cat");
           ysnunderlying_music = true;
         }
 */

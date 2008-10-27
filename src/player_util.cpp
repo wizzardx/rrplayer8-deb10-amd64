@@ -8,10 +8,10 @@ void write_liveinfo_setting(pg_conn_exec & db, const string & strname, const str
   string strSQL;
 
   strSQL = "SELECT lngStatus FROM tblliveInfo WHERE strstatusname = " + psql_str(strname);
-  pg_result rs = db.exec(strSQL);
+  ap_pg_result rs = db.exec(strSQL);
   // Generate part of the SQL string - if strValue is empty then a NULL value
   // must be written.
-  if (!rs)
+  if (!*rs)
     // A new status setting - INSERT
     strSQL = "INSERT INTO tblliveinfo (strstatusname, strstatusvalue) VALUES (" + psql_str(strname) + ", " + psql_str(strvalue) + ")";
   else
