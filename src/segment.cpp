@@ -222,8 +222,9 @@ void segment::load_from_db(pg_connection & db, const long lngfc_seg_arg, const d
       {
         bool blnsuccess = false; // Set to true if we successfully load the list:
         try {
-          load_pe_list(programming_elements, cat, sub_cat, db, config, mp3tags, musichistory, blnasap);
-          next_item = programming_elements.begin();
+          programming_element_list pel;
+          load_pe_list(pel, cat, sub_cat, db, config, mp3tags, musichistory, blnasap);
+          set_pel(pel);
           blnsuccess = true; // The above succeeded.
         } catch_exceptions;
         // If this fails, we revert to a lower level:
@@ -330,29 +331,19 @@ void segment::get_next_item(programming_element & pe, pg_conn_exec & db, const i
     revert_down(db, config, mp3tags, musichistory, blnasap); // This will also setup "next_item"
   }
   else {
-    // Has the first item already been retrieved?
-    if (intnum_fetched >= 1) {
-      // First item has already been fetched. Go to the next item
-      // (ie, we don't progress to the next item until the 2nd item is being retrieved).
-
-      // Are we at the end of the current list?
-      if (next_item == programming_elements.end()) LOGIC_ERROR; // Should never be at end before advancing!
-      next_item++; // Go to the next item.
-
-      // At the last item now?
-      if (next_item == programming_elements.end()) {
-        // Yes. Does the segment allow repeating?
-        if (blnrepeat) {
-          // Yes. Go back to the beginning of the list.
-          log_message("Ran out of media, going back to the beginning of the playlist");
-          next_item = programming_elements.begin();
-        }
-        else {
-          // Repeating not allowed. Revert to the alternate category.
-          // "imaging filler", or we revert to the alternate category.
-          log_line("Ran out of media for this segment (repeat=false)");
-          revert_down(db, config, mp3tags, musichistory, blnasap); // This will also setup "next_item"
-        }
+    // Are we at the end of the current list?
+    if (next_item == programming_elements.end()) {
+      // Yes. Does the segment allow repeating?
+      if (blnrepeat) {
+        // Yes. Go back to the beginning of the list.
+        log_message("Ran out of media, going back to the beginning of the playlist");
+        next_item = programming_elements.begin();
+      }
+      else {
+        // Repeating not allowed. Revert to the alternate category.
+        // "imaging filler", or we revert to the alternate category.
+        log_line("Ran out of media for this segment (repeat=false)");
+        revert_down(db, config, mp3tags, musichistory, blnasap); // This will also setup "next_item"
       }
     }
   }
@@ -378,6 +369,9 @@ void segment::get_next_item(programming_element & pe, pg_conn_exec & db, const i
     pe.load_media_info(db);
   }
 
+  // Advance the 'next item' pointer
+  ++next_item;
+
   // Record that 1 more item has been fetched.
   ++intnum_fetched; // Next time we will advance to the next item.
 }
@@ -397,23 +391,13 @@ bool segment::get_next_item_will_revert(string & strreason) {
     return true;
   }
   else {
-    // Has the first item already been retrieved?
-    if (intnum_fetched >= 1) {
-      // First item has already been fetched. Go to the next item
-      // (ie, we don't progress to the next item until the 2nd item is being retrieved).
+    // Check if the next item is at the end of the list:
+    programming_element_list::iterator test_next_item = next_item;
 
-      // Are we at the end of the current list?
-      if (next_item == programming_elements.end()) LOGIC_ERROR; // Should never be at end before advancing!
-
-      // Check if the next item is at the end of the list:
-      programming_element_list::iterator test_next_item = next_item;
-      test_next_item++;
-
-      // We will revert if at the end of the list and repetition is not enabled:
-      if (test_next_item == programming_elements.end() && !blnrepeat) {
-        strreason = "run out of items and repeating is not allowed";
-        return true;
-      }
+    // We will revert if at the end of the list and repetition is not enabled:
+    if (test_next_item == programming_elements.end() && !blnrepeat) {
+      strreason = "run out of items and repeating is not allowed";
+      return true;
     }
   }
 
@@ -447,11 +431,6 @@ int segment::count_remaining_playlist_artists(mp3_tags & mp3tags) {
     else {
         // Playlist cannot repeat. Start checking from the next item
         it = next_item;
-        // Dirty hack (to emulate the current confusing logic in
-        // segment::get_next_item())
-        if (intnum_fetched >= 1) {
-            ++it;
-        }
     }
 
     // Build a set of unique artists:

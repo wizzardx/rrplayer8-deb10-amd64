@@ -1,12 +1,4 @@
 
-* Fix 'next_item' segment logic.
-
- 'next_item' sometimes points to the previous item. See the "have we already
- retrieved the 1st item of this segment?" logic in segment::get_next_item()
-
-    -> When this is resolved, also see the other logic which uses the
-       'next_item' segment member.
-
 
 * Fix Player compile warnings
 
