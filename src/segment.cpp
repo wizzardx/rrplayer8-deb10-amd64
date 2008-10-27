@@ -928,8 +928,8 @@ void segment::revert_down(pg_conn_exec & db, const player_config & config, mp3_t
 
   while (!blndone) {
     // Reset pe list, and current element pointer.
-    programming_elements.clear();
-    next_item = programming_elements.begin();
+    programming_element_list pel;
+    set_pel(pel);
 
     switch (playback_state) {
       case PBS_CATEGORY: {
@@ -950,8 +950,9 @@ void segment::revert_down(pg_conn_exec & db, const player_config & config, mp3_t
           }
           else {
             // Now load the new playlist & setup the iterator:
-            load_pe_list(programming_elements, alt_cat, alt_sub_cat, db, config, mp3tags, musichistory, blnasap);
-            next_item = programming_elements.begin();
+            programming_element_list pel;
+            load_pe_list(pel, alt_cat, alt_sub_cat, db, config, mp3tags, musichistory, blnasap);
+            set_pel(pel);
             blndone = true;
           }
         } catch_exceptions;
@@ -964,8 +965,7 @@ void segment::revert_down(pg_conn_exec & db, const player_config & config, mp3_t
         }
         else {
           try {
-            programming_elements = prev_music_seg_pel;
-            next_item = programming_elements.begin();
+            set_pel(prev_music_seg_pel);
             blndone = true;
           } catch_exceptions
         }
@@ -975,7 +975,6 @@ void segment::revert_down(pg_conn_exec & db, const player_config & config, mp3_t
         playback_state = PBS_MUSIC_PROFILE;
         try {
           load_music_profile(db, config, mp3tags, musichistory, blnasap); // Automatically reverts to default music if no profile can be found
-          next_item = programming_elements.begin();
           blndone = true;
         } catch_exceptions;
       } break;
@@ -986,9 +985,6 @@ void segment::revert_down(pg_conn_exec & db, const player_config & config, mp3_t
       default: LOGIC_ERROR;
     }
   }
-
-  // Programming element list was updated in this function
-  dtmpel_updated = now();
 }
 
 // Functions called by load_from_db:
