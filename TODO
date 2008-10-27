@@ -1,8 +1,4 @@
 
-
-* Fix Player compile warnings
-
-
 * Mock db return in tests
 
   (and remove db transaction stuff from setup and teardown, and also remove

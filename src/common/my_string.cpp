@@ -444,8 +444,8 @@ string add_dashes(const string & strcode, const int intevery, const char chdash)
 
 string format_string_with_vector(const string & str, const vector<string> vec,
                                  const string & replace_marker) {
-  int str_pos = 0;
-  int vec_pos = 0;
+  unsigned int str_pos = 0;
+  unsigned int vec_pos = 0;
 
   // Replacement marker needs to have at least 1 character:
   if (replace_marker.length() == 0) {
