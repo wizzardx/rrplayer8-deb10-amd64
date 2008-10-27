@@ -106,7 +106,9 @@ string mp3_tags::get_mp3_description(const string & strFilePath) {
       strext != "cda" &&
       strext != "cdr" &&
       strFilePath != "LineIn" &&
-      strFilePath != "/dev/cdrom") my_throw("File not found: " + strFilePath);
+      strFilePath != "/dev/cdrom") {
+    my_throw("File not found: " + strFilePath);
+  }
 
   // If this is an mp3 file, then attempt to fetch mp3 tag details:
   if (strext == "mp3") {
@@ -242,8 +244,12 @@ tblmp3_info_map::const_iterator mp3_tags::get_mp3_info_item(const string & strFi
   // Fetch the cached item. If it doesn't exist then load it
 
   // Freak out if the file is not an mp3, or if it doesn't exist:
-  if (lcase(get_file_ext(strFilePath)) != "mp3") my_throw("File is not an mp3, can't fetch info for it: " + strFilePath);
-  if (!file_exists(strFilePath)) my_throw("File not found: " + strFilePath);
+  if (lcase(get_file_ext(strFilePath)) != "mp3") {
+    my_throw("File is not an mp3, can't fetch info for it: " + strFilePath);
+  }
+  if (!file_exists(strFilePath)) {
+    my_throw("File not found: " + strFilePath);
+  }
 
   // Check if the MP3 info is already loaded into memory, return it if so:
   tblmp3_info_map::const_iterator item;

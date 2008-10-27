@@ -33,9 +33,9 @@ public:
   ~mp3_tags();
 
   void init(const string & strBuffFilePath);  ///< Initialize the mp3_tags object, provide a buffer filename
-  string get_mp3_description(const string & strFilePath);
+  virtual string get_mp3_description(const string & strFilePath);
   int get_mp3_length(const string & strFilePath); ///< Fetch the length of an mp3
-  string get_mp3_artist(const string & strFilePath); ///< Fetch the artist for an MP3
+  virtual string get_mp3_artist(const string & strFilePath); ///< Fetch the artist for an MP3
   string get_mp3_album(const string & strFilePath); ///< Fetch the album for an MP3
   void save_changes(); ///< Rewrite the buffer file if there are any new tag details that have been loaded.
 
