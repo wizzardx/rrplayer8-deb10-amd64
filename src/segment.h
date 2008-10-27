@@ -39,6 +39,10 @@ public:
   /// How many items in the segment playlist are from the specified catagory?
   int count_items_from_catagory(const seg_category cat);
 
+  /// How many unique artists remain in the playlist?
+  /// (Also take looping segments into account)
+  int count_remaining_playlist_artists(mp3_tags & mp3tags);
+
   /// Let the class know that one of it's items was played (as opposed to just fetched)
   /// - eg, items can be fetched but not played (maybe they were already played recently,
   void item_played();

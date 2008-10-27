@@ -422,6 +422,7 @@ bool segment::get_next_item_will_revert(string & strreason) {
 }
 
 int segment::count_items_from_catagory(const seg_category cat) {
+  // How many items in the segment playlist are from the specified catagory?
   int count = 0; // Count of matching items
   programming_element_list::const_iterator i = programming_elements.begin();
   while (i != programming_elements.end()) {
@@ -430,6 +431,39 @@ int segment::count_items_from_catagory(const seg_category cat) {
     i++;
   }
   return count;
+}
+
+int segment::count_remaining_playlist_artists(mp3_tags & mp3tags) {
+    // How many unique artists remain in the playlist?
+    // (Also take looping segments into account)
+
+    // Initialise playlist iterator
+    programming_element_list::iterator it;
+    // Is the playlist allowed to repeat?
+    if (blnrepeat) {
+        // Playlist can repeat. Start checking from the start
+        it = programming_elements.begin();
+    }
+    else {
+        // Playlist cannot repeat. Start checking from the next item
+        it = next_item;
+        // Dirty hack (to emulate the current confusing logic in
+        // segment::get_next_item())
+        if (intnum_fetched >= 1) {
+            ++it;
+        }
+    }
+
+    // Build a set of unique artists:
+    tr1::unordered_set <string> artists;
+    while (it != programming_elements.end()) {
+        string artist = lcase(trim(mp3tags.get_mp3_artist(it->strmedia)));
+        artists.insert(artist);
+        ++it;
+    }
+
+    // Return the number of unique artists found:
+    return artists.size();
 }
 
 void segment::item_played() {
