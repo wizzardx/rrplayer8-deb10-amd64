@@ -104,6 +104,30 @@
             (See improvements to Step 2, earlier in this section)
 
 
+* Add a test for music_history::artist_song_played_recently()
+
+
+* Fix 'next_item' segment logic.
+
+ 'next_item' sometimes points to the previous item. See the "have we already
+ retrieved the 1st item of this segment?" logic in segment::get_next_item()
+
+    -> When this is resolved, also see the other logic which uses the
+       'next_item' segment member.
+
+
+* Fix Player compile warnings
+
+
+* Mock db return in tests
+
+  (and remove db transaction stuff from setup and teardown, and also remove
+   requirement for 'schedule_test' database to be present with a correct login)
+
+
+* Remove null logger usage (use mocks instead)
+
+
 * Updates for the end of each hour
 
     -> Wanted by Riaan and Nadia
