@@ -161,28 +161,83 @@ namespace test_player_get_next_item {
         }
     };
 
+    class mock_pg_result : public pg_result {
+    public:
+        // Types
+        typedef vector<string> columns_t;
+        typedef vector<columns_t> rows_t;
 
-    // Setup testing db data
-    void setup_test_db_data(pg_conn_exec & db) {
-        // Insert a new record into tblinstore_media_dir
-        string sql = "SELECT nextval('tblinstore_media_dir_lnginstore_media_"
-                     "dir_seq')";
-        long lnginstore_media_dir = strtoi(db.exec(sql)->field("nextval"));
-        sql = "INSERT INTO tblinstore_media_dir (lnginstore_media_dir, strdir)"
-              " VALUES (?, ?)";
-        pg_params params = ARGS_TO_PG_PARAMS(ltostr(lnginstore_media_dir),
-                                             psql_str("/dir/to/music/mp3s/"));
-        db.exec(sql, params);
-        // Insert a record for "test.mp3" into tblinstore_media
-        sql = "INSERT INTO tblinstore_media (lnginstore_media_dir, strfile, "
-                                            "intlength_ms, "
-                                            "blndynamically_compressed) "
-              "VALUES (?, ?, ?, ?)";
-        params = ARGS_TO_PG_PARAMS(ltostr(lnginstore_media_dir),
-                                   psql_str("test.mp3"),
-                                   "60000", psql_bool(true));
-        db.exec(sql, params);
-    }
+        // Attributes
+        columns_t columns;
+        rows_t rows;
+
+        // Return the value of a field on the current row
+        string field(const string & strfield_name,
+                     const char * strdefault_val = NULL) const {
+            return rows.at(row_num).at(get_field_num(strfield_name));
+        }
+
+        virtual long size() const {
+            return rows.size();
+        }
+
+    private:
+
+        // Return the column number of the field.
+        int get_field_num(const string & field_name) const {
+            string field_lower = lcase(field_name);
+            columns_t::const_iterator iter = columns.begin();
+            int colnum = 0;
+            while (iter != columns.end()) {
+                if (lcase(*iter) == field_lower) {
+                    return colnum;
+                }
+                colnum++;
+                iter++;
+            }
+            my_throw("Unknown column '" + field_name + "'");
+        }
+    };
+
+    typedef auto_ptr<mock_pg_result> ap_mock_pg_result;
+
+    class mock_db : public pg_conn_exec {
+
+        virtual ap_pg_result exec(const string & sql) {
+            my_throw("Must use parameterized queries! Bad query: " + sql);
+        }
+
+        #define COLS(cols...) rs->columns = ARGS_TO_VEC(string, cols)
+        #define VALS(vals...) rs->rows.push_back(ARGS_TO_VEC(string, vals))
+        #define RETURN_RESULT return ap_pg_result(rs)
+
+        virtual ap_pg_result exec(const string & sql,
+                                  const pg_params & params) {
+            ap_mock_pg_result rs(new mock_pg_result());
+            if (sql == "SELECT intlength_ms, intend_silence_start_ms, "
+                       "blndynamically_compressed, intend_quiet_start_ms, "
+                       "blnends_with_fade, intbegin_silence_stop_ms, "
+                       "intbegin_quiet_stop_ms, blnbegins_with_fade "
+                       "FROM tblinstore_media JOIN tblinstore_media_dir "
+                       "USING (lnginstore_media_dir) WHERE strdir = ? AND "
+                       "strfile = ? AND intlength_ms IS NOT NULL") {
+
+                COLS("intlength_ms", "intend_silence_start_ms",
+                     "blndynamically_compressed", "intend_quiet_start_ms",
+                     "blnends_with_fade", "intbegin_silence_stop_ms",
+                     "intbegin_quiet_stop_ms", "blnbegins_with_fade");
+                VALS("60000", "0", "t", "60000", "f", "0", "0", "f");
+                RETURN_RESULT;
+            }
+            else {
+                my_throw("Unrecognized SQL: " + sql);
+            }
+        }
+
+        #undef COLS
+        #undef VALS
+        #undef RETURN_RESULT
+    };
 
     // Logging function that discards logged messages. Used to suppress
     // logged messages
@@ -213,7 +268,7 @@ public:
     test_player_get_next_item::patched_mp3_tags mp3tags;
     player_config config;
     player_run_data run_data;
-    ap_pg_transaction trans;
+    test_player_get_next_item::mock_db db;
 
     // A pointer to the mock segment we setup in the constructor:
     test_player_get_next_item::patched_segment * ppatched_segment;
@@ -247,12 +302,6 @@ public:
         // Add a single programming element to the segment.
         run_data.current_segment->programming_elements.push_back(pe);
         run_data.current_segment->blnloaded = true;
-
-        // Setup a database transaction, with testing data
-        pg_connection db;
-        db.open("dbname=schedule_test");
-        trans = ap_pg_transaction(new pg_transaction(db));
-        setup_test_db_data(*trans);
     }
 
     // Per-test fixture teardown
@@ -260,7 +309,6 @@ public:
         mhistory.clear();
         mp3tags.clear();
         run_data.current_segment->reset();
-        trans->abort();
         logging.remove_all_loggers();
     }
 
@@ -268,7 +316,7 @@ public:
     void test_should_work() {
         // Run the tested function
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
 
         // Check the output of the tested function
         TS_ASSERT(next_item.blnloaded);
@@ -305,7 +353,7 @@ public:
                                 "not been played recently!";
         TS_ASSERT_THROWS_EQUALS (
             get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                                   *trans, config, run_data),
+                                   db, config, run_data),
             const my_exception &e, e.get_error(), expected_error
         );
         TS_ASSERT_EQUALS(run_data.current_segment->get_num_fetched(), 200);
@@ -340,7 +388,7 @@ public:
                                 "not been played recently!";
         TS_ASSERT_THROWS_EQUALS (
             get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                                   *trans, config, run_data),
+                                   db, config, run_data),
             const my_exception &e, e.get_error(), expected_error
         );
         TS_ASSERT_EQUALS(run_data.current_segment->get_num_fetched(), 100);
@@ -352,7 +400,7 @@ public:
         // Run the tested function
         intstarts_ms = 4999;
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
 
         // Check the output of the tested function
         TS_ASSERT(next_item.blnloaded);
@@ -370,7 +418,7 @@ public:
         // Run the tested function
         intstarts_ms = 5000;
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
 
         // Check the output of the tested function
         TS_ASSERT(next_item.blnloaded);
@@ -419,7 +467,7 @@ public:
                                 "not been played recently!";
         TS_ASSERT_THROWS_EQUALS (
             get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                                   *trans, config, run_data),
+                                   db, config, run_data),
             const my_exception &e, e.get_error(), expected_error
         );
 
@@ -480,7 +528,7 @@ public:
 
         // Get the next ok music item:
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
 
         TS_ASSERT_EQUALS(next_item.strmedia,
                          "/dir/to/announcement/mp3s/ann.mp3");
@@ -529,7 +577,7 @@ public:
 
         // Get the next ok music item:
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
 
         // Check the retrieved item
         TS_ASSERT_EQUALS(next_item.strmedia,
@@ -578,7 +626,7 @@ public:
 
         // Get the next ok music item:
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
 
         // Check the retrieved item
         TS_ASSERT_EQUALS(next_item.strmedia,
@@ -641,7 +689,7 @@ public:
 
         // Get the next ok music item:
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
 
         // Check the retrieved item
         TS_ASSERT_EQUALS(next_item.strmedia,
@@ -691,7 +739,7 @@ public:
                                 "not been played recently!";
         TS_ASSERT_THROWS_EQUALS (
             get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                                   *trans, config, run_data),
+                                   db, config, run_data),
             const my_exception &e, e.get_error(), expected_error
         );
         TS_ASSERT_EQUALS(run_data.current_segment->get_num_fetched(), 100);
@@ -773,7 +821,7 @@ public:
 
         // Get a song (should be 2.mp3)
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
         TS_ASSERT_EQUALS(next_item.strmedia,
                          "/dir/to/music/mp3s/2.mp3");
         // Pretend that song 2 just played (so that it's song artist goes
@@ -782,7 +830,7 @@ public:
 
         // Get the next song (should be 6.mp3)
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
         TS_ASSERT_EQUALS(next_item.strmedia,
                          "/dir/to/music/mp3s/6.mp3");
         // Pretend that the song played:
@@ -790,7 +838,7 @@ public:
 
         // Get the next song (should be 7.mp3)
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
         TS_ASSERT_EQUALS(next_item.strmedia,
                          "/dir/to/music/mp3s/7.mp3");
         // Pretend that the song played:
@@ -798,7 +846,7 @@ public:
 
         // Get the next song (should be 8.mp3)
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
         TS_ASSERT_EQUALS(next_item.strmedia,
                          "/dir/to/music/mp3s/8.mp3");
         // Pretend that the song played:
@@ -806,7 +854,7 @@ public:
 
         // Get the next song (should be 9.mp3)
         get_next_ok_music_item(next_item, intstarts_ms, mhistory, mp3tags,
-                               *trans, config, run_data);
+                               db, config, run_data);
         TS_ASSERT_EQUALS(next_item.strmedia,
                          "/dir/to/music/mp3s/9.mp3");
         // Pretend that the song played:

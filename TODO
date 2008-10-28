@@ -1,11 +1,4 @@
 
-* Use mock database in tests instead of real database.
-
-  (and remove db transaction stuff from setup and teardown, and also remove
-   requirement for 'schedule_test' database to be present with a correct login)
-
------------------------------------------------------------------
-
 * Remove null logger usage (use mocks instead)
 
 -----------------------------------------------------------------
