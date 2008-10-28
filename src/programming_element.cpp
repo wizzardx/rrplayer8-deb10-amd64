@@ -64,12 +64,16 @@ void programming_element::load_media_info(pg_conn_exec & db) {
   string strdirname, strbasename;
   break_down_file_path(strmedia, strdirname, strbasename);
   // - Query:
-  ap_pg_result rs = db.exec("SELECT intlength_ms, intend_silence_start_ms, "
+  string sql =
+    "SELECT intlength_ms, intend_silence_start_ms, "
     "blndynamically_compressed, intend_quiet_start_ms, blnends_with_fade, "
     "intbegin_silence_stop_ms, intbegin_quiet_stop_ms, blnbegins_with_fade "
     "FROM tblinstore_media JOIN tblinstore_media_dir USING "
-    "(lnginstore_media_dir) WHERE strdir = " + psql_str(strdirname) + " AND "
-    "strfile = " + psql_str(strbasename) + " AND intlength_ms IS NOT NULL");
+    "(lnginstore_media_dir) WHERE strdir = ? AND "
+    "strfile = ? AND intlength_ms IS NOT NULL";
+  pg_params params = ARGS_TO_PG_PARAMS(psql_str(strdirname),
+                                       psql_str(strbasename));
+  ap_pg_result rs = db.exec(sql, params);
   if (!*rs) {
     log_warning("No information for end of " + strmedia + " in database!");
     return;
