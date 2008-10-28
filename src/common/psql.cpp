@@ -307,16 +307,24 @@ void pg_connection::set_auto_commit_mode(const bool autocommit) {
 /********************************************************************************************************
           A Result wrapper
 *********************************************************************************************************/
+
+// Constructor to create a new, empty (and mostly useless) pg_result object
+pg_result::pg_result() {
+    presult = NULL;
+    clear();
+}
+
 // Copy constructor
 pg_result::pg_result(const pg_result & pg_res) {
   presult = NULL;
-  introw_num = 1;
+  clear();
   presult = new pqxx::result(*(pg_res.presult));
   strsql = pg_res.strsql;
 }
 
 // Assignment operator
 pg_result& pg_result::operator=(const pg_result & pg_res) {
+  check_presult();
   // Check for self-assignment...
   if (this != &pg_res) {
     // Is the result pointer set?
@@ -326,7 +334,7 @@ pg_result& pg_result::operator=(const pg_result & pg_res) {
     }
 
     // Now create a new Result pointer...
-    introw_num = 1;
+    row_num = 0;
     presult = new pqxx::result(*(pg_res.presult));
     strsql=pg_res.strsql;
   } // end self-assignment check.
@@ -338,6 +346,13 @@ pg_result& pg_result::operator=(const pg_result & pg_res) {
 
 // Destructor
 pg_result::~pg_result() {
+  clear();
+}
+
+// Clear out the object's attributes to default values
+void pg_result::clear() {
+  row_num = 0;
+  strsql = "";
   // Is the result pointer set?
   if (presult != NULL) {
     delete presult;
@@ -348,14 +363,15 @@ pg_result::~pg_result() {
 // Field retrieval
 string pg_result::field(const string & strfield_name, const char * strdefault_val) const {
   // Rethrows exceptions. The re-thrown exceptions also get this file, function, and a nearby line.
+  check_presult();
   try {
-    const pqxx::result::field & field = (*presult).at(introw_num-1).at(strfield_name);
+    const pqxx::result::field & field = (*presult).at(row_num).at(strfield_name);
     if ((field.is_null()) || (field.c_str() == NULL)) {
       if (strdefault_val == NULL) {
         // The field is NULL and there is no alternate value to return!
         // Either 1) NULL data values are not allowed.
         //        2) NULL values are allowed, but the caller of pg_result::field forgot to specify an alternate value
-        my_throw("Field \"" + strfield_name + "\" is NULL (and you did not specify a \"default\" value). Please check the data! Record #" + itostr(introw_num) + ", returned from query: " + strsql);
+        my_throw("Field \"" + strfield_name + "\" is NULL (and you did not specify a \"default\" value). Please check the data! Record #" + itostr(row_num) + ", returned from query: " + strsql);
       }
       return strdefault_val;
     }
@@ -373,8 +389,9 @@ string pg_result::field(const string & strfield_name, const char * strdefault_va
 
 bool pg_result::field_is_null(const string & strfield) const {
   // Rethrows exceptions
+  check_presult();
   try {
-    const pqxx::result::field & field = (*presult).at(introw_num-1).at(strfield);
+    const pqxx::result::field & field = (*presult).at(row_num).at(strfield);
     return field.is_null();
   }
   catch (const exception &e) {
@@ -383,15 +400,29 @@ bool pg_result::field_is_null(const string & strfield) const {
 }
 
 void pg_result::operator ++(int) { // Move to the next record
+  check_presult();
   if (this) { // Any records left?
-    ++introw_num;
+    ++row_num;
   }
   else my_throw("No more records left!");
 }
 
+long pg_result::size() const {
+  check_presult();
+  return presult->size();
+}
+
+void pg_result::check_presult() const {
+  if (presult == NULL) {
+    my_throw("presult member is NULL! Did you use the argumentless pg_result"
+             "constructor?");
+  }
+}
+
 // A constructor that can only be called by friend class pg_transaction
 pg_result::pg_result(const pqxx::result res) {
-  introw_num = 1;
+  presult = NULL;
+  clear();
   presult = new pqxx::result(res);
 }
 

@@ -133,6 +133,9 @@ private:
 /// A Result wrapper, to make porting from existing pg_recordset code easier
 class pg_result {
 public:
+  // Constructor to create a new, empty (and mostly useless) pg_result object
+  pg_result();
+
   // Copy constructor and assignment operator (copy from another pg_result object)
   pg_result(const pg_result & pg_res);
   pg_result& operator=(const pg_result & pg_res);
@@ -140,30 +143,44 @@ public:
   /// Destructor
   ~pg_result();
 
+  // Clear out the object's attributes to default values
+  void clear();
+
   // Field retrieval
-  string field(const string & strfield_name, const char * strdefault_val = NULL) const;
+  virtual string field(const string & strfield_name, const char * strdefault_val = NULL) const;
   bool field_is_null(const string & strfield) const;
 
   // Resultset traversal:
   /// Returns true while there is still information left in the recordset
-  inline operator bool() const  { return (unsigned)introw_num <= (*presult).size(); }
+  inline operator bool() const  { return row_num < this->size(); }
 
   void operator ++(int); /// Move to the next record
-  inline long size() const  { return presult->size(); };
-  inline bool empty() const { return presult->empty(); };
 
-  inline void movefirst() { introw_num = 1; };
-  inline void movelast() { introw_num = presult->size(); };
+  virtual long size() const;
+  inline bool empty() const { return this->size() != 0; }
+
+  inline void movefirst() { row_num = 0; }
+  inline void movelast()  { row_num = this->size() - 1; }
 
   /// Feedback for INSERT, UPDATE and DELETE statements.
   /// If command was INSERT of 1 row, return oid of inserted row
-  inline long inserted_oid() const { return (*presult).inserted_oid(); }
+  inline long inserted_oid() const {
+    check_presult();
+    return (*presult).inserted_oid();
+  }
 
   /// If command was INSERT, UPDATE, or DELETE, return number of affected rows.
   /// Returns zero for all other commands
-  inline long affected_rows() const { return (*presult).affected_rows(); }
+  inline long affected_rows() const {
+    check_presult();
+    return (*presult).affected_rows();
+  }
 
 private:
+
+  /// Make sure that the presult member is not NULL.
+  void check_presult() const;
+
   /// Only pg_connection and pg_transaction objects can create a new instance from scratch.
   /// ie, not by copying from another pg_result object:
   friend class pg_connection;
@@ -171,7 +188,9 @@ private:
   /// Constructor to create a pg_result object from a Result object:
   pg_result(const pqxx::result res);
 
-  int introw_num;
+protected:
+  long row_num;
+private:
   pqxx::result * presult;
   string strsql; ///< The query which was executed to create this result.
 };
