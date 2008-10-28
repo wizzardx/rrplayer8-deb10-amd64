@@ -36,33 +36,100 @@ namespace test_segment {
         }
     };
 
+    class mock_pg_result : public pg_result {
+    public:
+        // Types
+        typedef vector<string> columns_t;
+        typedef vector<columns_t> rows_t;
+
+        // Attributes
+        columns_t columns;
+        rows_t rows;
+
+        // Return the value of a field on the current row
+        string field(const string & strfield_name,
+                     const char * strdefault_val = NULL) const {
+            return rows.at(row_num).at(get_field_num(strfield_name));
+        }
+
+        virtual long size() const {
+            return rows.size();
+        }
+
+    private:
+
+        // Return the column number of the field.
+        int get_field_num(const string & field_name) const {
+            string field_lower = lcase(field_name);
+            columns_t::const_iterator iter = columns.begin();
+            int colnum = 0;
+            while (iter != columns.end()) {
+                if (lcase(*iter) == field_lower) {
+                    return colnum;
+                }
+                colnum++;
+                iter++;
+            }
+            my_throw("Unknown column '" + field_name + "'");
+        }
+    };
+
+    typedef auto_ptr<mock_pg_result> ap_mock_pg_result;
+
+    class mock_db : public pg_conn_exec {
+
+        virtual ap_pg_result exec(const string & sql) {
+            my_throw("Must use parameterized queries! Bad query: " + sql);
+        }
+
+        #define COLS(cols...) rs->columns = ARGS_TO_VEC(string, cols)
+        #define VALS(vals...) rs->rows.push_back(ARGS_TO_VEC(string, vals))
+        #define RETURN_RESULT return ap_pg_result(rs)
+
+        virtual ap_pg_result exec(const string & sql,
+                                  const pg_params & params) {
+            ap_mock_pg_result rs(new mock_pg_result());
+            if (sql == "SELECT intlength_ms, intend_silence_start_ms, "
+                       "blndynamically_compressed, intend_quiet_start_ms, "
+                       "blnends_with_fade, intbegin_silence_stop_ms, "
+                       "intbegin_quiet_stop_ms, blnbegins_with_fade "
+                       "FROM tblinstore_media JOIN tblinstore_media_dir "
+                       "USING (lnginstore_media_dir) WHERE strdir = ? AND "
+                       "strfile = ? AND intlength_ms IS NOT NULL") {
+
+                COLS("intlength_ms", "intend_silence_start_ms",
+                     "blndynamically_compressed", "intend_quiet_start_ms",
+                     "blnends_with_fade", "intbegin_silence_stop_ms",
+                     "intbegin_quiet_stop_ms", "blnbegins_with_fade");
+                VALS("60000", "0", "t", "60000", "f", "0", "0", "f");
+                RETURN_RESULT;
+            }
+            else {
+                my_throw("Unrecognized SQL: " + sql);
+            }
+        }
+
+        #undef COLS
+        #undef VALS
+        #undef RETURN_RESULT
+
+    };
+
 }
 
 // Tests for the segment class
 
 class TestSegment : public CxxTest::TestSuite {
 public:
-    // Helper type definitions
-    typedef auto_ptr<pg_transaction> ap_pg_transaction;
-
     // Members
     test_segment::patched_mp3_tags mp3tags;
     music_history mhistory;
     player_config config;
-    ap_pg_transaction trans;
+    test_segment::mock_db db;
 
     // Per-test fixture setup
     void setUp() {
-        pg_connection db;
-        db.open("dbname=schedule_test");
-        trans = ap_pg_transaction(new pg_transaction(db));
-        _setup_test_db_data(*trans);
         mp3tags.clear();
-    }
-
-    // Per-test fixture teardown
-    void tearDown() {
-        trans->abort();
     }
 
     // segment::set_pel() should work correctly
@@ -95,8 +162,7 @@ public:
 
         // Fetch the items
         for (int i = 0; i <= 99; i++) {
-            seg.get_next_item(pe, *trans, 5000, config, mp3tags, mhistory,
-                              false);
+            seg.get_next_item(pe, db, 5000, config, mp3tags, mhistory, false);
             string expected_media = "/dir/to/music/mp3s/song" + itostr(i) +
                                     ".mp3";
             TS_ASSERT_EQUALS(pe.strmedia, expected_media);
@@ -123,8 +189,7 @@ public:
 
         // Simulate fetching the first 30 items
         for (int i = 0; i <= 29; i++) {
-            seg.get_next_item(pe, *trans, 5000, config, mp3tags, mhistory,
-                              false);
+            seg.get_next_item(pe, db, 5000, config, mp3tags, mhistory, false);
         }
 
         // There should be a total of 7 unique artists. 0-3 were exhausted
@@ -153,40 +218,12 @@ public:
 
         // Simulate fetching the first 30 items
         for (int i = 0; i <= 29; i++) {
-            seg.get_next_item(pe, *trans, 5000, config, mp3tags, mhistory,
-                              false);
+            seg.get_next_item(pe, db, 5000, config, mp3tags, mhistory, false);
         }
 
         // Get the number of unique artists in the remaining playlist:
         // (Should be 10 total - the first 30 are included because the
         // playlist is setup to repeat)
         TS_ASSERT_EQUALS(seg.count_remaining_playlist_artists(mp3tags), 10);
-    }
-
-    // Helper methods
-
-    void _setup_test_db_data(pg_conn_exec & db) {
-        // Insert a new record into tblinstore_media_dir
-        string sql = "SELECT nextval('tblinstore_media_dir_lnginstore_media_"
-                     "dir_seq')";
-        long lnginstore_media_dir = strtoi(db.exec(sql)->field("nextval"));
-        sql = "INSERT INTO tblinstore_media_dir (lnginstore_media_dir, strdir)"
-              " VALUES (?, ?)";
-        pg_params params = ARGS_TO_PG_PARAMS(ltostr(lnginstore_media_dir),
-                                             psql_str("/dir/to/music/mp3s/"));
-        db.exec(sql, params);
-
-        // Insert records for the songs
-        sql = "INSERT INTO tblinstore_media (lnginstore_media_dir, strfile, "
-                                            "intlength_ms, "
-                                            "blndynamically_compressed) "
-              "VALUES (?, ?, ?, ?)";
-        for (int i = 0; i <= 99; i++) {
-            string media = "song" + itostr(i) + ".mp3";
-            params = ARGS_TO_PG_PARAMS(ltostr(lnginstore_media_dir),
-                                    psql_str(media),
-                                    "60000", psql_bool(true));
-            db.exec(sql, params);
-        }
     }
 };
