@@ -1,8 +1,4 @@
 
-* Remove null logger usage (use mocks instead)
-
------------------------------------------------------------------
-
 * Fix transition problems with items that end too soon
 
     -> Wanted by Gerhard and Nadia
