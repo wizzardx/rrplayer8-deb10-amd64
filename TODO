@@ -1,22 +1,9 @@
-
-* Fix transition problems with items that end too soon
-
-    -> Wanted by Gerhard and Nadia
-
-    - Example 1: LineIn that ends at end of segment, and next item wants to
-                 crossfade but can't, so playback starts too soon.
-
-        - Fix this by making linein's end later (seg end + crossfade length?
-
-    - Example 2: MP3s that end too soon, and next item wants to crossfade
-
-        - Fix this by logging a warning and not cross-fading after all.
-
 -----------------------------------------------------------------
 
 * Split LineIn into a separate Format Clock category
 
     -> Wanted by Gerhard (and originally VJ)
+    -> UPDATE: I need to check why this is needed
 
     Currently, LineIn is considered to be a type of music (it is scheduled by
     creating a music playlist, with a 'LineIn' entry).
@@ -51,6 +38,7 @@
 * Enable forced-time segments
 
     -> Wanted by Gerhard and Riaan L. Nadia too?
+    -> UPDATE: I need to check why this is needed
 
     - rrschedule-db updates:
 
@@ -206,6 +194,9 @@
 
     - Top of the hour with voice artist name and hour?
 
+        -> UPDATE: Riaan says this is something that will be scheduled
+                   explicitely. There are no Player updates required for this.
+
         -> I need more information for this
 
         -> Riaan spoke to nadia about getting a large selection of
@@ -214,16 +205,24 @@
 
     - Add imaging between all songs
 
-        -> UPDATE: Riaan says we shouldn't do this
+        -> Riaan says we shouldn't do this
 
         -> I need to know where to get the imaging from. Most recently-played
            imaging segment?
 
------------------------------------------------------------------
+===================== LOW PRIORITY TODOS ========================
+
+TODOS after this point are less important, and can wait until other, more
+important non-Player tasks have been completed.
+
+=================================================================
 
 * Expire cached data periodically
 
     -> Wanted by Gerhard
+    -> UPDATE: I Need to research this issue further, and see how bad it is.
+       (it's possible that one of the recent Player updates may have fixed
+       this. See git commit 803c841b for more info)
 
     - This is so that data gets occasionally reloaded from db/disk instead of
       always using an old version that was loaded into RAM sometime since the
@@ -243,7 +242,7 @@
     Occasionally XMMS becomes unstable, says it is playing a song, but the song
     was meant to finish a long time ago. Then XMMS crashes
 
-        - Also, make sure that rrplayer-fc logs when it kills XMMS(not just
+        - Also, make sure that rrplayer-fc logs when it kills XMMS (not just
           when it starts it up again)
 
 -----------------------------------------------------------------
@@ -258,6 +257,21 @@
 
     - If the item about to play is non-music, and it will play past the end
       of the hour, then play music instead
+
+-----------------------------------------------------------------
+
+* Fix transition problems with items that end too soon
+
+    -> Wanted by Gerhard and Nadia
+
+    - Example 1: LineIn that ends at end of segment, and next item wants to
+                 crossfade but can't, so playback starts too soon.
+
+        - Fix this by making linein's end later (seg end + crossfade length?
+
+    - Example 2: MP3s that end too soon, and next item wants to crossfade
+
+        - Fix this by logging a warning and not cross-fading after all.
 
 -----------------------------------------------------------------
 
