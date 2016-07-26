@@ -8,6 +8,7 @@
 #include <fstream>
 #include "system.h"
 #include "string_splitter.h"
+#include <unistd.h>
 
 #ifdef __linux__
   #include <pwd.h>
@@ -483,7 +484,7 @@ string get_file_dir(const string & strlong_filename) {
 void break_down_file_path(const string & strfilepath, string & strfile_dir, string & strfile_name) {
   // Take the path of a file, and return the directory and filename of the file
   // Find the right-most slash
-  unsigned intpos = strfilepath.rfind("/");
+  size_t intpos = strfilepath.rfind("/");
   if (intpos ==string::npos) {
     // No slash found. Assume that the entire string is a filename
     strfile_dir = "";
@@ -518,7 +519,7 @@ string get_file_ext(const string & strfilepath) {
   string strfile = get_short_filename(strfilepath);
 
   // Search for a "." from the right side of the filename:
-  unsigned intpos = strfile.rfind(".");
+  size_t intpos = strfile.rfind(".");
 
   // Did we find it?
   if (intpos != strfile.npos) {

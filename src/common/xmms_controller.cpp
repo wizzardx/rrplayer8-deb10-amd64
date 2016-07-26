@@ -5,7 +5,10 @@
 #include <fstream>
 #include <stdio.h>
 #include <unistd.h> // sleep() functon
-#include "xmms/xmmsctrl.h" // XMMS API functions
+// #include "xmms/xmmsctrl.h" // XMMS API functions
+
+#include "fake_xmmsctrl.h"
+
 #include "glib.h" // Needed to access some "xmmsctrl" functions
 #include "string_splitter.h"
 #include "exception.h"
@@ -13,6 +16,7 @@
 #include "my_string.h"
 #include "system.h"
 #include "math.h"
+#include "testing.h"
 
 namespace xmms_controller {
   xmms_controller::xmms_controller() {
@@ -28,7 +32,7 @@ namespace xmms_controller {
   }
 
   int xmms_controller::get_playlist_length(){
-    return xmms_remote_get_playlist_length(intsession);
+    return fake_xmms_remote_get_playlist_length(intsession);
   }
 
   int xmms_controller::get_song_length() {
@@ -37,119 +41,136 @@ namespace xmms_controller {
   }
 
   int xmms_controller::get_song_length_ms() {
-    // Returns the current song length in milliseconds
-    int intplaylist_pos = xmms_remote_get_playlist_pos(intsession);
-    int intplaylist_len = xmms_remote_get_playlist_length(intsession);
-    // Check if the playlist pos is valid (must be >= 0 and < PL_length)
-    if (intplaylist_pos >= 0 && intplaylist_pos < intplaylist_len) {
-      // xmms returns the song length to us in milliseconds, convert to seconds.
-      return  xmms_remote_get_playlist_time(intsession, xmms_remote_get_playlist_pos(intsession));
-    }
-    else {
-      my_throw("Bad playlist position!");
-    }
+    return fake_xmms_remote_get_current_song_length_ms(intsession);
+/*
+
+    undefined_throw;
+    return 5000;*/
+//     // Returns the current song length in milliseconds
+//     int intplaylist_pos = fake_xmms_remote_get_playlist_pos(intsession);
+//     int intplaylist_len = fake_xmms_remote_get_playlist_length(intsession);
+//     // Check if the playlist pos is valid (must be >= 0 and < PL_length)
+//     if (intplaylist_pos >= 0 && intplaylist_pos < intplaylist_len) {
+//       // xmms returns the song length to us in milliseconds, convert to seconds.
+//       return  fake_xmms_remote_get_playlist_time(intsession, fake_xmms_remote_get_playlist_pos(intsession));
+//     }
+//     else {
+//       my_throw("Bad playlist position!");
+//     }
   }
 
   int xmms_controller::get_playlist_pos() {
-    // Return the current playlist position (0-based)
-    return xmms_remote_get_playlist_pos(intsession);
+    undefined_throw;
+    return 0;
+//     // Return the current playlist position (0-based)
+//     return fake_xmms_remote_get_playlist_pos(intsession);
   }
 
   int xmms_controller::get_song_pos() {
     // Value returned is in milleseconds. Convert to seconds.
-    return xmms_remote_get_output_time(intsession)/1000;
+    return fake_xmms_remote_get_output_time(intsession)/1000;
   }
 
   int xmms_controller::get_song_pos_ms() {
-    // Get song position in milliseconds
-    return xmms_remote_get_output_time(intsession);
+    return fake_xmms_remote_get_output_time(intsession);
   }
 
   void xmms_controller::set_song_pos_ms(const int intpos) {
-    // Set song position in milliseconds
-    xmms_remote_jump_to_time(intsession, intpos);
-    // Don't check the new song position, because it takes a short time for
-    // XMMS to actually jump to the requested position
+    undefined_throw;
+//     // Set song position in milliseconds
+//     fake_xmms_remote_jump_to_time(intsession, intpos);
+//     // Don't check the new song position, because it takes a short time for
+//     // XMMS to actually jump to the requested position
   }
 
   string xmms_controller::get_song_time_str() {
-    // Retrieve the Current song position and make an attempt to format it.
-    // The expected format is "00:00.00"
-    long lngoutput_time = xmms_remote_get_output_time(intsession) / 10; // Returns 1000'ths, we start with 100'ths
-    string strtime_str = "";
+    undefined_throw;
+    return "00:12:30";
 
-    // Calculate hundredths of seconds
-    char strTemp[10];
-    sprintf(strTemp, "%02d", int(lngoutput_time % 100));
-    strtime_str = string(".") + strTemp;
-
-    // Calculate seconds
-    lngoutput_time /= 100;
-    sprintf(strTemp, "%02d", int(lngoutput_time % 60));
-    strtime_str = string(":")+ strTemp + strtime_str;
-
-    // Calculate minutes
-    lngoutput_time /= 60;
-    sprintf(strTemp, "%02d", int(lngoutput_time));
-    strtime_str = string(":") + strTemp + strtime_str;
-
-    // Calculate hours
-    lngoutput_time /= 60;
-    sprintf(strTemp, "%02d", int(lngoutput_time));
-    strtime_str = strTemp + strtime_str;
-
-    // Now we have the full time string. Return it!
-    return strtime_str;
+//     // Retrieve the Current song position and make an attempt to format it.
+//     // The expected format is "00:00.00"
+//     long lngoutput_time = fake_xmms_remote_get_output_time(intsession) / 10; // Returns 1000'ths, we start with 100'ths
+//     string strtime_str = "";
+//
+//     // Calculate hundredths of seconds
+//     char strTemp[10];
+//     sprintf(strTemp, "%02d", int(lngoutput_time % 100));
+//     strtime_str = string(".") + strTemp;
+//
+//     // Calculate seconds
+//     lngoutput_time /= 100;
+//     sprintf(strTemp, "%02d", int(lngoutput_time % 60));
+//     strtime_str = string(":")+ strTemp + strtime_str;
+//
+//     // Calculate minutes
+//     lngoutput_time /= 60;
+//     sprintf(strTemp, "%02d", int(lngoutput_time));
+//     strtime_str = string(":") + strTemp + strtime_str;
+//
+//     // Calculate hours
+//     lngoutput_time /= 60;
+//     sprintf(strTemp, "%02d", int(lngoutput_time));
+//     strtime_str = strTemp + strtime_str;
+//
+//     // Now we have the full time string. Return it!
+//     return strtime_str;
   }
 
   string xmms_controller::get_song_title() {
-    int intplaylist_pos = xmms_remote_get_playlist_pos(intsession);
-    int intplaylist_len = xmms_remote_get_playlist_length(intsession);
-    // Check if the playlist pos is valid (must be >= 0 and < PL_length)
-    if (intplaylist_pos >= 0 && intplaylist_pos < intplaylist_len) {
-      gchar * ret = xmms_remote_get_playlist_title(intsession, xmms_remote_get_playlist_pos(intsession));
-      if (ret == NULL) my_throw("xmms_remote_get_playlist_title() (to XMMS session " + itostr(intsession) + ") returned a NULL string pointer!");
-      return ret;
-    }
-    else
-      return "";  // An empty returned song name means no song is currently playing
+    return fake_xmms_remote_get_current_song_title(intsession);
+
+//     int intplaylist_pos = fake_xmms_remote_get_playlist_pos(intsession);
+//     int intplaylist_len = fake_xmms_remote_get_playlist_length(intsession);
+//     // Check if the playlist pos is valid (must be >= 0 and < PL_length)
+//     if (intplaylist_pos >= 0 && intplaylist_pos < intplaylist_len) {
+//       gchar * ret = fake_xmms_remote_get_playlist_title(intsession, fake_xmms_remote_get_playlist_pos(intsession));
+//       if (ret == NULL) my_throw("fake_xmms_remote_get_playlist_title() (to XMMS session " + itostr(intsession) + ") returned a NULL string pointer!");
+//       return ret;
+//     }
+//     else
+//       return "";  // An empty returned song name means no song is currently playing
   }
 
   string xmms_controller::get_song_file_path() {
-    int intplaylist_pos = xmms_remote_get_playlist_pos(intsession);
-    int intplaylist_len = xmms_remote_get_playlist_length(intsession);
-    // Check if the playlist pos is valid (must be >= 0 and < PL_length)
-    if (intplaylist_pos >= 0 && intplaylist_pos < intplaylist_len) {
-      gchar * ret = xmms_remote_get_playlist_file(intsession, xmms_remote_get_playlist_pos(intsession));
-      if (ret == NULL) my_throw("xmms_remote_get_playlist_file() (to XMMS session " + itostr(intsession) + ") returned a NULL string pointer!");
-      return ret;
-    }
-    else
-      return "";  // An empty returned song name means no song is currently playing
+    return fake_xmms_remote_get_current_song_path(intsession);
+//     int intplaylist_pos = fake_xmms_remote_get_playlist_pos(intsession);
+//     int intplaylist_len = fake_xmms_remote_get_playlist_length(intsession);
+//     // Check if the playlist pos is valid (must be >= 0 and < PL_length)
+//     if (intplaylist_pos >= 0 && intplaylist_pos < intplaylist_len) {
+//       gchar * ret = fake_xmms_remote_get_playlist_file(intsession, fake_xmms_remote_get_playlist_pos(intsession));
+//       if (ret == NULL) my_throw("fake_xmms_remote_get_playlist_file() (to XMMS session " + itostr(intsession) + ") returned a NULL string pointer!");
+//       return ret;
+//     }
+//     else
+//       return "";  // An empty returned song name means no song is currently playing
   }
 
   string xmms_controller::get_playlist_file(const int intpos) {
-    // Fetch the filename of an arbitrary playlist entry
-    gchar * ret = xmms_remote_get_playlist_file(intsession, intpos);
-    if (ret == NULL) my_throw("xmms_remote_get_playlist_file() (to XMMS session " + itostr(intsession) + ") returned a NULL string pointer!");
-    return ret;
+    undefined_throw;
+    return "/fake/path/to/playlist_file.mp3";
+//     // Fetch the filename of an arbitrary playlist entry
+//     gchar * ret = fake_xmms_remote_get_playlist_file(intsession, intpos);
+//     if (ret == NULL) my_throw("fake_xmms_remote_get_playlist_file() (to XMMS session " + itostr(intsession) + ") returned a NULL string pointer!");
+//     return ret;
   }
 
   void xmms_controller::playlist_delete(const int intpos) {
-    // Remove an entry from the playlist
-    xmms_remote_playlist_delete(intsession, intpos);
+    undefined_throw;
+//     // Remove an entry from the playlist
+//     fake_xmms_remote_playlist_delete(intsession, intpos);
   }
 
   int xmms_controller::getvol() {
     // Get the xmms volume (return a value from 0-100%)
-    return xmms_remote_get_main_volume(intsession);
+    return fake_xmms_remote_get_main_volume(intsession);
   }
 
   void xmms_controller::hide_windows() {
-    // Hide all the displayed xmms-shell windows
-    xmms_remote_main_win_toggle(intsession, false);
-    xmms_remote_pl_win_toggle(intsession, false);
-    xmms_remote_eq_win_toggle(intsession, false);
+    // We've switched over to MPD, so there are no GUI windows that need to be hidden
+//     // Hide all the displayed xmms-shell windows
+//     fake_xmms_remote_main_win_toggle(intsession, false);
+//     fake_xmms_remote_pl_win_toggle(intsession, false);
+//     fake_xmms_remote_eq_win_toggle(intsession, false);
   }
 
   void xmms_controller::play(){
@@ -160,7 +181,7 @@ namespace xmms_controller {
       int intPlaylistLen = get_playlist_length();
       if (intPlaylistLen > 0) {
         // XMMS's playlist is not empty. Start playback:
-        xmms_remote_play(intsession);
+        fake_xmms_remote_play(intsession);
 
         // Wait for up to 0.5s for XMMS to start reporting that it's now
         // playing:
@@ -169,7 +190,7 @@ namespace xmms_controller {
         bool done = false;
         while (!done) {
           check_count++;
-          if (xmms_remote_is_playing(intsession)) {
+          if (fake_xmms_remote_is_playing(intsession)) {
             done = true;
           }
           else {
@@ -204,17 +225,17 @@ namespace xmms_controller {
 
     // Also, interestingly enough, if xmms was playing but then it was paused, the "is_playing" API function
     // returns true. Take this into account (we define playing as actually playing and progressing through the song)
-    if (xmms_remote_is_playing(intsession) && !xmms_remote_is_paused(intsession)) {
+    if (fake_xmms_remote_is_playing(intsession) && !fake_xmms_remote_is_paused(intsession)) {
       // XMMS reports that it is playing. Now run a check, see if the song position is changing.
-      long lngStartMusicPos = xmms_remote_get_output_time(intsession); // Song position in milliseconds
+      long lngStartMusicPos = fake_xmms_remote_get_output_time(intsession); // Song position in milliseconds
       long lngCurrentMusicPos = 0; // retrieve music position during the loop
 
       datetime dtmTimeOut = now() + 5;        // Now + 5 seconds
       do {
         usleep(100000); // Usleep is a microseconds function - wait 1/10th of a second
-        lngCurrentMusicPos = xmms_remote_get_output_time(intsession);
+        lngCurrentMusicPos = fake_xmms_remote_get_output_time(intsession);
       } while ((now() <= dtmTimeOut) &&                                   // Check for timeout (5 seconds)
-                  (xmms_remote_is_playing(intsession)) &&                          // Check if XMMS is still playing (can stop during loop)
+                  (fake_xmms_remote_is_playing(intsession)) &&                          // Check if XMMS is still playing (can stop during loop)
                   (lngStartMusicPos==lngCurrentMusicPos) &&       // Check if the song position has changed
                   (lngCurrentMusicPos >= 0));                                  // Final check - returned values must be valid
 
@@ -225,7 +246,7 @@ namespace xmms_controller {
         kill();
         my_throw("XMMS session " + itostr(intsession) + " reported that it was playing, put it was actually frozen! Session was killed. Please check the sound daemon");
       }
-      else return xmms_remote_is_playing(intsession); // No time-out, so return the current "playing" status
+      else return fake_xmms_remote_is_playing(intsession); // No time-out, so return the current "playing" status
     }
     else return false;   // XMMS reports that is is not playing a song (eg: an announcement ended)
   }
@@ -237,36 +258,39 @@ namespace xmms_controller {
     // Copy the playlist location to this new storage location
     strcpy(URL, strURL.c_str());
 
-    xmms_remote_playlist_add_url_string(intsession, URL);
+    fake_xmms_remote_playlist_add_url_string(intsession, URL);
   }
 
   void xmms_controller::playlist_clear() {
-    xmms_remote_playlist_clear(intsession);
+    fake_xmms_remote_playlist_clear(intsession);
   }
 
   void xmms_controller::playlist_clear_all_except_current() {
-    // Get the playlist position and the playlist length
-    int intPL_pos = xmms_remote_get_playlist_pos(intsession);
-    int intPL_len = xmms_remote_get_playlist_length(intsession);
-
-    // Only run the playlist update if the playlist is not already empty
-    if (intPL_len > 0 && intPL_pos >= 0) {
-      // Calculate :
-      //    - 1) Playlist entries to delete before the current entry
-      int intdel_before = intPL_pos;
-      //    - 2) Playlist entries to delete after the current entry
-      int intdel_after = intPL_len - intPL_pos - 1;
-
-      // Now perform the deletions
-      for (int i=0;i<intdel_before;i++)
-        xmms_remote_playlist_delete(intsession, 0);  // Deletions *before* the current entry
-
-      for (int i=0;i<intdel_after;i++)
-        xmms_remote_playlist_delete(intsession, 1);  // Deletions *after* the current entry
-    }
+    undefined_throw;
+//     // Get the playlist position and the playlist length
+//     int intPL_pos = fake_xmms_remote_get_playlist_pos(intsession);
+//     int intPL_len = fake_xmms_remote_get_playlist_length(intsession);
+//
+//     // Only run the playlist update if the playlist is not already empty
+//     if (intPL_len > 0 && intPL_pos >= 0) {
+//       // Calculate :
+//       //    - 1) Playlist entries to delete before the current entry
+//       int intdel_before = intPL_pos;
+//       //    - 2) Playlist entries to delete after the current entry
+//       int intdel_after = intPL_len - intPL_pos - 1;
+//
+//       // Now perform the deletions
+//       for (int i=0;i<intdel_before;i++)
+//         fake_xmms_remote_playlist_delete(intsession, 0);  // Deletions *before* the current entry
+//
+//       for (int i=0;i<intdel_after;i++)
+//         fake_xmms_remote_playlist_delete(intsession, 1);  // Deletions *after* the current entry
+//     }
   }
 
   void xmms_controller::playlist_load(const string strmusic, bool overwrite_default_playlist) {
+    undefined_throw;
+/*
     // Tell xmms to load a playlist file.
     GList * xmms_list = 0; // Alocate the data structure to send to the xmms API
                                       // I guess this means that you can tell XMMS to load multiple playlist files at once.
@@ -280,7 +304,7 @@ namespace xmms_controller {
     xmms_list = g_list_append(xmms_list, playlist);
 
     // Tell XMMS to load the playlist
-    xmms_remote_playlist_add(intsession, xmms_list);
+    fake_xmms_remote_playlist_add(intsession, xmms_list);
 
     // Overwrite the default xmms playlist if specified
     if (overwrite_default_playlist) {
@@ -288,53 +312,61 @@ namespace xmms_controller {
     }
 
     // Now free the structure;
-    g_list_free(xmms_list); // De-allocate the data structure containing a pointer for the xmms API
+    g_list_free(xmms_list); // De-allocate the data structure containing a pointer for the xmms API*/
   }
 
   void xmms_controller::playlist_save(const string strpath) {
+    undefined_throw;
+/*
     // Save the contents of the playlist to an external file.
 
     // Open the file for writing.
     ofstream PlaylistFile(strpath.c_str());
 
     // Process the playlist
-    long lngplaylist_len = xmms_remote_get_playlist_length(intsession);
+    long lngplaylist_len = fake_xmms_remote_get_playlist_length(intsession);
 
     for (int i=0;i<lngplaylist_len;i++) {
-      PlaylistFile << xmms_remote_get_playlist_file(intsession, i) << endl;
+      PlaylistFile << fake_xmms_remote_get_playlist_file(intsession, i) << endl;
     }
 
     // Close the file.
-    PlaylistFile.close();
+    PlaylistFile.close();*/
   }
 
   void xmms_controller::pause() {
-    xmms_remote_pause(intsession);
+    undefined_throw;
+//     fake_xmms_remote_pause(intsession);
   }
 
   bool xmms_controller::paused() {
-    // Is XMMS in a paused state?
-    return xmms_remote_is_paused(intsession);
+    undefined_throw;
+    return false;
+//     // Is XMMS in a paused state?
+//     return fake_xmms_remote_is_paused(intsession);
   }
 
   bool xmms_controller::getrepeat() {
-    return xmms_remote_is_repeat(intsession);
+    return fake_xmms_remote_is_repeat(intsession);
   }
 
   void xmms_controller::setrepeat(bool blnRepeat) {
-    if (xmms_remote_is_repeat(intsession) != blnRepeat) {
-      xmms_remote_toggle_repeat(intsession);
+    if (fake_xmms_remote_is_repeat(intsession) != blnRepeat) {
+      fake_xmms_remote_toggle_repeat(intsession);
     }
   }
 
   bool xmms_controller::getshuffle() {
-    return xmms_remote_is_shuffle(intsession);
+    undefined_throw;
+    return false;
+//     return fake_xmms_remote_is_shuffle(intsession);
   }
 
   void xmms_controller::setshuffle(bool blnShuffle) {
-    if (xmms_remote_is_shuffle(intsession) != blnShuffle) {
-      xmms_remote_toggle_shuffle(intsession);
-    }
+    undefined_throw;
+//     if (fake_xmms_remote_is_shuffle(intsession) != blnShuffle) {
+//       fake_xmms_remote_toggle_shuffle(intsession);
+//     }
   }
 
   void xmms_controller::setvol(const int intnew_vol) {
@@ -345,10 +377,10 @@ namespace xmms_controller {
     if (intvol<0) intvol = 0;
 
     // Quit if the XMMS volume is already correct:
-    int intcurrent_vol = xmms_remote_get_main_volume(intsession);
+    int intcurrent_vol = fake_xmms_remote_get_main_volume(intsession);
     if (intcurrent_vol == intvol) return;
 
-    xmms_remote_set_main_volume(intsession, intvol);
+    fake_xmms_remote_set_main_volume(intsession, intvol);
 
     // Sometimes XMMS takes a very short period of time (approx 1/5th of a second)
     // after you set the volume, until it reports the changed volume. This may be because of
@@ -357,7 +389,7 @@ namespace xmms_controller {
     int intreported_vol = -1;
     int intattempts_remaining = 50; // Loop up to 50 times (5 seconds), waiting for the volume to change.
     do {
-      intreported_vol = xmms_remote_get_main_volume(intsession);
+      intreported_vol = fake_xmms_remote_get_main_volume(intsession);
       if (intreported_vol != intvol) usleep(1000000/10); // Sleep 1/10th of a second, then check again.
       --intattempts_remaining;
     } while ((intreported_vol != intvol) && (intattempts_remaining > 0));
@@ -370,29 +402,33 @@ namespace xmms_controller {
   }
 
   gfloat xmms_controller::get_eq_preamp() {
-    // Return the XMMS equaliser pre-amp (from -20db to +20db)
-    return xmms_remote_get_eq_preamp(intsession);
+    undefined_throw;
+//     // Return the XMMS equaliser pre-amp (from -20db to +20db)
+//     return fake_xmms_remote_get_eq_preamp(intsession);
   }
 
   void xmms_controller::set_eq_preamp(const gfloat preamp) {
-    gfloat new_preamp = CLAMP(preamp, -19.999, 19.999);
+    // There is no concept of preamp (or other XMMS-like equalizer settings)
+    // in MPD, as far as I know, so we don't do anything over here.
 
-    // Quit if the new value is very close to the current one:
-    gfloat old_preamp = xmms_remote_get_eq_preamp(intsession);
-    if (fabs(old_preamp - new_preamp) <= 1.0) return;
-
-    // Set the new pre-amp volume and log it:
-    xmms_remote_set_eq_preamp(intsession, new_preamp);
-    log_line("XMMS (session " + itostr(intsession) + ") equalizer pre-amp set to " + dtostr(new_preamp) + "db");
+//     gfloat new_preamp = CLAMP(preamp, -19.999, 19.999);
+//
+//     // Quit if the new value is very close to the current one:
+//     gfloat old_preamp = fake_xmms_remote_get_eq_preamp(intsession);
+//     if (fabs(old_preamp - new_preamp) <= 1.0) return;
+//
+//     // Set the new pre-amp volume and log it:
+//     fake_xmms_remote_set_eq_preamp(intsession, new_preamp);
+//     log_line("XMMS (session " + itostr(intsession) + ") equalizer pre-amp set to " + dtostr(new_preamp) + "db");
   }
 
   void xmms_controller::stop() {
     // Stop XMMS playback
-    xmms_remote_stop(intsession);
+    fake_xmms_remote_stop(intsession);
   }
 
   bool xmms_controller::stopped() {
-    return !xmms_remote_is_playing(intsession);
+    return !fake_xmms_remote_is_playing(intsession);
   }
 
   // Fetch & set the current session number:
@@ -406,7 +442,7 @@ namespace xmms_controller {
 
   bool xmms_controller::running() {
     // Is the XMMS process running?
-    return xmms_remote_is_running(intsession);
+    return fake_xmms_remote_is_running(intsession);
   }
 
   void xmms_controller::set_pid(const int pid) {
@@ -415,17 +451,19 @@ namespace xmms_controller {
   }
 
   void xmms_controller::kill() {
-    // Kill the XMMS session:
-    if (!running())   my_throw("XMMS session " + itostr(intsession)+ " is not running, cannot kill it!");
-    if (intpid == -1) {
-      // If the PID is not known (eg, XMMS was running before the player started)
-      // then kill all XMMS sessions
-      log_warning("Don't know PID for XMMS session " + itostr(intsession) + ", killing all XMMS sessions instead!");
-      system("killall -9 -q xmms");
-    }
-    else {
-      system(string("kill -9 -q " + itostr(intpid) + " &> /dev/null").c_str());
-    }
+    undefined_throw;
+
+//     // Kill the XMMS session:
+//     if (!running())   my_throw("XMMS session " + itostr(intsession)+ " is not running, cannot kill it!");
+//     if (intpid == -1) {
+//       // If the PID is not known (eg, XMMS was running before the player started)
+//       // then kill all XMMS sessions
+//       log_warning("Don't know PID for XMMS session " + itostr(intsession) + ", killing all XMMS sessions instead!");
+//       system("killall -9 -q xmms");
+//     }
+//     else {
+//       system(string("kill -9 -q " + itostr(intpid) + " &> /dev/null").c_str());
+//     }
   }
 
   // Management of multiple XMMS sessions:
@@ -434,8 +472,9 @@ namespace xmms_controller {
 
   void set_num_xmms_sessions(const int max) {
     // Set the number of XMMS sessions used
-    if (num_xmms_sessions != -1)
+    if (num_xmms_sessions != -1) {
       my_throw("Number of XMMS sessions is already set to " + itostr(num_xmms_sessions) + ", cannot set it again!");
+    }
     num_xmms_sessions = max;
 
     for (int i = 0; i < num_xmms_sessions; i++) {
@@ -444,6 +483,13 @@ namespace xmms_controller {
   }
 
   void ensure_correct_num_xmms_sessions_running() {
+    // We're now managing (2) MPD sessions externally, so the Player doesn't
+    // need to do anything here, unlike with XMMS.
+
+//       testing;
+//       cout << "TODO: Implement ensure_correct_num_xmms_sessions_running()" << endl;
+
+/*
     // Start extra XMMS sessions if too few are running, and kill excess sessions
     // if too many are running.
 
@@ -454,7 +500,7 @@ namespace xmms_controller {
     // Check if there are any XMMS sessions running after the ones being managed:
     bool killall = false; // Set to true if we need to kill all XMMS sessions.
     for (int i=num_xmms_sessions; i < 16; i++) {
-      if (xmms_remote_is_running(i)) {
+      if (fake_xmms_remote_is_running(i)) {
         log_warning("XMMS session " + itostr(i) + " is running! (No sessions above " + itostr(num_xmms_sessions - 1) + " should be running)");
         killall = true; // We need to kill all the XMMS sessions!
       }
@@ -503,7 +549,7 @@ namespace xmms_controller {
           string strxmms_session_list = "";
           int intsession_count = 0;
           for (int session=0; session < 16; session++) {
-            if (xmms_remote_is_running(session)) {
+            if (fake_xmms_remote_is_running(session)) {
               intsession_count++;
               if (!strxmms_session_list.empty()) strxmms_session_list += " ";
               strxmms_session_list += itostr(session);
@@ -534,6 +580,6 @@ namespace xmms_controller {
         xmms[i].setshuffle(false);
         xmms[i].setrepeat(false);
       }
-    }
+    }*/
   }
 }

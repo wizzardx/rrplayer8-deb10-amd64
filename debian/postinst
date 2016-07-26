@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # postinst script for rrplayer-fc
 #
 # see: dh_installdeb(1)
@@ -24,8 +24,24 @@ case "$1" in
         rm -rvf /data/radio_retail/progs/player/binary/ # Debian now manages our binary versions
         rm -vf /data/radio_retail/progs/player/player_email.txt
         # Player permissions and ownership:
+        chown radman:radman /data/radio_retail/progs/player
+        chown radman:radman /data/radio_retail/progs/player/logs
         chown radman:radman /data/radio_retail/progs/player/player
         chmod 0700          /data/radio_retail/progs/player/player
+
+        chown -R radman:radman /var/log/rrplayer8
+        chown -R radman:radman /var/lib/rrplayer8
+        chown -R radman:radman /var/run/rrplayer8
+
+        # Create Python virtualenv:
+        if [ ! -d /var/lib/rrplayer8/venv ]; then
+            rrpyvenv-3.5 /var/lib/rrplayer8/venv
+        fi
+        . /var/lib/rrplayer8/venv/bin/activate
+        for NAME in "python-mpd2-0.5.5.tar.gz"; do
+            pip install --disable-pip-version-check /usr/share/rrplayer8/$NAME
+        done
+        deactivate
 
         # If the old logfile (player_log.txt) still exists, then move it to player.log instead:
         if [ -f /data/radio_retail/progs/player/player_log.txt ]; then
@@ -35,15 +51,26 @@ case "$1" in
         # Clear the mp3 tag cache, force it to be re-generated:
         rm -f /data/radio_retail/progs/player/mp3_tags.txt
 
-        # Don't startup the player if invoke-rc.d has been disabled (eg: piuparts is running):
-	# (we're checking makedev because there isn't an init.d script for the player)
-	(invoke-rc.d --query makedev restart); RET=$?
-	if [ $RET -eq 104 ]; then
-	    killall -9 -q -w player || true
-	    su radman -c "/data/radio_retail/progs/player/player &> /dev/null < /dev/null &" # Start the player as radman
-	else
-	    echo "WARNING: Not starting the player because invoke-rc restart has been disabled"
-	fi
+        # Setup a few misc things to help the player:
+        modprobe snd
+        modprobe snd-hda-intel
+        adduser radman audio
+
+        # We're note going to update aumix here, but that could be done with
+        # eg this line: aumix -v 100 -w 100
+
+        # Start up player service & friends:
+        invoke-rc.d rrplayer8 restart
+
+#         # Don't startup the player if invoke-rc.d has been disabled (eg: piuparts is running):
+# 	# (we're checking makedev because there isn't an init.d script for the player)
+# 	RET=0; invoke-rc.d --query makedev restart || RET=$?
+# 	if [ $RET -eq 104 ]; then
+# 	    killall -9 -q -w player || true
+# 	    su radman -c "/data/radio_retail/progs/player/player &> /dev/null < /dev/null &" # Start the player as radman
+# 	else
+# 	    echo "WARNING: Not starting the player because invoke-rc restart has been disabled"
+# 	fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

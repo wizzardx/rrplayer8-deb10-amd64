@@ -5,6 +5,9 @@
 #include "exception.h"
 #include "my_string.h"
 #include "logging.h"
+#include <unistd.h>
+
+#include "testing.h"
 
 #include <pqxx/transaction>
 #include <pqxx/nontransaction>
@@ -364,8 +367,14 @@ void pg_result::clear() {
 string pg_result::field(const string & strfield_name, const char * strdefault_val) const {
   // Rethrows exceptions. The re-thrown exceptions also get this file, function, and a nearby line.
   check_presult();
+
+  if (row_num >= this->size()) {
+    my_throw("No record to read field \"" + strfield_name + "\" from!");
+  }
+
   try {
-    const pqxx::result::field & field = (*presult).at(row_num).at(strfield_name);
+    const auto & row = (*presult).at(row_num);
+    const auto & field = row.at(strfield_name);
     if ((field.is_null()) || (field.c_str() == NULL)) {
       if (strdefault_val == NULL) {
         // The field is NULL and there is no alternate value to return!

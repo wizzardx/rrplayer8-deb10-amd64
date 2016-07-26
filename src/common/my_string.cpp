@@ -2,9 +2,11 @@
 #include <limits.h>
 #include <string>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "my_string.h"
 #include "exception.h"
+#include <iostream>
 
 using namespace std;
 
@@ -314,13 +316,14 @@ string replace(const string & search_in, const string & search_for, const string
   int SearchForLen = search_for.length();
 
   int ReplaceWithLen = replace_with.length();
-  unsigned Pos = Temp_SearchIn.find(Temp_SearchFor, 0);
+  size_t Pos = Temp_SearchIn.find(Temp_SearchFor, 0);
 
   string strret=search_in;
   while (Pos!=Temp_SearchIn.npos) {
     // Replace in both the SearchIn String and the case-(in)sensitive one.
     strret.replace(Pos, SearchForLen, replace_with);
     Temp_SearchIn.replace(Pos, SearchForLen, replace_with);
+
     // Find the next postition to replace at
     Pos = Pos + ReplaceWithLen;
     Pos = Temp_SearchIn.find(Temp_SearchFor, Pos);
@@ -520,7 +523,7 @@ bool is_quoted_string(const string & str, const char chquote, bool & blnquote_er
         strslash_quote += chquote;
         strtemp = replace(strtemp, strslash_quote, "");
         // Now search for any quote characters that remain.
-        unsigned int intquote_pos = strtemp.find(chquote, 0);
+        size_t intquote_pos = strtemp.find(chquote, 0);
         if (intquote_pos != strtemp.npos) {
           // Remaining quote marks were found within the string
           blnquote_error = true;

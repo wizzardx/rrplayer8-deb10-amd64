@@ -8,6 +8,7 @@
 #include "common/system.h"
 #include "common/rr_misc.h"
 #include <fstream>
+#include <unistd.h>
 
 #include "common/testing.h"
 

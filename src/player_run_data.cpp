@@ -68,12 +68,13 @@ void player_run_data::reset_playback() {
       xmmsc::xmms[intsession].stop(); // Stop the XMMS session.
       xmmsc::xmms[intsession].setrepeat(false); // Turn off repeat
       xmmsc::xmms[intsession].hide_windows(); // Hide all visible XMMS windows
-    }
-    catch(...) {
-      // We don't throw this as an exception. Init will still succeed. Later the
-      // check_playback_status() will be called and it will throw an exception.
-      log_error("XMMS session " + itostr(intsession) + " is not running!");
-    }
+    } catch_exceptions;
+    // HAX --- commented out....
+//     catch(...) {
+//       // We don't throw this as an exception. Init will still succeed. Later the
+//       // check_playback_status() will be called and it will throw an exception.
+//       log_error("XMMS session " + itostr(intsession) + " is not running!");
+//     }
   }
 
   // Also reset the linein volume:

@@ -6,7 +6,7 @@
 #include "exception.h"
 #include <iostream>
 #ifdef __linux__
-#include <config.h>
+#include "config.h"
 #else
   extern const char * VERSION;
   extern const char * PACKAGE;

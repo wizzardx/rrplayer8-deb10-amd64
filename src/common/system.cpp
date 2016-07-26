@@ -14,6 +14,8 @@
   #include "testing.h"
 #endif
 
+#include <unistd.h>
+
 using namespace std;
 
 // System info
@@ -73,7 +75,7 @@ string get_ip() {
 
   string strLine = line;
   // Is there a string segment "inet addr:" ?
-  unsigned intStartPos = strLine.find("inet addr:");
+  size_t intStartPos = strLine.find("inet addr:");
 
   if (intStartPos == strLine.npos) {
     my_throw("Error occured!");
@@ -82,7 +84,7 @@ string get_ip() {
   intStartPos+=10;
 
   // Everything after the colon, up to the first space is the IP address
-  unsigned intEndPos = strLine.find(" ", intStartPos);
+  size_t intEndPos = strLine.find(" ", intStartPos);
 
   if (intStartPos == strLine.npos) {
     my_throw("Error occured!");
@@ -146,7 +148,7 @@ int system_capture_out(const string & COMMAND, string & strout) {
   // Do a regular system() call, but return the output out and error in string variables.
   string strout_file = (string)"/tmp/." + PACKAGE + "_output_" + itostr(getpid()) + "_out.txt";
   string strresult_file = (string)"/tmp/." + PACKAGE + "_result_" + itostr(getpid()) + "_result.txt";
-  string strcmd = COMMAND + " &> " + strout_file + "; echo $? > " + strresult_file;
+  string strcmd = COMMAND + " > " + strout_file + " 2>&1; echo $? > " + strresult_file;
 
   // When there is an error, system() is returning 256 instead of the real error code!
   // So piping the real result into a text file and reading it instead of using

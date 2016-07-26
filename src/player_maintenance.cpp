@@ -131,9 +131,10 @@ void player::maintenance_cache_pels(const datetime dtmcutoff) {
   // Currently, we just re-populate the currently-scheduled music profile (if any)
   // once an hour, or immediately if it isn't already populated:
   static datetime dtmlast_populate = datetime_error;
-  if (!pel_cache.has("MusicProfile") || ((dtmlast_populate / (60*60)) != (now() / (60*60)))) {
+//   if (!pel_cache.has("MusicProfile") || ((dtmlast_populate / (60*60)) != (now() / (60*60)))) {
+  if ((dtmlast_populate / (60*60)) != (now() / (60*60))) {
     log_message("Pre-caching music profile playlist...");
-    // Loading the music profile into a segment will also cache it:    
+    // Loading the music profile into a segment will also cache it:
     segment seg; seg.load_music_profile(db, config, mp3tags, m_music_history, false);
     dtmlast_populate = now();
   }

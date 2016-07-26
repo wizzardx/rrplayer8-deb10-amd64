@@ -38,7 +38,7 @@ void music_history::song_played_no_db(const string & strfile, const string & str
 
 bool music_history::song_played_recently(const string & strfile, const int count)
 {
-  typeof(m_history.begin()) i = m_history.begin();
+  auto i = m_history.begin();
   int c = 0; // How many items we have iterated over;
   bool found = false; // Set to true if we find the song
   while (i != m_history.end() && c < count) {
@@ -55,7 +55,7 @@ bool music_history::song_played_recently(const string & strfile, const int count
 bool music_history::artist_song_played_recently(const std::string & strartist,
                                                 const int count,
                                                 mp3_tags & mp3tags) {
-  typeof(m_history.begin()) i = m_history.begin();
+  auto i = m_history.begin();
   int c = 0; // How many items we have iterated over;
   bool found = false; // Set to true if we find the song
   while (i != m_history.end() && c < count) {

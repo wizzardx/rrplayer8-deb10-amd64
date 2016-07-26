@@ -21,14 +21,17 @@ set -e
 
 case "$1" in
     purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-        # Don't kill the player if invoke-rc.d has been disabled:
-	# (we're checking makedev because there isn't an init.d script for the player)
-	(invoke-rc.d --query makedev stop); RET=$?
-	if [ $RET -eq 101 ]; then
-	    echo "WARNING: Not killing the player because invoke-rc.d stop has been disabled."
-	else
-	    killall -q -9 -w player || true
-	fi
+        # Shut down player service & friends:
+        invoke-rc.d rrplayer8 restart
+
+#         # Don't kill the player if invoke-rc.d has been disabled:
+# 	# (we're checking makedev because there isn't an init.d script for the player)
+# 	RET=0; invoke-rc.d --query makedev stop || RET=$?
+# 	if [ $RET -eq 101 ]; then
+# 	    echo "WARNING: Not killing the player because invoke-rc.d stop has been disabled."
+# 	else
+# 	    killall -q -9 -w player || true
+# 	fi
     ;;
 
     *)

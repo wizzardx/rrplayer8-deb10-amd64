@@ -74,7 +74,7 @@ void load_config_file_section(const string & strconfig_file,
         // Are we in the correct section?
         if (blnin_section) {
           // - Look for an assignment operator: =
-          unsigned equals_pos = strline.find("=", 0);
+          auto equals_pos = strline.find("=", 0);
           if (equals_pos == strline.npos) {
             my_throw("Invalid line " + itostr(intlinenum) + " in " + strconfig_file
                      + " - no '=' character");

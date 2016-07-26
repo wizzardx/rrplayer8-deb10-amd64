@@ -11,6 +11,8 @@
 #include "common/rr_misc.h"
 #include <iostream>
 
+#include "common/testing.h"
+
 // A "call-back" logging function:
 void log(const log_info & LI) {
   // Standard log handling - logfile & clog

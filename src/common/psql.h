@@ -24,6 +24,8 @@
 #include <string>
 #include "my_time.h"
 
+#include "testing.h"
+
 using namespace std;
 //using namespace pqxx;
 
@@ -157,7 +159,7 @@ public:
   void operator ++(int); /// Move to the next record
 
   virtual long size() const;
-  inline bool empty() const { return this->size() != 0; }
+  inline bool empty() const { return this->size() == 0; }
 
   inline void movefirst() { row_num = 0; }
   inline void movelast()  { row_num = this->size() - 1; }

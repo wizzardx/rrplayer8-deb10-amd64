@@ -504,11 +504,12 @@ void alternate_file_list_artists(vector<string> & file_list, mp3_tags & mp3tags,
     // Get a list of artists from the music history (most recent artists first)
     vector <string> recent_artists;
     {
-      typedef typeof(musichistory.get_history()) history_list_type;
+//       typedef typeof(musichistory.get_history()) history_list_type;
+      typedef const std::list<std::string> history_list_type;
       history_list_type history_list(musichistory.get_history()); // Most recent files are at the start of the list
 
       // Proceed through recently-played music:
-      history_list_type::const_iterator mp3_iter = history_list.begin(); // Start at the most recently-played file
+      auto mp3_iter = history_list.begin(); // Start at the most recently-played file
       int missing_count = 0; // Number of missing recently-played files
       while (mp3_iter != history_list.end()) {
         if (!file_exists(*mp3_iter)) {
@@ -1176,7 +1177,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       // this messes with our query. Also, canonicalize_file_name() is
       // inappropriate because we don't want to resolve symbolic links):
       {
-        unsigned int dblslash_pos = 1;
+        size_t dblslash_pos = 1;
         do {
           dblslash_pos = source_dir.find("//", 0);
           if (dblslash_pos != source_dir.npos) {

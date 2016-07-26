@@ -19,6 +19,7 @@
 #include "common/rr_misc_db.h"
 #include "common/rr_security.h"
 #include "common/system.h"
+#include <unistd.h>
 
 #include "common/testing.h"
 

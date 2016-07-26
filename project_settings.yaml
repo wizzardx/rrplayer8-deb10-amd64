@@ -1,0 +1,37 @@
+package:
+    name: rrplayer8
+
+    # Version numbers follow this spec: http://semver.org/
+    version: 8.0.0
+
+    description: "TODO: Add this"
+    url: "TODO: Add this"
+    dependencies:
+        - libglib2.0-0
+        - libpqxx-4.0
+        - libssl1.0.0
+        - extract
+        - mp3info
+        - psmisc
+        - rrmedia-maintenance2
+        - rrschedule-db4
+        - rradd-radman-user
+        - rrsetup-directories
+        - mpd
+        - mpc
+        - aumix
+        - rrpython3.5
+        - sox
+        - libsox-fmt-mp3
+
+    maintainer: David <wizzardx@gmail.com>
+
+
+test_vm_settings:
+    timezone_name: Africa/Johannesburg
+    debian_release_name: jessie
+    vagrant_box_name: debian-jessie-amd64-netboot
+    deb_mirror_urls:
+        debian: http://10.0.2.2:9999/debian
+        fullfacing: http://10.0.2.2:9999/radioretail
+

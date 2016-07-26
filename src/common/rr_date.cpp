@@ -3,6 +3,7 @@
 #include "my_time.h"
 #include "exception.h"
 #include "my_string.h"
+#include <stdio.h>
 
 using namespace std;
 

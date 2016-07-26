@@ -1,2 +1,0 @@
-#!/bin/sh
-cat ./configure.in  | grep AM_INIT_AUTOMAKE | awk '{print substr($2,1,length($2)-1)}'

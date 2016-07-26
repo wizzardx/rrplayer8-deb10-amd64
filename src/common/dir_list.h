@@ -21,8 +21,8 @@ public:
   dir_list(const string & strdir, const string & strext_filter = "", const int intTypeFilt=DT_REG);
   ~dir_list();
 
-  const int size()   { return intitem_count; } ///< For functions that want to count directory files
-  const bool empty() { return intitem_count == 0; }; ///< No files found?
+  int size()   { return intitem_count; } ///< For functions that want to count directory files
+  bool empty() { return intitem_count == 0; }; ///< No files found?
   operator string (); ///< Return the current directory entry.
   void movefirst() { intitem_num = 1; } ///< Go back to the first entry in the listing.
 
