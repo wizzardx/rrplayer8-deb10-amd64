@@ -320,12 +320,33 @@ def run_qa_tests_after_pkg_install(cfg: 'Dict[str,Any]') -> None:
     # Enable sound under virtualbox VM...
     #check_call('modprobe snd', shell=True)
     #check_call('modprobe snd-hda-intel', shell=True)
+    #check_call('modprobe snd-pcm-oss', shell=True)
     #check_call('adduser radman audio', shell=True)
+
+    # Create some misc directories under the VM; helps with testing...
+    for dirname in ['/data/radio_retail/stores_software/data',
+                    '/data/radio_retail/progs/loader/prerec_error',
+                    '/data/radio_retail/stores_software/data_maintenance_error']:
+        if not isdir(dirname):
+            makedirs(dirname)
+        check_call('chown radman:radman %s' % dirname, shell=True)
+
     check_call('aumix -v 100 -w 100', shell=True)
 
     # Get some music MP3s to test with:
     check_call('rsync -va --progress /vagrant/hax_mp3s/ /data/radio_retail/stores_software/data/', shell=True)
 
+    # Update music volume level
+    check_call("""su postgres -c 'psql -d schedule -c "UPDATE tblstore SET intmusicvolume = 200"'""", shell=True)
+
+    ## HACK:
+    #check_call('gdebi -n /vagrant/tmp_del_me/rrmedia-maintenance2_2.0.1_amd64.deb', shell=True)
+
+    #if not isdir('/data/radio_retail/stores_software/data_maintenance_error'):
+        #makedirs('/data/radio_retail/stores_software/data_maintenance_error')
+    #check_call('chown radman:radman /data/radio_retail/stores_software/data_maintenance_error', shell=True)
+
+    #assert 0
 
     #old_cwd = getcwd()
     #chdir('/data/radio_retail/progs/player')
@@ -403,6 +424,22 @@ deb %s testing radio-retail
         check_call(['apt-get', 'update'])
         with open(flagfile, 'w'):
             pass
+
+    # A fix for a ruby ssl issue:
+    flagfile = '/tmp/.libssl_upgraded'
+    if not isfile(flagfile):
+        check_call(['apt-get', 'install', '-y', 'libssl1.0.0'])
+        with open(flagfile, 'w'):
+            pass
+
+    ## Run apt-get dist-upgrade within the VM if we haven't done that yet.
+    #flagfile = "/tmp/.apt-get-dist-upgrade-ran"
+    #if not isfile(flagfile):
+        ##check_call(['apt-get', 'remove', '-y', 'apt-listchanges'])  # So we don't get some unwanted prompt during the dist-upgrade
+        ##check_call(['apt-get', '-y', 'dist-upgrade'])
+        #check_call(['apt-get', 'install', 'dist-upgrade'])
+        #with open(flagfile, 'w'):
+            #pass
 
     # Copy all our source code/etc, over to a temporary directory for
     # building, testing/ etc

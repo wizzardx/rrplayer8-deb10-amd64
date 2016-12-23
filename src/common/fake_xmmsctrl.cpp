@@ -206,3 +206,12 @@ void fake_xmms_remote_toggle_repeat(gint session) {
     undefined_throw;
 }
 
+void fake_xmms_remote_jump_to_time(gint session, gint pos) {
+    string const serverUrl("http://localhost:30126/RPC2");
+    string const methodName("fake_xmms_remote_jump_to_time");
+
+    xmlrpc_c::clientSimple myClient;
+    xmlrpc_c::value result;
+
+    myClient.call(serverUrl, methodName, "ii", &result, session, pos);
+}

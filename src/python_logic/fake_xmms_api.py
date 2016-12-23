@@ -232,6 +232,15 @@ def fake_xmms_remote_play(session: int) -> None:
         raise
 
 
+def fake_xmms_remote_jump_to_time(session: int, milliseconds: int) -> None:
+    try:
+        with get_mpd_client(session) as client:
+            client.seekcur(milliseconds / 1000)
+    except Exception:
+        log_exception('Error...')
+        raise
+
+
 def fake_xmms_remote_playlist_add_url_string(session: int, url: str) -> None:
     try:
         # Check that the provided URL, is in fact an existing file path:
@@ -330,6 +339,7 @@ def main() -> None:
     server.register_function(fake_xmms_remote_get_current_song_length_ms, "fake_xmms_remote_get_current_song_length_ms")
     server.register_function(fake_xmms_remote_get_current_song_title, "fake_xmms_remote_get_current_song_title")
     server.register_function(fake_xmms_remote_get_current_song_path, "fake_xmms_remote_get_current_song_path")
+    server.register_function(fake_xmms_remote_jump_to_time, "fake_xmms_remote_jump_to_time")
 
     server.serve_forever()
 

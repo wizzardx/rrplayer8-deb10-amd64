@@ -2,7 +2,7 @@ package:
     name: rrplayer8
 
     # Version numbers follow this spec: http://semver.org/
-    version: 8.0.0
+    version: 8.0.2
 
     description: "TODO: Add this"
     url: "TODO: Add this"
@@ -23,6 +23,7 @@ package:
         - rrpython3.5
         - sox
         - libsox-fmt-mp3
+        - libxmlrpc-c++8
 
     maintainer: David <wizzardx@gmail.com>
 

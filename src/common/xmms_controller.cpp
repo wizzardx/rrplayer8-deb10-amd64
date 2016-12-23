@@ -76,9 +76,8 @@ namespace xmms_controller {
   }
 
   void xmms_controller::set_song_pos_ms(const int intpos) {
-    undefined_throw;
-//     // Set song position in milliseconds
-//     fake_xmms_remote_jump_to_time(intsession, intpos);
+    // Set song position in milliseconds
+    fake_xmms_remote_jump_to_time(intsession, intpos);
 //     // Don't check the new song position, because it takes a short time for
 //     // XMMS to actually jump to the requested position
   }

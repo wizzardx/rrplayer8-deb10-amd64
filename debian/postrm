@@ -22,7 +22,7 @@ set -e
 case "$1" in
     purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
         # Shut down player service & friends:
-        invoke-rc.d rrplayer8 restart
+        invoke-rc.d rrplayer8 stop || true
 
 #         # Don't kill the player if invoke-rc.d has been disabled:
 # 	# (we're checking makedev because there isn't an init.d script for the player)
