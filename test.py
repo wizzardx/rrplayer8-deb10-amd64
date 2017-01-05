@@ -204,7 +204,6 @@ def build_player_bin(cfg: 'Dict[str,Any]') -> None:
         if not isfile('build.ninja'):
             check_call(['meson', '..'])
         check_call(['ninja'])
-        check_call(['ninja', 'test'])
 
 
 # pylint: disable=too-many-locals,too-many-statements
