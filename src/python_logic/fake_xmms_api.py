@@ -96,6 +96,8 @@ def fake_xmms_remote_get_output_time(session: int) -> int:
         with get_mpd_client(session) as client:
             # Result needs to be in milliseconds, not seconds
             status = client.status()
+            if not 'elapsed' in status:
+                return -999
             elapsed = float(status['elapsed'])
             ms = int(elapsed * 1000)
             return ms
@@ -123,6 +125,8 @@ def fake_xmms_remote_get_current_song_length_ms(session: int) -> int:
     try:
         # Result needs to be in milliseconds, not seconds
         audio_link_path = '/var/lib/rrplayer8/mpd/%d/music/audio.mp3' % (session + 1)
+        if not isfile(audio_link_path):
+            return -9999
         log_debug('Running soxi to determine song length...')
         output = check_output(['soxi', audio_link_path]).decode()
         duration_str = None
@@ -141,7 +145,13 @@ def fake_xmms_remote_get_current_song_length_ms(session: int) -> int:
 def fake_xmms_remote_get_current_song_title(session: int) -> str:
     try:
         with get_mpd_client(session) as client:
-            return client.currentsong()['title']
+            # We actually return <artist> - <title>, rather than just <title>
+            song_info = client.currentsong()
+            artist = song_info.get('artist', '<no artist>')
+            title = song_info.get('title', '<no title>')
+            result = artist + " - " + title
+            return result
+
     except Exception:
         log_exception('Error...')
         raise
@@ -152,6 +162,8 @@ def fake_xmms_remote_get_current_song_path(session: int) -> str:
         # Quick sanity check:
         with get_mpd_client(session) as client:
             songinfo = client.currentsong()
+        if not 'file' in songinfo:
+            return '<no song is currently playing>'
         assert songinfo['file'] == 'audio.mp3'
 
         # Next, get path to out audio file (actually a symlink):
