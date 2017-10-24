@@ -1,8 +1,6 @@
 project('player', 'cpp')
 glibdep = dependency('glib-2.0')
 pqxxdep = dependency('libpqxx')
-cryptodep = dependency('libcrypto')
-#xml_rpc_dep = dependency('xmlrpc')
 executable('player',
            'main.cpp',
            'music_history.cpp',
@@ -35,11 +33,8 @@ executable('player',
            'common/temp_dir.cpp',
            'common/xmms_controller.cpp',
            'common/fake_xmmsctrl.cpp',
-#           dependencies : [glibdep, pqxxdep, cryptodep, xml_rpc_dep],
-           dependencies : [glibdep, pqxxdep, cryptodep],
-           #cpp_args: ['-Wall', '-Wextra', '-std=c++14', '-Wshadow', '-Weffc++'])
+           dependencies : [glibdep, pqxxdep],
            cpp_args: ['-Wall', '-Wextra', '-std=c++14'],
-#           link_args: ['-lxmlrpc', '-llibxmlrpc_parse', '-llibxmlrpc_xmltok', '-llibxmlrpc_util']
            link_args: ['-L/usr/lib/x86_64-linux-gnu',
                        '-lxmlrpc_client++',
                        '-lxmlrpc_client',
@@ -49,11 +44,8 @@ executable('player',
                        '-lxmlrpc_xmltok',
                        '-lxmlrpc_util',
                        '-L/usr/lib/x86_64-linux-gnu',
-#                       '-lcurl',
-                       '-lxmlrpc_packetsocket']
-
-#-L/usr/lib/x86_64-linux-gnu   -lxmlrpc_client++ -lxmlrpc_client -lxmlrpc++ -lxmlrpc  -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_util -L/usr/lib/x86_64-linux-gnu -lcurl -lxmlrpc_packetsocket
-
+                       '-lxmlrpc_packetsocket',
+                       '-lcrypto']
 
            )
            # See more over here: http://stackoverflow.com/questions/5283894/recommended-w-flags-for-building-c-with-gcc

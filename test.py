@@ -185,7 +185,7 @@ def build_player_bin(cfg: 'Dict[str,Any]') -> None:
     with pushdir('src'):
         if not isfile('/tmp/.cpp_build_deps_installed'):
 #            check_call(['apt-get', 'install', '-y', 'meson', 'g++', 'libglib2.0-dev', 'libpqxx-dev', 'libcurlpp-dev'])
-            check_call(['apt-get', 'install', '-y', 'meson', 'g++', 'libglib2.0-dev', 'libpqxx-dev', 'libxmlrpc-c++8-dev'])
+            check_call(['apt-get', 'install', '-y', 'meson', 'g++', 'libglib2.0-dev', 'libpqxx-dev', 'libxmlrpc-c++8-dev', 'libssl-dev'])
             with open('/tmp/.cpp_build_deps_installed', 'w') as f:
                 pass
 
@@ -425,9 +425,8 @@ deb %s testing radio-retail
             pass
 
     # A fix for a ruby ssl issue:
-    flagfile = '/tmp/.libssl_upgraded'
     if not isfile(flagfile):
-        check_call(['apt-get', 'install', '-y', 'libssl1.0.0'])
+        check_call(['apt-get', 'install', '-y', 'libssl1.0.0|libssl1.0.2'])
         with open(flagfile, 'w'):
             pass
 
@@ -439,6 +438,10 @@ deb %s testing radio-retail
         #check_call(['apt-get', 'install', 'dist-upgrade'])
         #with open(flagfile, 'w'):
             #pass
+
+    # Make sure that rsync is installed:
+    if not isfile('/usr/bin/rsync'):
+        check_call(['apt-get', 'install', '-y', 'rsync'])
 
     # Copy all our source code/etc, over to a temporary directory for
     # building, testing/ etc
