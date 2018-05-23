@@ -1223,6 +1223,17 @@ void get_next_ok_music_item(
         }
     }
 
+    // Item is automatically ok if it is LineIn)
+    // (unlike MU MP3 files, we don't check for too much repetition, attempt re-ordering, etc)
+    if (!blnok) {
+        if (next_item.cat == SCAT_MUSIC) {
+            if (next_item.strmedia == "LineIn") {
+                log_message("Found LineIn item, using it");
+                blnok = true;
+            }
+        }
+    }
+
     // Check if the item should be skipped
     bool blnskip = false;
     string strskip_reason = "";
