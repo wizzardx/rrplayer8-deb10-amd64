@@ -57,6 +57,10 @@ void player_run_data::reset_playback() {
   // Reset members to default values
   clear();
 
+  // Also reset some additional playback status-related things, stored outside
+  // of this class:
+  pel_cache.clear();
+
   // Now setup xmms sessions and tracking info:
   for (int intsession = 0; intsession < intmax_xmms; intsession++) {
     // Setup a controller for the session:

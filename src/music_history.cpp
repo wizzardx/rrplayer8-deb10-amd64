@@ -59,10 +59,18 @@ bool music_history::artist_song_played_recently(const std::string & strartist,
   int c = 0; // How many items we have iterated over;
   bool found = false; // Set to true if we find the song
   while (i != m_history.end() && c < count) {
-    string item_artist = mp3tags.get_mp3_artist(*i);
-    if (item_artist == strartist) {
-      found = true;
-      break;
+    // Skip checking the file if it doesn't exist on the harddrive. This can
+    // happen when files have been stored in the music history, but which
+    // have since been moved around by some external process.
+    if (!file_exists(*i)) {
+      log_warning("File " + *i + " exists in music history, but not on harddrive. Have the files been moved around recently?");
+    }
+    else {
+      string item_artist = mp3tags.get_mp3_artist(*i);
+      if (item_artist == strartist) {
+        found = true;
+        break;
+      }
     }
     i++; c++;
   }

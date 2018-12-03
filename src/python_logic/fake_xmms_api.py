@@ -267,7 +267,7 @@ def fake_xmms_remote_playlist_add_url_string(session: int, url: str) -> None:
         audio_file_link = '/var/lib/rrplayer8/mpd/%d/music/%s' % (mpd_num, 'audio' + lower_ext)
 
         # Remove symlink if present:
-        if exists(audio_file_link):
+        if islink(audio_file_link):
             remove(audio_file_link)
 
         # Create symlink:
