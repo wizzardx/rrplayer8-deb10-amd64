@@ -293,7 +293,7 @@ def build_deb_installer(cfg: 'Dict[str,Any]') -> None:
         "--maintainer", pkg_maintainer,
         "--description", pkg_description,
         "--url", pkg_url,
-        "--deb-compression", "xz",
+        #"--deb-compression", "xz",
         "--before-install", "debian/preinst",
         "--after-install", "debian/postinst",
         "--after-remove", "debian/postrm",
@@ -353,6 +353,7 @@ def run_qa_tests_after_pkg_install(cfg: 'Dict[str,Any]') -> None:
     #sleep(20)
     #check_call('killall player', shell=True)
     #chdir(old_cwd)
+    check_call("""/etc/init.d/rrplayer8 restart""", shell=True)
 
 
 def get_deb_filename(cfg: 'Dict[str,Any]') -> str:
@@ -425,8 +426,9 @@ deb %s testing radio-retail
             pass
 
     # A fix for a ruby ssl issue:
+    flagfile = "/tmp/.lib-ssl-upgraded"
     if not isfile(flagfile):
-        check_call(['apt-get', 'install', '-y', 'libssl1.0.0|libssl1.0.2'])
+        check_call(['apt-get', 'install', '-y', 'libssl1.0.0|libssl1.0.2', 'libssl-dev'])
         with open(flagfile, 'w'):
             pass
 
