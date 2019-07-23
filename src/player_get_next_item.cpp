@@ -948,7 +948,7 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
       // Fetch lngfc:
       string strsql = "SELECT lngfc FROM tblfc_sched INNER JOIN tblfc_sched_day USING (lngfc_sched) "
                       "WHERE (tblfc_sched.intday = " + itostr(weekday(dtmdelayed)) + " OR tblfc_sched.intday IS NULL) AND "
-                      "date '" + strfc_date + "' BETWEEN COALESCE(tblfc_sched.dtmstart, '0000-01-01') AND "
+                      "date '" + strfc_date + "' BETWEEN COALESCE(tblfc_sched.dtmstart, '0001-01-01') AND "
                                                         "COALESCE(tblfc_sched.dtmend, '9999-12-25') AND "
                       "time '" + strfc_time_with_hour + "' BETWEEN tblfc_sched_day.dtmstart AND tblfc_sched_day.dtmend "
                       "ORDER BY tblfc_sched.lngfc_sched DESC LIMIT 1";
