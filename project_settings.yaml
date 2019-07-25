@@ -2,7 +2,7 @@ package:
     name: rrplayer8
 
     # Version numbers follow this spec: http://semver.org/
-    version: 8.1.4
+    version: 8.1.5
 
     description: "TODO: Add this"
     url: "TODO: Add this"
