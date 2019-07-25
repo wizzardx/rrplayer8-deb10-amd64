@@ -1042,7 +1042,7 @@ void segment::recursive_add_to_string_list(vector <string> & file_list, const st
       "COALESCE(dtmrelevant_until, '9999-12-25') >= " + strsql_date;
       // Now modify the query, using the Max Age and Premature segment settings.
       if (!blnpremature) { // blnpremature means ignore relevant from
-        strsql += " AND COALESCE(dtmrelevant_from, '0000-01-01') <= " + strsql_date;
+        strsql += " AND COALESCE(dtmrelevant_from, '0001-01-01') <= " + strsql_date;
       }
 
       if (blnmax_age) { // Max age means maximum # of days after dtmrelevant_from that the media will be played.
