@@ -1031,7 +1031,7 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
 
     // Check if we need to get the next item ASAP (ie, use cached playlists if available), otherwise
     // scan directories etc:
-    const bool blnasap = (intstarts_ms - now() <= 5); // Starts 5 or less seconds from now..
+    const bool blnasap = (intstarts_ms - now() <= 1); // Starts 1 or less seconds from now..
     run_data.current_segment->load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags, m_music_history, blnasap);
 
     // Log more info about the segment we just loaded:
@@ -1193,7 +1193,7 @@ void get_next_ok_music_item(
 
     // Check if we need to get the next item ASAP (ie, use cached playlists if available), otherwise
     // scan directories etc:
-    const bool blnasap = (intstarts_ms < 5000); // Starts 5 or less seconds from now..
+    const bool blnasap = (intstarts_ms < 1000); // Starts 1 or less seconds from now..
 
     // Fetch the next item:
     run_data.current_segment->get_next_item(next_item, db, intstarts_ms, config, mp3tags, music_history, blnasap);
