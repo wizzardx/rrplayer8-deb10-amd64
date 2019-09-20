@@ -1029,10 +1029,7 @@ void player::get_next_item_check_fc_seg_change(const int intstarts_ms) {
 
     // A -1 lngfc_seg means load the currently-scheduled music profile instead
 
-    // Check if we need to get the next item ASAP (ie, use cached playlists if available), otherwise
-    // scan directories etc:
-    const bool blnasap = (intstarts_ms - now() <= 1); // Starts 1 or less seconds from now..
-    run_data.current_segment->load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags, m_music_history, blnasap);
+    run_data.current_segment->load_from_db(db, lngfc_seg, dtmdelayed, config, mp3tags, m_music_history);
 
     // Log more info about the segment we just loaded:
     log_message("Loaded segment " + itostr(run_data.current_segment->intseg_no) +
@@ -1191,12 +1188,8 @@ void get_next_ok_music_item(
     // When was the current playlist previously updated?
     datetime dtmprev_playlist_update = run_data.current_segment->dtmpel_updated;
 
-    // Check if we need to get the next item ASAP (ie, use cached playlists if available), otherwise
-    // scan directories etc:
-    const bool blnasap = (intstarts_ms < 1000); // Starts 1 or less seconds from now..
-
     // Fetch the next item:
-    run_data.current_segment->get_next_item(next_item, db, intstarts_ms, config, mp3tags, music_history, blnasap);
+    run_data.current_segment->get_next_item(next_item, db, intstarts_ms, config, mp3tags, music_history);
 
     // If the segment playlist was just updated, then re-calculate the mimum
     // allowed number of songs before a song can repeat.

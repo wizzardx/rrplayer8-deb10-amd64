@@ -92,24 +92,4 @@ typedef deque <programming_element> programming_element_list;
 /// A global variable containing the previous music segment's programming element list
 extern programming_element_list prev_music_seg_pel;
 
-// A cache of programming element lists, used when we are in a hurry to get a playlist:
-// A class used by generate_playlist to remember recent programming element lists.
-class cpel_cache {
-  public:
-    void clear();
-    bool get (const string & id, programming_element_list & pel);
-    bool has (const string & id);
-    void set (const string & id, const programming_element_list & pel);
-  private:
-   struct pel_info {
-     programming_element_list pel;
-     datetime cached_time;
-   };
-   typedef map <string, pel_info> cache_type;
-   cache_type cache;
-   void tidy();
-};
-
-extern cpel_cache pel_cache; ///< Global variable for player storage of recent programming element lists
-
 #endif
