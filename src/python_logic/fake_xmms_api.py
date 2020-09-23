@@ -148,7 +148,19 @@ def fake_xmms_remote_get_current_song_title(session: int) -> str:
             # We actually return <artist> - <title>, rather than just <title>
             song_info = client.currentsong()
             artist = song_info.get('artist', '<no artist>')
+
+            # In some weird cases, the returned artist is a list of strings, rather than just a string:
+            if isinstance(artist, list):
+                artist = artist[0]
+            assert isinstance(artist, str), repr(artist)
+
             title = song_info.get('title', '<no title>')
+
+            # In some weird cases, the returned title is a list of strings, rather than just a string:
+            if isinstance(title, list):
+                title = title[0]
+            assert isinstance(title, str), repr(title)
+
             result = artist + " - " + title
             return result
 
