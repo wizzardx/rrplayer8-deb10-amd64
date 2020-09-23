@@ -15,6 +15,11 @@
 
 ## pylint:disable=fixme
 
+
+# For now we just hardcode the Ruby version to install
+RUBY_VERSION = '2.7.1'
+
+
 from os import chdir, getcwd, remove, makedirs, rename, symlink, mkdir
 import os
 import sys
@@ -278,7 +283,7 @@ def build_deb_installer(cfg: 'Dict[str,Any]') -> None:
     pkg_url = cfg['package']['url']
 
     fpm_cmd = [
-        "fpm",
+        "rbenv", "exec", "fpm",
         "-s", "dir",
         "-t", "deb",
         "-a", "amd64",
@@ -373,6 +378,66 @@ def get_deb_filename(cfg: 'Dict[str,Any]') -> str:
     return pkg_fname
 
 
+def _get_fpm_bin_path():
+    return '/root/.rbenv/versions/' + RUBY_VERSION + '/bin/fpm'
+
+
+def _install_newer_ruby_version():
+
+    # Install rbenv, to help us manage more recent Ruby versions:
+    if not isfile('/usr/bin/rbenv'):
+        check_call(['apt-get', 'install', 'rbenv'])
+
+    output = check_output(['rbenv', 'root']).strip().decode()
+    plugins_dir = output + "/plugins"
+    if not isdir(plugins_dir):
+        print("Creating rbenv plugins directory %r" % plugins_dir)
+        makedirs(plugins_dir)
+
+    # Install 'git' utility if it's not already present:
+    if not isfile('/usr/bin/git'):
+        check_call(['apt', 'install', '-y', 'git'])
+
+    # Use git to clone the latest version of the plugin source code:
+    ruby_build_plugin_dir = plugins_dir + '/ruby-build'
+    if not isdir(ruby_build_plugin_dir):
+        check_call(['git', 'clone', 'https://github.com/rbenv/ruby-build.git', ruby_build_plugin_dir])
+
+    # Use this command to list the installable Ruby versions:
+    #check_call(['rbenv', 'install', '--list'])
+
+    # For now we just hardcode the Ruby version to install, in our
+    # RUBY_VERSION global variable.
+
+    ruby_install_dir='/root/.rbenv/versions/' + RUBY_VERSION
+    if not isdir(ruby_install_dir):
+        check_call(['rbenv', 'install', RUBY_VERSION])
+
+    # Set PATH environment variable so that rbenv shims come first:
+    os.environ['PATH'] = '/root/.rbenv/shims:' + os.environ['PATH']
+
+    output = check_output(['ruby', '--version']).decode()
+    assert output.startswith('ruby ' + RUBY_VERSION)
+
+
+def _install_fpm():
+    # Quit early if FPM is already installed:
+    fpm_bin_path = _get_fpm_bin_path()
+
+    # Set RBENV_VERSION environment variable so that we start using the newer
+    # python version:
+    os.environ['RBENV_VERSION'] = RUBY_VERSION
+
+    if isfile(fpm_bin_path):
+        return
+
+    # Install and configure newer ruby interpreter version:
+    _install_newer_ruby_version()
+
+    # Attempt to use gem to install fpm:
+    check_call(['gem', 'install', 'fpm'])
+
+
 def run_vm_box_logic() -> None:
     """Run testing logic under a vagrant VM.
 
@@ -462,8 +527,8 @@ deb %s testing radio-retail
     if not isfile('/usr/share/doc/ruby-dev/changelog.gz'):
         check_call(['apt-get', 'install', '-y', 'ruby-dev'])
 
-    if not isfile('/usr/local/bin/fpm'):
-        check_call(['gem', 'install', 'fpm'])
+    # Install the fpm utility if not already present.
+    _install_fpm()
 
     # Build the debian package:
     build_deb_installer(cfg)
