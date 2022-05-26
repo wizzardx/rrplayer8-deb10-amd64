@@ -102,7 +102,7 @@ set -e
 if [ ! -f /usr/lib/python3/dist-packages/yaml/__init__.py ]; then
     echo "deb %s %s main contrib non-free" > /etc/apt/sources.list
     apt-get update
-    apt-get install -y python3-yaml
+    apt-get install -y --force-yes python3-yaml
 fi
 
 #Next, change over to our project directory and run the under-VM testing
@@ -116,8 +116,12 @@ cd /vagrant
         with open(tmp_setup_script, 'w') as script_file:
             script_file.write(shell_logic)
         check_call(['chmod', '+x', tmp_setup_script])
-        check_call(['vagrant', 'ssh', '-c',
-                    'sudo /vagrant/%s' % tmp_setup_script])
+
+        os.environ['SSHPASS'] = 'vagrant'
+
+        ssh_cmd = "sshpass -e ssh -p 2222 vagrant@localhost -C "
+        check_call(ssh_cmd + 'sudo /vagrant/%s' % tmp_setup_script, shell=True)
+
     finally:
         # At the end we tidy up our temporary shell script:
         if isfile(tmp_setup_script):
@@ -190,7 +194,7 @@ def build_player_bin(cfg: 'Dict[str,Any]') -> None:
     with pushdir('src'):
         if not isfile('/tmp/.cpp_build_deps_installed'):
 #            check_call(['apt-get', 'install', '-y', 'meson', 'g++', 'libglib2.0-dev', 'libpqxx-dev', 'libcurlpp-dev'])
-            check_call(['apt-get', 'install', '-y', 'meson', 'g++', 'libglib2.0-dev', 'libpqxx-dev', 'libxmlrpc-c++8-dev', 'libssl-dev'])
+            check_call(['apt-get', 'install', '-y', '--force-yes', 'meson', 'g++', 'libglib2.0-dev', 'libpqxx-dev', 'libxmlrpc-c++8-dev', 'libssl-dev'])
             with open('/tmp/.cpp_build_deps_installed', 'w') as f:
                 pass
 
@@ -386,7 +390,7 @@ def _install_newer_ruby_version():
 
     # Install rbenv, to help us manage more recent Ruby versions:
     if not isfile('/usr/bin/rbenv'):
-        check_call(['apt-get', 'install', 'rbenv'])
+        check_call(['apt-get', 'install', '-y', '--force-yes', 'rbenv'])
 
     output = check_output(['rbenv', 'root']).strip().decode()
     plugins_dir = output + "/plugins"
@@ -396,7 +400,7 @@ def _install_newer_ruby_version():
 
     # Install 'git' utility if it's not already present:
     if not isfile('/usr/bin/git'):
-        check_call(['apt', 'install', '-y', 'git'])
+        check_call(['apt', 'install', '-y', '--force-yes', 'git'])
 
     # Use git to clone the latest version of the plugin source code:
     ruby_build_plugin_dir = plugins_dir + '/ruby-build'
@@ -493,7 +497,7 @@ deb %s testing radio-retail
     # A fix for a ruby ssl issue:
     flagfile = "/tmp/.lib-ssl-upgraded"
     if not isfile(flagfile):
-        check_call(['apt-get', 'install', '-y', 'libssl1.0.0|libssl1.0.2', 'libssl-dev'])
+        check_call(['apt-get', 'install', '-y', '--force-yes', 'libssl1.0.0|libssl1.0.2', 'libssl-dev'])
         with open(flagfile, 'w'):
             pass
 
@@ -522,10 +526,10 @@ deb %s testing radio-retail
 
     # Install logic that we use for building deb packages:
     if not isfile('/usr/bin/gem'):
-        check_call(['apt-get', 'install', '-y', 'ruby'])
+        check_call(['apt-get', 'install', '-y', '--force-yes', 'ruby'])
 
     if not isfile('/usr/share/doc/ruby-dev/changelog.gz'):
-        check_call(['apt-get', 'install', '-y', 'ruby-dev'])
+        check_call(['apt-get', 'install', '-y', '--force-yes', 'ruby-dev'])
 
     # Install the fpm utility if not already present.
     _install_fpm()
@@ -535,7 +539,7 @@ deb %s testing radio-retail
 
     # Install the debian package:
     if not isfile("/usr/bin/gdebi"):
-        check_call(['apt-get', 'install', '-y', 'gdebi-core'])
+        check_call(['apt-get', 'install', '-y', '--force-yes', 'gdebi-core'])
     deb_fname = get_deb_filename(cfg)
     call(['gdebi', '-n', deb_fname])
 

@@ -35,6 +35,6 @@ test_vm_settings:
     vagrant_box_name: debian-jessie-amd64-netboot
     #vagrant_box_name: koalephant/debian9-amd64
     deb_mirror_urls:
-        debian: http://10.0.2.2:9999/debian
+        debian: http://10.0.2.2:9999/debian-archive
         fullfacing: http://10.0.2.2:9999/radioretail
 
