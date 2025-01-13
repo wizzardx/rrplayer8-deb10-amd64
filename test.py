@@ -17,7 +17,7 @@
 
 
 # For now we just hardcode the Ruby version to install
-RUBY_VERSION = '2.7.1'
+RUBY_VERSION = '3.0.7'
 
 
 from os import chdir, getcwd, remove, makedirs, rename, symlink, mkdir
@@ -409,6 +409,10 @@ def _install_newer_ruby_version():
 
     # Use this command to list the installable Ruby versions:
     #check_call(['rbenv', 'install', '--list'])
+
+    # Install build-essential, if not installed yet. It's required for building Ruby from source.
+    if not isfile('/usr/share/doc/build-essential/copyright'):
+        check_call(['apt', 'install', '-y', '--force-yes', 'build-essential'])
 
     # For now we just hardcode the Ruby version to install, in our
     # RUBY_VERSION global variable.
