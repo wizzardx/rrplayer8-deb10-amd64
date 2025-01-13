@@ -317,7 +317,7 @@ void segment::load_music_profile(pg_conn_exec & db, const player_config & config
   blnloaded = true; // Our segment is now loaded.
 }
 
-void segment::get_next_item(programming_element & pe, pg_conn_exec & db, const int intstarts_ms, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory) {
+void segment::get_next_item(programming_element & pe, pg_conn_exec & db, [[maybe_unused]] const int intstarts_ms, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory) {
   // Check if the segment is loaded:
   // NB: Changes to this function must be mirrored in get_next_item_will_revert()
 
@@ -829,10 +829,10 @@ void segment::load_pe_list(programming_element_list & pel, const struct cat & ca
     case SCAT_LINKS: case SCAT_ENTERTAINMENT: case SCAT_PROMOS: break;
 
     // If for some strange reason there is a music category loaded:
-    case SCAT_MUSIC_BED: log_warning("This is a Music Bed segment!");
+    case SCAT_MUSIC_BED: log_warning("This is a Music Bed segment!"); break;
 
     // All other categories: Invalid! They aren't meant to be used for the segment!
-    default: LOGIC_ERROR;
+    default: LOGIC_ERROR; break;
   }
 
   // Do we load any items?

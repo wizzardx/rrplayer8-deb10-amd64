@@ -16,6 +16,7 @@ class pg_connection;
 class music_history
 {
  public:
+   virtual ~music_history() {};
    /// Load music history from the schedule database
    void load(pg_connection & db);
 

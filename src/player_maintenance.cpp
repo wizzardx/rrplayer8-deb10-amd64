@@ -111,7 +111,7 @@ void player::maintenance_player_running(const datetime dtmcutoff) {
   log_line(strline);
 }
 
-void player::maintenance_hide_xmms_windows(const datetime dtmcutoff) {
+void player::maintenance_hide_xmms_windows([[maybe_unused]] const datetime dtmcutoff) {
   // Hide all visible XMMS windows.
   for (int intsession=0; intsession < intmax_xmms; intsession++) {
     xmmsc::xmms[intsession].hide_windows();

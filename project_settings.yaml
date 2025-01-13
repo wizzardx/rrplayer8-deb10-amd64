@@ -2,14 +2,17 @@ package:
     name: rrplayer8
 
     # Version numbers follow this spec: http://semver.org/
-    version: 8.6.0-deb8
+    version: 8.7.0-deb10
 
     description: "TODO: Add this"
     url: "TODO: Add this"
     dependencies:
+        # This package is specific to Debian 10:
+        - base-files (>= 10), base-files (<< 11)
+
         - libglib2.0-0
-        - "libpqxx-4.0|libpqxx-4.0v5"
-        - "libssl1.0.0|libssl1.0.2"
+        - libpqxx-6.2
+        - libssl1.1
         - extract
         - mp3info
         - psmisc
@@ -23,18 +26,16 @@ package:
         - rrpython3.5
         - sox
         - libsox-fmt-mp3
-        - "libxmlrpc-c++8|libxmlrpc-c++8v5"
+        - libxmlrpc-c++8v5
 
     maintainer: David <wizzardx@gmail.com>
 
 
 test_vm_settings:
     timezone_name: Africa/Johannesburg
-    debian_release_name: jessie
-    #debian_release_name: stretch
-    vagrant_box_name: debian-jessie-amd64-netboot
-    #vagrant_box_name: koalephant/debian9-amd64
+    debian_release_name: buster
+    vagrant_box_name: generic/debian10
     deb_mirror_urls:
-        debian: http://10.0.2.2:9999/debian-archive
+        debian: http://10.0.2.2:9999/debian
         fullfacing: http://10.0.2.2:9999/radioretail
 

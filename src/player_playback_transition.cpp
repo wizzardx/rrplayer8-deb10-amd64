@@ -355,7 +355,7 @@ void player::playback_transition(playback_events_info & playback_events) {
       gettimeofday(&tvnow, NULL);
 
       // Check that the previous recorded time is less than or equal to the current time:
-      if (tvprev_now.tv_sec < tvprev_now.tv_sec || (tvprev_now.tv_sec == tvprev_now.tv_sec && tvprev_now.tv_usec < tvprev_now.tv_usec)) {
+      if (tvnow.tv_sec < tvprev_now.tv_sec || (tvnow.tv_sec == tvprev_now.tv_sec && tvnow.tv_usec < tvprev_now.tv_usec)) {
         testing_throw;
         // System time has moved backwards! Possibly an ntpdate...
         // Calculate how far back the time has moved back.

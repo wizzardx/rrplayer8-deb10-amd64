@@ -215,7 +215,7 @@ void pg_connection::establish_connection() {
       // If there were no exceptions, then the connection was successful.
       blnConnected = true;
     }
-    catch(const PGSTD::exception &e) {
+    catch(const exception &e) {
       // Connection attempt did not succeed.
       // - Fetch the error description
       strconn_err = trim(e.what());
@@ -400,7 +400,7 @@ bool pg_result::field_is_null(const string & strfield) const {
   // Rethrows exceptions
   check_presult();
   try {
-    const pqxx::result::field & field = (*presult).at(row_num).at(strfield);
+    const auto & field = (*presult).at(row_num-1).at(strfield);
     return field.is_null();
   }
   catch (const exception &e) {

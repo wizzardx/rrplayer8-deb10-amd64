@@ -30,7 +30,7 @@ typedef map <const string, tblmp3_info> tblmp3_info_map;
 class mp3_tags {
 public:
   mp3_tags();
-  ~mp3_tags();
+  virtual ~mp3_tags();
 
   void init(const string & strBuffFilePath);  ///< Initialize the mp3_tags object, provide a buffer filename
   virtual string get_mp3_description(const string & strFilePath);

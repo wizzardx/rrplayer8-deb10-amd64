@@ -10,8 +10,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # please see the online documentation at vagrantup.com.
 
   # Every Vagrant virtual environment requires a box to build off of.
-  config.vm.box = "debian-jessie-amd64-netboot"
-#   config.vm.box = "koalephant/debian9-amd64"
+  config.vm.box = "generic/debian10"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -41,12 +40,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
   # config.vm.synced_folder "../data", "/vagrant_data"
+  config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
 
-  # Disable guest additions auto-update
-  if Vagrant.has_plugin?("vagrant-vbguest")
-    config.vbguest.auto_update = false
-    config.vbguest.no_remote = true
-  end
+  # # Disable guest additions auto-update
+  # if Vagrant.has_plugin?("vagrant-vbguest")
+  #   config.vbguest.auto_update = false
+  #   config.vbguest.no_remote = true
+  # end
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.

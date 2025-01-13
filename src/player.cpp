@@ -661,7 +661,7 @@ void player::check_received() {
   }
 }
 
-void player::load_cmd_into_db(const string strfull_path) {
+void player::load_cmd_into_db([[maybe_unused]] const string strfull_path) {
   undefined_throw;
 }
 

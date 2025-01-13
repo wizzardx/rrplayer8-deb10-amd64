@@ -25,7 +25,7 @@ class programming_element;
 class segment {
 public:
   segment();  // Constructor
-  ~segment(); // Destructor
+  virtual ~segment(); // Destructor
   void reset(); // Reset all segment info
   void load_from_db(pg_connection & db, const long lngfc_seg, const datetime dtmtime, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory);
   void load_music_profile(pg_conn_exec & db, const player_config & config, mp3_tags & mp3tags, const music_history & musichistory);
@@ -163,6 +163,6 @@ private:
 
 // auto_ptr type definition. Conveniance type for code that needs to handle
 // pointers to segment objects.
-typedef auto_ptr<segment> ap_segment;
+typedef std::unique_ptr<segment> ap_segment;
 
 #endif

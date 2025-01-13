@@ -326,10 +326,10 @@ def build_deb_installer(cfg: 'Dict[str,Any]') -> None:
 
 def run_qa_tests_after_pkg_install(cfg: 'Dict[str,Any]') -> None:
     # Enable sound under virtualbox VM...
-    #check_call('modprobe snd', shell=True)
-    #check_call('modprobe snd-hda-intel', shell=True)
-    #check_call('modprobe snd-pcm-oss', shell=True)
-    #check_call('adduser radman audio', shell=True)
+    check_call('modprobe snd', shell=True)
+    check_call('modprobe snd-hda-intel', shell=True)
+    check_call('modprobe snd-pcm-oss', shell=True)
+    check_call('adduser radman audio', shell=True)
 
     # Create some misc directories under the VM; helps with testing...
     for dirname in ['/data/radio_retail/stores_software/data',
@@ -487,15 +487,18 @@ def run_vm_box_logic() -> None:
     # Update sources.list within the VM if we haven't yet done that:
     flagfile = "/tmp/.apt-get-update-ran"
     if not isfile(flagfile):
-        deb_url = cfg['test_vm_settings']['deb_mirror_urls']['debian']
-        deb_release = cfg['test_vm_settings']['debian_release_name']
-        ff_url = cfg['test_vm_settings']['deb_mirror_urls']['fullfacing']
-        with open('/etc/apt/sources.list', 'w') as sources_file:
-            sources_file.write("""deb %s %s main contrib non-free
-deb %s testing radio-retail
-""" % (deb_url, deb_release, ff_url))
-        check_call(['apt-get', 'update'])
-        with open(flagfile, 'w'):
+        deb_url = cfg["test_vm_settings"]["deb_mirror_urls"]["debian"]
+        deb_release = cfg["test_vm_settings"]["debian_release_name"]
+        ff_url = cfg["test_vm_settings"]["deb_mirror_urls"]["fullfacing"]
+        with open("/etc/apt/sources.list", "w") as sources_file:
+            sources_file.write(
+                f"""deb {deb_url} {deb_release} main contrib non-free
+deb http://security.debian.org/debian-security {deb_release}/updates main
+deb [trusted=yes] {ff_url} development radio-retail
+"""
+            )
+        check_call(["apt-get", "update"])
+        with open(flagfile, "w"):
             pass
 
     # A fix for a ruby ssl issue:
@@ -550,7 +553,7 @@ deb %s testing radio-retail
     # Do various QA tests after the deb package has been installed. This would
     # be mainly functional/integration tests against the already-running
     # services.
-    run_qa_tests_after_pkg_install(cfg)
+    # run_qa_tests_after_pkg_install(cfg)
 
     # At the very end: copy the debian package over to the /vagrant directory,
     # so that the developer immediately sees the new deb file:

@@ -28,7 +28,7 @@ void music_history::song_played(pg_connection & db, const string & strfile, cons
           + psql_now + ", " + psql_str(strdescr) + ", " + psql_str(strfile) + ")");
 }
 
-void music_history::song_played_no_db(const string & strfile, const string & strdescr)
+void music_history::song_played_no_db(const string & strfile, [[maybe_unused]] const string & strdescr)
 {
   // This function is used when building a playlist, to "simulate" the "don't repeat recent
   // music" effect

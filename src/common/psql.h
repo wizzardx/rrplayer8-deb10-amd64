@@ -52,7 +52,7 @@ typedef vector<string> pg_params; // For running parameterized queries.
 
 // Autopointer type declaration
 class pg_result; // Forward declaration
-typedef auto_ptr<pg_result> ap_pg_result;
+typedef std::unique_ptr<pg_result> ap_pg_result;
 
 // Abstract base class for pg_connection and pg_transaction. Used to allow passing objects of either
 // type to functions that only need to call the "exec" method:
@@ -143,7 +143,7 @@ public:
   pg_result& operator=(const pg_result & pg_res);
 
   /// Destructor
-  ~pg_result();
+  virtual ~pg_result();
 
   // Clear out the object's attributes to default values
   void clear();
