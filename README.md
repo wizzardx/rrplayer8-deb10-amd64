@@ -1,12 +1,16 @@
 # INSTRUCTIONS
 
-Try running this command after cloning the git repo:
+## Clone the git repo
 
- $ ./test.py
+ git clone https://github.com/wizzardx/rrplayer8-deb10-amd64.git
 
-If it succeeds, then yould have the RR player running in a Vagrant VM (including audio playback) as well as a built deb file in the current directory, eg: `rrplayer8_8.7.0-deb10_amd64.deb `
+# Compiling and testing the RR player
 
-If it fails, then you can usually find the exact cause of the problem on the command-line.
+ ./test.py
+
+If thisss succeeds, then yould have the RR player running in a Vagrant VM (including audio playback) as well as a built deb file in the current directory, eg: `rrplayer8_8.7.0-deb10_amd64.deb `
+
+If this fails, then you can usually find the exact cause of the problem on the command-line.
 
 The most critical config (eg things like version numbers or deb mirrors) can be found within `project_settings.yaml`
 
