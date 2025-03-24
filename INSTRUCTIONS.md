@@ -12,7 +12,7 @@ git clone https://github.com/wizzardx/rrplayer8-deb10-amd64.git
 ./test.py
 ```
 
-If thisss succeeds, then yould have the RR player running in a Vagrant VM (including audio playback) as well as a built deb file in the current directory, eg: `rrplayer8_8.7.0-deb10_amd64.deb `
+If this succeeds, then yould have the RR player running in a Vagrant VM (including audio playback) as well as a built deb file in the current directory, eg: `rrplayer8_8.7.0-deb10_amd64.deb `
 
 If this fails, then you can usually find the exact cause of the problem on the command-line.
 
