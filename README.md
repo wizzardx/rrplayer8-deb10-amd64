@@ -2,11 +2,15 @@
 
 ## Clone the git repo
 
- git clone https://github.com/wizzardx/rrplayer8-deb10-amd64.git
+```
+git clone https://github.com/wizzardx/rrplayer8-deb10-amd64.git
+```
 
 # Compiling and testing the RR player
 
- ./test.py
+```
+./test.py
+```
 
 If thisss succeeds, then yould have the RR player running in a Vagrant VM (including audio playback) as well as a built deb file in the current directory, eg: `rrplayer8_8.7.0-deb10_amd64.deb `
 
