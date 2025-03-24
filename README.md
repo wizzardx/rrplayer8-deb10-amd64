@@ -1,4 +1,4 @@
-==INSTRUCTIONS==
+# INSTRUCTIONS
 
 Try running this command after cloning the git repo:
 
